@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inspections - ABC Digital Compliance Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#233144",
+                        "on-surface-variant": "#bcc9c6",
+                        "inverse-on-surface": "#233143",
+                        "tertiary": "#bec6e0",
+                        "inverse-surface": "#d4e4fa",
+                        "surface-container-highest": "#273647",
+                        "secondary-container": "#3c4a5e",
+                        "surface-container-high": "#1c2b3c",
+                        "surface-container-lowest": "#010f1f",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#005049",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "on-primary-fixed": "#00201d",
+                        "on-surface": "#d4e4fa",
+                        "surface-bright": "#2c3a4c",
+                        "on-error": "#690005",
+                        "secondary": "#b9c7e0",
+                        "primary-container": "#29a195",
+                        "tertiary-container": "#8990a8",
+                        "error": "#ffb4ab",
+                        "outline-variant": "#3d4947",
+                        "on-secondary-container": "#abb9d2",
+                        "primary-fixed": "#89f5e7",
+                        "secondary-fixed-dim": "#b9c7e0",
+                        "tertiary-fixed": "#dae2fd",
+                        "on-error-container": "#ffdad6",
+                        "on-primary": "#003732",
+                        "surface-container": "#122131",
+                        "outline": "#879391",
+                        "surface-dim": "#051424",
+                        "surface-variant": "#273647",
+                        "on-tertiary-fixed": "#131b2e",
+                        "on-secondary-fixed": "#0d1c2f",
+                        "on-background": "#d4e4fa",
+                        "background": "#051424",
+                        "surface-tint": "#6bd8cb",
+                        "primary": "#6bd8cb",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "primary-fixed-dim": "#6bd8cb",
+                        "on-secondary-fixed-variant": "#3a485c",
+                        "on-primary-container": "#00302b",
+                        "on-tertiary-container": "#22293d",
+                        "inverse-primary": "#006a61",
+                        "secondary-fixed": "#d5e3fd",
+                        "surface": "#051424",
+                        "on-tertiary": "#283044",
+                        "surface-container-low": "#0d1c2d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "element-gap": "8px",
+                        "table-cell-padding": "12px 16px",
+                        "gutter": "16px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-bold": ["Inter"],
+                        "code-sm": ["monospace"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3c4a5e; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-high dark:bg-surface-container-high text-primary dark:text-primary font-label-md text-label-md fixed left-0 top-0 h-screen w-[240px] border-r border-outline-variant dark:border-outline-variant flex flex-col h-full py-4 z-20">
+<div class="px-gutter mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-container">shield</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary leading-tight">ABC Digital</h1>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Compliance Platform</p>
+</div>
+</div>
+<ul class="flex-1 flex flex-col gap-1 px-2">
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">pets</span>
+<span>ABC Centres</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+<span>Surgeries</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-primary font-bold bg-surface-container-highest dark:bg-surface-container-highest transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<span>Inspections</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+<span>Fund Tracker</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span>Reports</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+<span>Committee Portal</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto px-4 pt-4 border-t border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-label-bold">ID</div>
+<div>
+<p class="font-label-bold text-on-surface">Inspector Dan</p>
+<p class="text-[10px] text-on-surface-variant">ID: AWBI-8492</p>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col ml-[240px] h-screen bg-background relative">
+<!-- TopAppBar -->
+<header class="bg-surface-container dark:bg-surface-container text-primary dark:text-primary font-body-md text-body-md border-b border-outline-variant dark:border-outline-variant flex justify-between items-center h-16 px-gutter shrink-0 z-10 w-full">
+<div class="flex items-center">
+<span class="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface tracking-tight">AWBI ABC Compliance</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 bg-surface-container-highest px-2 py-1 rounded border border-outline-variant" title="System synced 2 mins ago">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[11px] font-label-md text-on-surface-variant">Online &amp; Synced</span>
+</div>
+<div class="flex items-center gap-2 border-l border-outline-variant pl-4 ml-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-auto p-container-padding">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Inspection Schedule</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Manage and execute compliance inspections for ABC centres.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span> Filter
+</button>
+<button class="px-4 py-2 border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span> Month View
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100%-80px)] min-h-[600px]">
+<!-- Left: Calendar / Schedule List -->
+<div class="lg:col-span-8 bg-surface-container rounded-lg border border-outline-variant flex flex-col overflow-hidden">
+<div class="p-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+<h3 class="font-label-bold text-label-bold uppercase text-on-surface-variant tracking-wider">October 2024</h3>
+<div class="flex gap-1">
+<button class="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+<button class="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+</div>
+</div>
+<div class="flex-1 overflow-auto p-4 space-y-3">
+<div class="text-[11px] font-bold text-primary tracking-wider uppercase mb-2 mt-2">Today, Oct 24</div>
+<div class="group relative bg-surface-container-highest border border-primary rounded p-3 flex gap-4 cursor-pointer hover:bg-secondary-container transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l"></div>
+<div class="w-16 shrink-0 flex flex-col items-center justify-center border-r border-outline-variant pr-4">
+<span class="font-label-bold text-on-surface">09:00</span>
+<span class="text-[10px] text-on-surface-variant">AM</span>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-label-bold text-on-surface truncate">City Municipal Dog Pound</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-error/10 text-error border border-error/20 whitespace-nowrap">High Priority</span>
+</div>
+<p class="text-[11px] text-on-surface-variant truncate">Routine compliance check + Surgery audit</p>
+</div>
+<div class="shrink-0 flex items-center">
+<span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded p-3 flex gap-4 cursor-pointer hover:bg-surface-container-highest transition-colors">
+<div class="w-16 shrink-0 flex flex-col items-center justify-center border-r border-outline-variant pr-4 opacity-70">
+<span class="font-label-bold text-on-surface">14:30</span>
+<span class="text-[10px] text-on-surface-variant">PM</span>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-label-bold text-on-surface truncate">Green Valley Animal Shelter</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-container-highest text-on-surface-variant border border-outline-variant whitespace-nowrap">Scheduled</span>
+</div>
+<p class="text-[11px] text-on-surface-variant truncate">Follow-up on previous violations</p>
+</div>
+</div>
+<div class="text-[11px] font-bold text-on-surface-variant tracking-wider uppercase mb-2 mt-6">Tomorrow, Oct 25</div>
+<div class="bg-surface-container border border-outline-variant rounded p-3 flex gap-4 cursor-pointer hover:bg-surface-container-highest transition-colors">
+<div class="w-16 shrink-0 flex flex-col items-center justify-center border-r border-outline-variant pr-4 opacity-50">
+<span class="font-label-bold text-on-surface">10:00</span>
+<span class="text-[10px] text-on-surface-variant">AM</span>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center opacity-70">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-label-bold text-on-surface truncate">Westside ABC Centre</h4>
+</div>
+<p class="text-[11px] text-on-surface-variant truncate">Initial registration inspection</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Inspection Detail Card -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<div class="bg-surface-container rounded-lg border border-outline-variant flex flex-col flex-1 relative overflow-hidden">
+<div class="h-1 w-full bg-gradient-to-r from-primary to-surface-tint"></div>
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-6">
+<div>
+<div class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">Selected Inspection</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">City Municipal Dog Pound</h3>
+</div>
+<span class="px-2 py-1 bg-surface-container-highest rounded border border-outline-variant text-[10px] font-mono text-on-surface-variant">ID: INS-2948</span>
+</div>
+<div class="space-y-4 flex-1">
+<div>
+<div class="text-[11px] text-on-surface-variant mb-1">Address</div>
+<div class="font-body-sm text-body-sm text-on-surface flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary shrink-0 mt-0.5">location_on</span>
+<span>42 Industrial Estate Road, Sector 5<br/>North District, 110042</span>
+</div>
+</div>
+<div class="h-px w-full bg-outline-variant/50"></div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<div class="text-[11px] text-on-surface-variant mb-1">Scheduled Date</div>
+<div class="font-body-sm text-body-sm text-on-surface">Oct 24, 2024 • 09:00 AM</div>
+</div>
+<div>
+<div class="text-[11px] text-on-surface-variant mb-1">Assigned Officer</div>
+<div class="font-body-sm text-body-sm text-on-surface">Inspector Dan</div>
+</div>
+</div>
+<div class="h-px w-full bg-outline-variant/50"></div>
+<div>
+<div class="text-[11px] text-on-surface-variant mb-2">Pre-Inspection Context</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 grid grid-cols-2 gap-2">
+<div>
+<div class="text-[10px] text-on-surface-variant uppercase">Last Surgeries</div>
+<div class="font-headline-sm text-primary">142 <span class="text-[10px] text-on-surface-variant font-normal">/mo</span></div>
+</div>
+<div>
+<div class="text-[10px] text-on-surface-variant uppercase">Previous Rating</div>
+<div class="font-label-bold text-[#F59E0B] flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> Needs Imp.
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant">
+<button class="w-full py-3 bg-[#F97316] hover:bg-[#EA580C] text-white font-label-bold rounded transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span> START INSPECTION
+</button>
+<p class="text-[10px] text-center text-on-surface-variant mt-2">Entering inspection mode will lock device location.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
