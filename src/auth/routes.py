@@ -48,7 +48,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         name=body.name,
         phone=body.phone,
         role=body.role,
-        centre_id=body.centre_id or "",
+        centre_id=body.centre_id,
         password_hash=hash_password(body.password),
     )
     db.add(staff)
