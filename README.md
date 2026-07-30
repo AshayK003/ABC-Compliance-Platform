@@ -44,4 +44,4 @@ Modular monolith deployed on NIC Kubernetes — single FastAPI service with modu
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+AGPL v3 — see [LICENSE](LICENSE).
