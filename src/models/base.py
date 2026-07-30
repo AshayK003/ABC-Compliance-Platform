@@ -42,7 +42,8 @@ class Staff(Base):
     centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
     name: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(50))  # vet, surgeon, admin
-    phone: Mapped[str] = mapped_column(String(20))
+    phone: Mapped[str] = mapped_column(String(20), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     centre: Mapped[Centre] = relationship(back_populates="staff")
