@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/"]
+
+[project]
+name = "abc-dashboard"
+version = "0.1.0"
+description = "ABC Compliance Platform — Digital compliance infrastructure for Animal Birth Control centres"
+requires-python = ">=3.11"
+license = "AGPL-3.0-only"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "sqlalchemy[asyncio]>=2.0,<3",
+    "asyncpg>=0.30,<1",
+    "alembic>=1.13,<2",
+    "pydantic>=2.9,<3",
+    "pydantic-settings>=2.5,<3",
+    "redis>=5.0,<6",
+    "celery>=5.4,<6",
+    "pyjwt>=2.9,<3",
+    "passlib[bcrypt]>=1.7,<2",
+    "python-multipart>=0.0.12,<1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0,<9",
+    "pytest-asyncio>=0.24,<1",
+    "httpx>=0.27,<1",
+    "ruff>=0.6,<1",
+    "pyright>=1.1,<2",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
