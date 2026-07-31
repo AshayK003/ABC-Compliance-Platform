@@ -1,40 +1,22 @@
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
-
-interface SurgeryRecord {
-  id: string;
-  date: string;
-  centreName: string;
-  centreCode: string;
-  animalId: string;
-  procedureType: string;
-  outcome: 'Recovered' | 'In Observation' | 'Complication';
-}
-
-interface SurgerySummary {
-  total: number;
-  preOp: number;
-  postOp: number;
-  complications: number;
-}
+import { 
+  type SurgeryRecord, 
+  type SurgerySummary,
+  MOCK_SURGERY_SUMMARY,
+  MOCK_SURGERIES
+} from '../mocks';
 
 export function Surgeries() {
   const [records, setRecords] = useState<SurgeryRecord[]>([]);
-  const [summary, setSummary] = useState<SurgerySummary>({ total: 0, preOp: 0, postOp: 0, complications: 0 });
+  const [summary, setSummary] = useState<SurgerySummary>(MOCK_SURGERY_SUMMARY);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      setSummary({ total: 1248, preOp: 342, postOp: 856, complications: 50 });
-      setRecords([
-        { id: '1', date: '2023-10-24 14:30', centreName: 'Central Vet Hub', centreCode: 'CVH-01', animalId: 'DOG-8842-A', procedureType: 'Orthopedic - Fracture Repair', outcome: 'Recovered' },
-        { id: '2', date: '2023-10-24 15:15', centreName: 'Northside Clinic', centreCode: 'NSC-04', animalId: 'CAT-1193-B', procedureType: 'Soft Tissue - Exploratory', outcome: 'In Observation' },
-        { id: '3', date: '2023-10-24 16:00', centreName: 'East End Surgery', centreCode: 'EES-02', animalId: 'DOG-9921-C', procedureType: 'Cardiothoracic', outcome: 'Complication' },
-        { id: '4', date: '2023-10-24 16:45', centreName: 'Central Vet Hub', centreCode: 'CVH-01', animalId: 'CAT-4432-A', procedureType: 'Dental Extraction', outcome: 'Recovered' },
-        { id: '5', date: '2023-10-24 10:30', centreName: 'West End Surgery', centreCode: 'WES-03', animalId: 'DOG-7721-B', procedureType: 'Ophthalmic - Cataract', outcome: 'Recovered' },
-        { id: '6', date: '2023-10-23 14:00', centreName: 'Northside Clinic', centreCode: 'NSC-04', animalId: 'CAT-3382-C', procedureType: 'Neurological - Spinal', outcome: 'In Observation' },
-      ]);
+      setSummary(MOCK_SURGERY_SUMMARY);
+      setRecords(MOCK_SURGERIES);
     } catch (error) {
       console.error('Failed to load surgeries:', error);
     } finally {

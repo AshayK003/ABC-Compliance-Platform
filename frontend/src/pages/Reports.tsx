@@ -1,20 +1,8 @@
 import { useState } from 'react';
-
-interface ReportTemplate {
-  id: string;
-  name: string;
-  code: string;
-  icon: string;
-  color: string;
-}
+import { MOCK_REPORT_TEMPLATES } from '../mocks';
 
 export function Reports() {
-  const [templates] = useState<ReportTemplate[]>([
-    { id: 'TMPL-001', name: 'Monthly Compliance', code: 'TMPL-001', icon: 'summarize', color: 'primary' },
-    { id: 'TMPL-042', name: 'Surgery Trends', code: 'TMPL-042', icon: 'trending_up', color: 'secondary' },
-    { id: 'TMPL-108', name: 'Inspection Summary', code: 'TMPL-108', icon: 'plagiarism', color: 'tertiary' },
-    { id: 'TMPL-205', name: 'Financial Audit', code: 'TMPL-205', icon: 'account_balance', color: 'error' },
-  ]);
+  const [templates] = useState(MOCK_REPORT_TEMPLATES);
 
   const [dateRange, setDateRange] = useState('Last 30 Days');
   const [region, setRegion] = useState('All India');
@@ -54,7 +42,7 @@ export function Reports() {
           </button>
           <div className="h-8 w-px bg-outline-variant mx-2"></div>
           <button className="w-8 h-8 rounded-full bg-tertiary-container overflow-hidden border border-outline-variant ml-1 cursor-pointer active:opacity-80 transition-opacity">
-            <img alt="Compliance Officer Profile" className="w-full h-full object-cover" src="" />
+            <span className="material-symbols-outlined text-on-tertiary-container icon-fill text-lg">person</span>
           </button>
         </div>
       </header>
@@ -225,31 +213,31 @@ export function Reports() {
                 </div>
                 {/* Bars */}
                 <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden" style={{ height: '40%' }}>
+                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '40%' } as React.CSSProperties}>
                     <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                   </div>
                   <span className="font-code-sm text-code-sm text-on-surface-variant">Q1</span>
                 </div>
                 <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden" style={{ height: '55%' }}>
+                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '55%' } as React.CSSProperties}>
                     <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                   </div>
                   <span className="font-code-sm text-code-sm text-on-surface-variant">Q2</span>
                 </div>
                 <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden" style={{ height: '48%' }}>
+                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '48%' } as React.CSSProperties}>
                     <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                   </div>
                   <span className="font-code-sm text-code-sm text-on-surface-variant">Q3</span>
                 </div>
                 <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden" style={{ height: '70%' }}>
+                  <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '70%' } as React.CSSProperties}>
                     <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                   </div>
                   <span className="font-code-sm text-code-sm text-on-surface-variant">Q4</span>
                 </div>
                 <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                  <div className="w-full bg-primary-container rounded-t relative overflow-hidden" style={{ height: '85%' }}>
+                  <div className="w-full bg-primary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '85%' } as React.CSSProperties}>
                     <div className="absolute inset-0 bg-gradient-to-t from-transparent to-primary/20"></div>
                   </div>
                   <span className="font-code-sm text-code-sm text-primary font-bold">Q1 '24</span>

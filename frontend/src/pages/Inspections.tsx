@@ -1,15 +1,8 @@
 import { useState, useEffect } from 'react';
-
-interface InspectionRecord {
-  id: string;
-  centreName: string;
-  centreCode: string;
-  scheduledAt: string;
-  status: 'Scheduled' | 'Completed' | 'Overdue';
-  inspectorName: string;
-  priority?: 'High' | 'Normal';
-  type: string;  // Changed from union type to string to allow any value
-}
+import { 
+  type InspectionRecord,
+  MOCK_INSPECTIONS
+} from '../mocks';
 
 export function Inspections() {
   const [records, setRecords] = useState<InspectionRecord[]>([]);
@@ -22,13 +15,7 @@ export function Inspections() {
 
   const loadData = async () => {
     try {
-      setRecords([
-        { id: 'INS-2948', centreName: 'City Municipal Dog Pound', centreCode: 'CMDP-01', scheduledAt: '2024-10-24T09:00:00', status: 'Scheduled', inspectorName: 'Inspector Dan', priority: 'High', type: 'Routine + Surgery Audit' },
-        { id: 'INS-2949', centreName: 'Green Valley Animal Shelter', centreCode: 'GVAS-02', scheduledAt: '2024-10-24T14:30:00', status: 'Scheduled', inspectorName: 'Inspector Dan', priority: 'Normal', type: 'Follow-up on violations' },
-        { id: 'INS-2950', centreName: 'Westside ABC Centre', centreCode: 'WABC-03', scheduledAt: '2024-10-25T10:00:00', status: 'Scheduled', inspectorName: 'Inspector Dan', priority: 'Normal', type: 'Initial registration' },
-        { id: 'INS-2947', centreName: 'North District Hub', centreCode: 'NDH-04', scheduledAt: '2024-10-23T09:00:00', status: 'Completed', inspectorName: 'Inspector Dan', priority: 'Normal', type: 'Routine' },
-        { id: 'INS-2946', centreName: 'East Valley Shelter', centreCode: 'EVS-05', scheduledAt: '2024-10-22T11:00:00', status: 'Overdue', inspectorName: 'Inspector Dan', priority: 'High', type: 'Follow-up' },
-      ]);
+      setRecords(MOCK_INSPECTIONS);
     } catch (error) {
       console.error('Failed to load inspections:', error);
     } finally {

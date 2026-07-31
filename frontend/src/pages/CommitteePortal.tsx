@@ -28,7 +28,7 @@ export function CommitteePortal() {
         <div className="flex gap-4">
           <span className="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity">search</span>
           <span className="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity">notifications</span>
-          <img className="w-8 h-8 rounded-full object-cover border border-outline-variant cursor-pointer" alt="Profile" src="" />
+          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity text-[24px]">person</span>
         </div>
       </header>
 
@@ -91,7 +91,7 @@ export function CommitteePortal() {
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
             </button>
-            <img className="w-8 h-8 rounded-full object-cover border border-outline-variant" alt="Profile" src="" />
+            <span className="material-symbols-outlined text-on-surface-variant text-[24px]">person</span>
           </div>
         </div>
 
@@ -241,7 +241,9 @@ export function CommitteePortal() {
               <div className="p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between p-2 rounded-DEFAULT hover:bg-surface-container transition-colors">
                   <div className="flex items-center gap-3">
-                    <img className="w-10 h-10 rounded-full object-cover border border-outline-variant" alt="Arthur Pendelton" src="" />
+                    <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center border border-outline-variant">
+                      <span className="material-symbols-outlined text-on-primary-container icon-fill text-xl">person</span>
+                    </div>
                     <div>
                       <div className="font-body-md text-body-md font-semibold text-on-surface">Arthur Pendelton</div>
                       <div className="font-label-md text-label-md text-on-surface-variant">Chairperson</div>
@@ -258,7 +260,9 @@ export function CommitteePortal() {
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-DEFAULT hover:bg-surface-container transition-colors">
                   <div className="flex items-center gap-3">
-                    <img className="w-10 h-10 rounded-full object-cover border border-outline-variant" alt="Elena Rostova" src="" />
+                    <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center border border-outline-variant">
+                      <span className="material-symbols-outlined text-on-secondary-container icon-fill text-xl">person</span>
+                    </div>
                     <div>
                       <div className="font-body-md text-body-md font-semibold text-on-surface">Elena Rostova</div>
                       <div className="font-label-md text-label-md text-on-surface-variant">Chief Ethics Officer</div>

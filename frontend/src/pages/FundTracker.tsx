@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
+import { 
+  type FundDisbursement, 
+  type ExpenseRecord,
+  MOCK_FUND_DISBURSEMENTS,
+  MOCK_EXPENSES
+} from '../mocks';
 
 export function FundTracker() {
   const [activeTab, setActiveTab] = useState<'grants' | 'allocations' | 'expenses'>('grants');
@@ -57,7 +63,7 @@ export function FundTracker() {
             <span className="material-symbols-outlined">help</span>
           </button>
           <div className="w-8 h-8 rounded-full bg-secondary-container ml-2 overflow-hidden border border-outline-variant cursor-pointer">
-            <img alt="Compliance Officer Profile" className="w-full h-full object-cover" src="" />
+            <span className="material-symbols-outlined text-on-secondary-container icon-fill text-lg">person</span>
           </div>
         </div>
       </header>
@@ -115,22 +121,16 @@ export function FundTracker() {
                   </div>
                   <div className="overflow-x-auto flex-1">
                     <DataTable
-                      data={[
-                        { date: '2023-10-24', centre: 'North Regional Hub', amount: 12500000, purpose: 'Infrastructure Upgrade', status: 'Approved' },
-                        { date: '2023-10-22', centre: 'Eastern Tech Park', amount: 8250000, purpose: 'Operational Costs Q4', status: 'Processing' },
-                        { date: '2023-10-18', centre: 'South District Hq', amount: 4100000, purpose: 'Training & Compliance', status: 'Approved' },
-                        { date: '2023-10-15', centre: 'Central Data Center', amount: 22000000, purpose: 'Server Procurement', status: 'Flagged' },
-                        { date: '2023-10-10', centre: 'West Operations Facility', amount: 5750000, purpose: 'Facility Maintenance', status: 'Approved' },
-                      ]}
+                      data={MOCK_FUND_DISBURSEMENTS}
                       columns={[
                         { key: 'date', header: 'Date' },
                         { key: 'centre', header: 'Centre' },
-                        { key: 'amount', header: 'Amount (₹)', align: 'right', render: (r: any) => formatCurrency(r.amount) },
+                        { key: 'amount', header: 'Amount (₹)', align: 'right', render: (r: FundDisbursement) => formatCurrency(r.amount) },
                         { key: 'purpose', header: 'Purpose' },
                         {
                           key: 'status',
                           header: 'Status',
-                          render: (r: any) => (
+                          render: (r: FundDisbursement) => (
                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${
                               r.status === 'Approved' ? 'bg-primary-container/20 text-primary' :
                               r.status === 'Processing' ? 'bg-secondary-container/50 text-secondary' :
@@ -158,22 +158,22 @@ export function FundTracker() {
                           <span>100M</span><span>75M</span><span>50M</span><span>25M</span><span>0</span>
                         </div>
                         <div className="ml-10 flex-1 flex items-end justify-between gap-1 h-full pb-6 relative border-b border-outline-variant">
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative">
+                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative chart-bar" style={{ '--target-h': '30%' } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹30M</span>
                           </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[45%] rounded-t group relative">
+                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[45%] rounded-t group relative chart-bar" style={{ '--target-h': '45%' } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹45M</span>
                           </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[25%] rounded-t group relative">
+                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[25%] rounded-t group relative chart-bar" style={{ '--target-h': '25%' } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹25M</span>
                           </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[60%] rounded-t group relative">
+                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[60%] rounded-t group relative chart-bar" style={{ '--target-h': '60%' } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹60M</span>
                           </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[80%] rounded-t group relative">
+                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[80%] rounded-t group relative chart-bar" style={{ '--target-h': '80%' } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹80M</span>
                           </div>
-                          <div className="w-full bg-primary h-[45%] rounded-t group relative shadow-[0_0_10px_rgba(107,216,203,0.3)]">
+                          <div className="w-full bg-primary h-[45%] rounded-t group relative chart-bar" style={{ '--target-h': '45%' } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹45M</span>
                           </div>
                         </div>
@@ -191,22 +191,16 @@ export function FundTracker() {
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
-                        data={[
-                          { date: '2023-10-24', centre: 'North Regional Hub', amount: 12500000, purpose: 'Infrastructure Upgrade', status: 'Approved' },
-                          { date: '2023-10-22', centre: 'Eastern Tech Park', amount: 8250000, purpose: 'Operational Costs Q4', status: 'Processing' },
-                          { date: '2023-10-18', centre: 'South District Hq', amount: 4100000, purpose: 'Training & Compliance', status: 'Approved' },
-                          { date: '2023-10-15', centre: 'Central Data Center', amount: 22000000, purpose: 'Server Procurement', status: 'Flagged' },
-                          { date: '2023-10-10', centre: 'West Operations Facility', amount: 5750000, purpose: 'Facility Maintenance', status: 'Approved' },
-                        ]}
+                        data={MOCK_FUND_DISBURSEMENTS}
                         columns={[
                           { key: 'date', header: 'Date' },
                           { key: 'centre', header: 'Centre' },
-                          { key: 'amount', header: 'Amount (₹)', align: 'right', render: (r: any) => formatCurrency(r.amount) },
+                          { key: 'amount', header: 'Amount (₹)', align: 'right', render: (r: FundDisbursement) => formatCurrency(r.amount) },
                           { key: 'purpose', header: 'Purpose' },
                           {
                             key: 'status',
                             header: 'Status',
-                            render: (r: any) => (
+                            render: (r: FundDisbursement) => (
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${
                                 r.status === 'Approved' ? 'bg-primary-container/20 text-primary' :
                                 r.status === 'Processing' ? 'bg-secondary-container/50 text-secondary' :
@@ -232,7 +226,7 @@ export function FundTracker() {
                     <ChartPlaceholder height="250px">
                       <div className="flex-1 flex items-end gap-2 pt-8">
                         {['medicine', 'equipment', 'infrastructure', 'training', 'maintenance'].map((cat, i) => (
-                          <div key={cat} className="flex-1 bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative">
+                          <div key={cat} className="flex-1 bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative chart-bar" style={{ '--target-h': `${(i+1)*15}%` } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹{(i+1)*2}M</span>
                           </div>
                         ))}
@@ -247,21 +241,17 @@ export function FundTracker() {
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
-                        data={[
-                          { date: '2023-10-24', allocation: 'A1', category: 'medicine', amount: 2500000, billRef: 'BILL-001', status: 'Paid' },
-                          { date: '2023-10-22', allocation: 'A1', category: 'equipment', amount: 15000000, billRef: 'BILL-002', status: 'Pending' },
-                          { date: '2023-10-18', allocation: 'A2', category: 'infrastructure', amount: 8000000, billRef: 'BILL-003', status: 'Paid' },
-                        ]}
+                        data={MOCK_EXPENSES}
                         columns={[
                           { key: 'date', header: 'Date' },
                           { key: 'allocation', header: 'Allocation' },
                           { key: 'category', header: 'Category' },
-                          { key: 'amount', header: 'Amount (₹)', align: 'right', render: (r: any) => formatCurrency(r.amount) },
+                          { key: 'amount', header: 'Amount (₹)', align: 'right', render: (r: ExpenseRecord) => formatCurrency(r.amount) },
                           { key: 'billRef', header: 'Bill Ref' },
                           {
                             key: 'status',
                             header: 'Status',
-                            render: (r: any) => (
+                            render: (r: ExpenseRecord) => (
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${
                                 r.status === 'Paid' ? 'bg-primary-container/20 text-primary' : 'bg-secondary-container/50 text-secondary'
                               }`}>

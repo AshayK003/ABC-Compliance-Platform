@@ -2,25 +2,13 @@ import { useState, useEffect } from 'react';
 import { StatCard } from '../components/StatCard';
 import { InspectionCard } from '../components/InspectionCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
-
-interface CentreSummary {
-  id: string;
-  name: string;
-  code: string;
-  district: string;
-  state: string;
-  capacity: number;
-  status: 'active' | 'inactive' | 'suspended';
-  complianceScore: number;
-  surgeriesThisMonth: number;
-}
-
-interface AlertItem {
-  centre: string;
-  district: string;
-  issue: string;
-  status: 'Critical' | 'Warning' | 'Resolved';
-}
+import { 
+  type CentreSummary, 
+  type AlertItem,
+  MOCK_CENTRES,
+  MOCK_ALERTS,
+  MOCK_UPCOMING_INSPECTIONS
+} from '../mocks';
 
 export function Dashboard() {
   const [centres, setCentres] = useState<CentreSummary[]>([]);
@@ -39,26 +27,10 @@ export function Dashboard() {
   const loadDashboardData = async () => {
     try {
       // In a real app, these would be API calls
-      // For now, using mock data that matches the HTML designs
-      setCentres([
-        { id: '1', name: 'Metro North ABC Hub', code: 'MNAH-001', district: 'North District', state: 'State', capacity: 450, status: 'active', complianceScore: 92, surgeriesThisMonth: 245 },
-        { id: '2', name: 'Southside Animal Welfare', code: 'SAW-002', district: 'South District', state: 'State', capacity: 200, status: 'active', complianceScore: 78, surgeriesThisMonth: 180 },
-        { id: '3', name: 'East Valley ABC Clinic', code: 'EVAC-003', district: 'East District', state: 'State', capacity: 150, status: 'inactive', complianceScore: 45, surgeriesThisMonth: 0 },
-        { id: '4', name: 'West End Veterinary Trust', code: 'WEVT-004', district: 'West District', state: 'State', capacity: 500, status: 'active', complianceScore: 98, surgeriesThisMonth: 320 },
-      ]);
-
-      setUpcomingInspections([
-        { centreName: 'Apex Care Centre', scheduledAt: '2023-10-24', status: 'Scheduled' },
-        { centreName: 'Metro Paws ABC', scheduledAt: '2023-10-22', status: 'Completed' },
-        { centreName: 'City Ward 4 Clinic', scheduledAt: '2023-10-15', status: 'Overdue' },
-        { centreName: 'North District Hub', scheduledAt: '2023-11-02', status: 'Scheduled' },
-      ]);
-
-      setAlerts([
-        { centre: 'Southside ABC', district: 'District 2', issue: 'Post-op care protocol violation reported.', status: 'Critical' },
-        { centre: 'East Valley Shelter', district: 'District 5', issue: 'Delayed monthly surgery reporting.', status: 'Warning' },
-        { centre: 'Central Gov ABC', district: 'District 1', issue: 'Minor infrastructure gap identified during inspection.', status: 'Resolved' },
-      ]);
+      // For now, using shared mock data
+      setCentres(MOCK_CENTRES);
+      setUpcomingInspections(MOCK_UPCOMING_INSPECTIONS);
+      setAlerts(MOCK_ALERTS);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -94,7 +66,7 @@ export function Dashboard() {
             <span className="material-symbols-outlined">settings</span>
           </button>
           <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center cursor-pointer">
-            <img alt="User Avatar" className="w-full h-full object-cover rounded-full" src="" />
+            <span className="material-symbols-outlined text-on-primary-container icon-fill text-lg">person</span>
           </div>
         </div>
       </header>
@@ -137,17 +109,21 @@ export function Dashboard() {
               <h3 className="font-headline-sm text-headline-sm mb-4">Surgeries per Centre — Last 30 Days</h3>
               <ChartPlaceholder height="300px">
                 <div className="flex-1 bg-surface-container-lowest border border-outline-variant/50 rounded flex items-end p-4 gap-2 min-h-[300px] w-full">
-                  {topCentres.map((centre) => (
-                    <div
-                      key={centre.id}
-                      className="flex-1 bg-primary/20 hover:bg-primary/40 transition-colors rounded-t border-t border-primary relative group"
-                      style={{ height: `${Math.max(10, (centre.surgeriesThisMonth / Math.max(...topCentres.map(c => c.surgeriesThisMonth))) * 90)}%` }}
-                    >
-                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-variant text-on-surface text-label-md px-2 py-1 rounded pointer-events-none">
-                        {centre.surgeriesThisMonth}
+                  {topCentres.map((centre) => {
+                    const maxSurgeries = Math.max(...topCentres.map(c => c.surgeriesThisMonth));
+                    const heightPct = Math.max(10, (centre.surgeriesThisMonth / maxSurgeries) * 90);
+                    return (
+                      <div
+                        key={centre.id}
+                        className="flex-1 bg-primary/20 hover:bg-primary/40 transition-colors rounded-t border-t border-primary relative group chart-bar"
+                        style={{ '--target-h': `${heightPct}%` } as React.CSSProperties}
+                      >
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-variant text-on-surface text-label-md px-2 py-1 rounded pointer-events-none">
+                          {centre.surgeriesThisMonth}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ChartPlaceholder>
               <div className="flex justify-between mt-2 text-label-md text-on-surface-variant">

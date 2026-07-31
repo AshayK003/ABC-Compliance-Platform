@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import type { Centre } from '../types';
+import { MOCK_CENTRES_EXTENDED } from '../mocks';
 
 export function Centres() {
   const [centres, setCentres] = useState<Centre[]>([]);
@@ -16,14 +17,7 @@ export function Centres() {
   const loadCentres = async () => {
     try {
       // Mock data matching the HTML designs
-      setCentres([
-        { id: '1042', name: 'Metro North ABC Hub', code: 'MNAH-001', district: 'North District', state: 'State', capacity: 450, status: 'active', complianceScore: 92, surgeriesThisMonth: 245, created_at: '2024-01-15T10:00:00Z' },
-        { id: '1045', name: 'Southside Animal Welfare', code: 'SAW-002', district: 'South District', state: 'State', capacity: 200, status: 'active', complianceScore: 78, surgeriesThisMonth: 180, created_at: '2024-02-20T10:00:00Z' },
-        { id: '1018', name: 'East Valley ABC Clinic', code: 'EVAC-003', district: 'East District', state: 'State', capacity: 150, status: 'inactive', complianceScore: 45, surgeriesThisMonth: 0, created_at: '2024-03-10T10:00:00Z' },
-        { id: '1088', name: 'West End Veterinary Trust', code: 'WEVT-004', district: 'West District', state: 'State', capacity: 500, status: 'active', complianceScore: 98, surgeriesThisMonth: 320, created_at: '2024-01-05T10:00:00Z' },
-        { id: '1092', name: 'Central Municipal Pound', code: 'CMP-005', district: 'Central District', state: 'State', capacity: 300, status: 'active', complianceScore: 85, surgeriesThisMonth: 150, created_at: '2024-04-12T10:00:00Z' },
-        { id: '1105', name: 'Rural Care Centre', code: 'RCC-006', district: 'Rural District', state: 'State', capacity: 100, status: 'suspended', complianceScore: 30, surgeriesThisMonth: 0, created_at: '2024-05-01T10:00:00Z' },
-      ]);
+      setCentres(MOCK_CENTRES_EXTENDED);
     } catch (error) {
       console.error('Failed to load centres:', error);
     } finally {
