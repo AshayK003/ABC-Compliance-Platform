@@ -166,3 +166,22 @@ class Complaint(Base):
     sla_deadline: Mapped[datetime | None] = mapped_column(default=None)
     resolution: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# ─── Offline Sync Queue ───────────────────────────────────────────────────────
+
+
+class SyncQueue(Base):
+    __tablename__ = "sync_queue"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+    entity_type: Mapped[str] = mapped_column(String(50), index=True)  # surgery, dog, inspection, etc.
+    entity_id: Mapped[str] = mapped_column(String(36), index=True)
+    operation: Mapped[str] = mapped_column(String(20))  # create, update, delete
+    payload: Mapped[dict] = mapped_column(Text, default="{}")  # JSON-serialized
+    idempotency_key: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)  # pending, synced, failed
+    retry_count: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime | None] = mapped_column(default=None)
+    error: Mapped[str | None] = mapped_column(Text, default=None)
