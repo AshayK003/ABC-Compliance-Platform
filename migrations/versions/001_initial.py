@@ -21,14 +21,14 @@ def upgrade() -> None:
         "centres",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("code", sa.String(50), nullable=False, unique=True),
+        sa.Column("code", sa.String(50), nullable=False),
         sa.Column("district", sa.String(255), nullable=False),
         sa.Column("state", sa.String(100), nullable=False),
         sa.Column("capacity", sa.Integer, server_default="0", nullable=False),
         sa.Column("status", sa.String(20), server_default="active", nullable=False),
         sa.Column("created_at", sa.DateTime, server_default=sa.func.now(), nullable=False),
     )
-    op.create_index("ix_centres_code", "centres", ["code"])
+    op.create_index("ix_centres_code", "centres", ["code"], unique=True)
     op.create_index("ix_centres_state", "centres", ["state"])
 
     op.create_table(

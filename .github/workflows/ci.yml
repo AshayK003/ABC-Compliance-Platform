@@ -45,19 +45,25 @@ jobs:
         run: uv run pyright src/
 
       - name: Alembic drift check
-        run: uv run alembic check
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
         env:
           DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_test
+          SECRET_KEY: ci-test-secret-key-not-for-production
 
       - name: Unit tests (mocked)
         run: uv run pytest tests/ -v
         env:
           DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_test
+          SECRET_KEY: ci-test-secret-key-not-for-production
 
       - name: Integration test (real DB)
-        run: uv run pytest tests/ -v -k "not test_token" --no-cov
+        run: uv run pytest tests/test_integration.py -v
         env:
           DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_test
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          RUN_INTEGRATION: "1"
 
   frontend:
     runs-on: ubuntu-latest
@@ -86,7 +92,7 @@ jobs:
 
   deploy-fly:
     needs: [backend, frontend]
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && secrets.FLY_API_TOKEN != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

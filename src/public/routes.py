@@ -117,7 +117,7 @@ async def enqueue_sync(
             "entity_type": existing.entity_type,
             "entity_id": existing.entity_id,
             "operation": existing.operation,
-            "payload": json.loads(existing.payload) if existing.payload else {},
+            "payload": json.loads(str(existing.payload)) if existing.payload else {},
             "idempotency_key": existing.idempotency_key,
             "status": existing.status,
             "retry_count": existing.retry_count,

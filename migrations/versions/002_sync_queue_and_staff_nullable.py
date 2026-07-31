@@ -30,16 +30,12 @@ def upgrade() -> None:
         sa.Column("synced_at", sa.DateTime, nullable=True),
         sa.Column("error", sa.Text, nullable=True),
     )
-    op.create_index("ix_sync_queue_status", "sync_queue", ["status"])
-    op.create_index("ix_sync_queue_created_at", "sync_queue", ["created_at"])
 
     # Make staff.centre_id nullable (was NOT NULL in 001, but model is nullable=True)
     op.alter_column("staff", "centre_id", existing_type=sa.String(36), nullable=True)
 
 
 def downgrade() -> None:
-    op.drop_index("ix_sync_queue_created_at", table_name="sync_queue")
-    op.drop_index("ix_sync_queue_status", table_name="sync_queue")
     op.drop_table("sync_queue")
 
     # Revert staff.centre_id to NOT NULL

@@ -20,7 +20,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def engine():
     url = os.getenv("DATABASE_URL")
     if not url:
@@ -28,13 +28,14 @@ def engine():
     return create_async_engine(url)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def setup_db(engine):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
 
 
 @pytest.fixture
@@ -142,18 +143,25 @@ class TestSyncQueueIntegration:
 class TestComplaintsIntegration:
     @pytest.mark.asyncio
     async def test_create_and_update_complaint(self, client: AsyncClient):
-        # Create complaint (public endpoint - no auth needed)
-        app = _app
-        app.dependency_overrides.clear()
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as public_client:
-            resp = await public_client.post("/public/complaints", json={
-                "centre_id": "centre-1",
-                "citizen_phone": "9876543210",
-                "description": "Test complaint",
-            })
-            assert resp.status_code == 201
-            complaint_id = resp.json()["id"]
+        # Create a real centre first (FK constraint on complaints.centre_id)
+        resp = await client.post("/centres", json={
+            "name": "BBMP Centre 2",
+            "code": "BBMP002",
+            "district": "Bangalore Urban",
+            "state": "Karnataka",
+            "capacity": 40,
+        })
+        assert resp.status_code == 201
+        centre_id = resp.json()["id"]
+
+        # Create complaint (public endpoint - no auth needed, but works through same client)
+        resp = await client.post("/public/complaints", json={
+            "centre_id": centre_id,
+            "citizen_phone": "9876543210",
+            "description": "Test complaint",
+        })
+        assert resp.status_code == 201
+        complaint_id = resp.json()["id"]
 
         # Update complaint (requires auth)
         resp = await client.patch(f"/public/complaints/{complaint_id}", json={
