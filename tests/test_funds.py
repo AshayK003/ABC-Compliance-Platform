@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.deps import TokenPayload, get_current_user
 from src.database import get_db
 from src.main import app as _app
-from src.models.base import Grant, Allocation, Expense
+from src.models.base import Allocation, Expense, Grant
 
 
 @pytest.fixture

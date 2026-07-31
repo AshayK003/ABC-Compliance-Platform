@@ -60,7 +60,9 @@ def _make_inspection(**kwargs) -> Inspection:
 
 class TestCreateInspection:
     @pytest.mark.asyncio
-    async def test_creates_and_returns_inspection(self, client: AsyncClient, mock_session: AsyncMock):
+    async def test_creates_and_returns_inspection(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 

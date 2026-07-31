@@ -104,7 +104,9 @@ async def enqueue_sync(
     _: TokenPayload = Depends(get_current_user),
 ):
     # Check idempotency
-    result = await db.execute(select(SyncQueue).where(SyncQueue.idempotency_key == body.idempotency_key))
+    result = await db.execute(
+        select(SyncQueue).where(SyncQueue.idempotency_key == body.idempotency_key)
+    )
     existing = result.scalar_one_or_none()
     if existing:
         return {
@@ -141,7 +143,12 @@ async def list_pending_sync(
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(SyncQueue).where(SyncQueue.status == "pending").order_by(SyncQueue.created_at).limit(limit)
+    stmt = (
+        select(SyncQueue)
+        .where(SyncQueue.status == "pending")
+        .order_by(SyncQueue.created_at)
+        .limit(limit)
+    )
     if entity_type:
         stmt = stmt.where(SyncQueue.entity_type == entity_type)
 

@@ -39,7 +39,9 @@ class Staff(Base):
     __tablename__ = "staff"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
-    centre_id: Mapped[str | None] = mapped_column(ForeignKey("centres.id"), index=True, nullable=True)
+    centre_id: Mapped[str | None] = mapped_column(
+        ForeignKey("centres.id"), index=True, nullable=True
+    )
     name: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(50))  # vet, surgeon, admin
     phone: Mapped[str] = mapped_column(String(20), unique=True)
@@ -175,12 +177,16 @@ class SyncQueue(Base):
     __tablename__ = "sync_queue"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
-    entity_type: Mapped[str] = mapped_column(String(50), index=True)  # surgery, dog, inspection, etc.
+    entity_type: Mapped[str] = mapped_column(
+        String(50), index=True
+    )  # surgery, dog, inspection, etc.
     entity_id: Mapped[str] = mapped_column(String(36), index=True)
     operation: Mapped[str] = mapped_column(String(20))  # create, update, delete
     payload: Mapped[dict] = mapped_column(Text, default="{}")  # JSON-serialized
     idempotency_key: Mapped[str] = mapped_column(String(100), unique=True, index=True)
-    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)  # pending, synced, failed
+    status: Mapped[str] = mapped_column(
+        String(20), default="pending", index=True
+    )  # pending, synced, failed
     retry_count: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     synced_at: Mapped[datetime | None] = mapped_column(default=None)

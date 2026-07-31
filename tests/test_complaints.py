@@ -60,7 +60,9 @@ def _make_complaint(**kwargs) -> Complaint:
 
 class TestCreateComplaint:
     @pytest.mark.asyncio
-    async def test_creates_and_returns_complaint(self, client: AsyncClient, mock_session: AsyncMock):
+    async def test_creates_and_returns_complaint(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 
@@ -141,4 +143,35 @@ class TestGetComplaint:
         mock_session.execute.return_value = mr
 
         resp = await client.get("/public/complaints/nonexistent")
+        assert resp.status_code == 404
+
+
+class TestUpdateComplaint:
+    @pytest.mark.asyncio
+    async def test_updates_status_and_resolution(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        c1 = _make_complaint(id="comp-1", status="open")
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = c1
+        mock_session.execute.return_value = mr
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
+
+        resp = await client.patch(
+            "/public/complaints/comp-1",
+            params={"status": "resolved", "resolution": "Centre visited, issue closed"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "resolved"
+        assert resp.json()["resolution"] == "Centre visited, issue closed"
+        mock_session.commit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_404_for_missing(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mr
+
+        resp = await client.patch("/public/complaints/nonexistent", params={"status": "resolved"})
         assert resp.status_code == 404

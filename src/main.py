@@ -7,7 +7,8 @@ from src.auth.routes import router as auth_router
 from src.centres.routes import router as centres_router
 from src.config import settings
 from src.dogs.routes import router as dogs_router
-from src.funds.routes import alloc_router, exp_router, router as funds_router
+from src.funds.routes import alloc_router, exp_router
+from src.funds.routes import router as funds_router
 from src.inspections.routes import router as inspections_router
 from src.public.routes import public_router, sync_router
 from src.surgeries.routes import router as surgeries_router

@@ -1,0 +1,172 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock
+
+import jwt
+import pytest
+from fastapi import FastAPI, HTTPException
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.auth.deps import TokenPayload, decode_token, get_current_user, hash_password
+from src.config import settings
+from src.database import get_db
+from src.main import app as _app
+from src.models.base import Staff
+
+
+@pytest.fixture
+def app() -> FastAPI:
+    _app.dependency_overrides.clear()
+    return _app
+
+
+@pytest.fixture
+def mock_session() -> AsyncMock:
+    session = AsyncMock(spec=AsyncSession)
+    session.add = MagicMock()
+    return session
+
+
+@pytest.fixture
+def auth_override():
+    def _override():
+        return TokenPayload(user_id="test-user-id", role="admin")
+    return _override
+
+
+@pytest.fixture
+async def client(app: FastAPI, mock_session: AsyncMock, auth_override) -> AsyncClient:
+    app.dependency_overrides[get_db] = lambda: mock_session
+    app.dependency_overrides[get_current_user] = auth_override
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+
+def _make_staff(**kwargs) -> Staff:
+    data = {
+        "id": "staff-1",
+        "centre_id": None,
+        "name": "Dr. Test",
+        "role": "vet",
+        "phone": "9876543210",
+        "password_hash": hash_password("secret123"),
+        "active": True,
+    }
+    data.update(kwargs)
+    return Staff(**data)
+
+
+class TestRegister:
+    @pytest.mark.asyncio
+    async def test_registers_new_staff(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mr
+        mock_session.commit = AsyncMock()
+
+        resp = await client.post("/auth/register", json={
+            "name": "Dr. Test",
+            "phone": "9876543210",
+            "password": "secret123",
+            "role": "vet",
+        })
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["name"] == "Dr. Test"
+        assert body["role"] == "vet"
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_rejects_duplicate_phone(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = _make_staff()
+        mock_session.execute.return_value = mr
+
+        resp = await client.post("/auth/register", json={
+            "name": "Dr. Test",
+            "phone": "9876543210",
+            "password": "secret123",
+        })
+        assert resp.status_code == 409
+        mock_session.add.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_validates_payload(self, client: AsyncClient):
+        resp = await client.post("/auth/register", json={"phone": "123"})
+        assert resp.status_code == 422
+
+
+class TestLogin:
+    @pytest.mark.asyncio
+    async def test_login_returns_token(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = _make_staff()
+        mock_session.execute.return_value = mr
+
+        resp = await client.post("/auth/login", json={
+            "phone": "9876543210",
+            "password": "secret123",
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["token_type"] == "bearer"
+        assert body["role"] == "vet"
+        assert body["access_token"]
+
+    @pytest.mark.asyncio
+    async def test_login_wrong_password(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = _make_staff(password_hash=hash_password("other"))
+        mock_session.execute.return_value = mr
+
+        resp = await client.post("/auth/login", json={
+            "phone": "9876543210",
+            "password": "secret123",
+        })
+        assert resp.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_login_unknown_phone(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mr
+
+        resp = await client.post("/auth/login", json={
+            "phone": "0000000000",
+            "password": "whatever",
+        })
+        assert resp.status_code == 401
+
+
+class TestMe:
+    @pytest.mark.asyncio
+    async def test_returns_current_user(self, client: AsyncClient):
+        resp = await client.get("/auth/me")
+        assert resp.status_code == 200
+        assert resp.json() == {"user_id": "test-user-id", "role": "admin"}
+
+
+class TestTokenDecode:
+    def test_expired_token_rejected(self):
+        now = datetime.now(UTC)
+        payload = {
+            "sub": "user-1",
+            "role": "admin",
+            "iat": now - timedelta(hours=2),
+            "exp": now - timedelta(hours=1),
+        }
+        token = jwt.encode(payload, settings.secret_key, algorithm="HS256")
+        with pytest.raises(HTTPException) as exc:
+            decode_token(token)
+        assert exc.value.status_code == 401
+
+    def test_invalid_signature_rejected(self):
+        payload = {"sub": "user-1", "role": "admin"}
+        token = jwt.encode(payload, "wrong-secret-key", algorithm="HS256")
+        with pytest.raises(HTTPException) as exc:
+            decode_token(token)
+        assert exc.value.status_code == 401

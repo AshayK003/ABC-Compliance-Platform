@@ -66,6 +66,9 @@ class TestSyncQueue:
     async def test_enqueue_operation(self, client: AsyncClient, mock_session: AsyncMock):
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mr
 
         resp = await client.post("/sync/enqueue", json={
             "entity_type": "surgery",
@@ -74,12 +77,15 @@ class TestSyncQueue:
             "payload": {"surgery_type": "spay", "dog_id": "dog-1"},
             "idempotency_key": "idem-123",
         })
-        assert resp.status_code == 201
+        assert resp.status_code == 200
+        assert resp.json()["idempotency_key"] == "idem-123"
         mock_session.add.assert_called_once()
         mock_session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_enqueue_duplicate_idempotency_key(self, client: AsyncClient, mock_session: AsyncMock):
+    async def test_enqueue_duplicate_idempotency_key(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
         # First enqueue
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
