@@ -28,7 +28,9 @@ The Space suspends after ~48 h of inactivity. A keep-alive ping to `/health` eve
    - `DATABASE_URL` — Neon pooled connection string
      (`postgresql+asyncpg://...@...neon.tech/...?sslmode=require`)
    - `SECRET_KEY` — generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`
-   - `ALLOWED_ORIGINS` — your Vercel frontend URL
+   - `ALLOWED_ORIGINS` — your Vercel frontend URL, **JSON list format**:
+     `["https://your-frontend.vercel.app"]` (a plain string crashes the app —
+     pydantic-settings parses list fields as JSON)
 5. **Push to master.** CI runs tests, then the deploy job uploads the app to the
    Space. The Space rebuilds and runs `alembic upgrade head` before starting.
 
