@@ -19,4 +19,4 @@ COPY --from=builder /app/alembic.ini /app/alembic.ini
 
 ENV PORT=8080
 EXPOSE 8080
-CMD ["sh", "-c", "python -m uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "alembic upgrade head && python -m uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

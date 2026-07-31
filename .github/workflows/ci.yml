@@ -90,19 +90,28 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-  deploy-fly:
+  deploy-hf-spaces:
     needs: [backend, frontend]
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy to Fly.io
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deploy tooling
+        run: pip install --quiet huggingface_hub
+
+      - name: Deploy to Hugging Face Spaces
         run: |
-          if [ -z "$FLY_API_TOKEN" ]; then
-            echo "FLY_API_TOKEN not set — skipping deploy"
+          if [ -z "$HF_TOKEN" ]; then
+            echo "HF_TOKEN not set — skipping deploy"
             exit 0
           fi
-          flyctl deploy --remote-only
+          python scripts/deploy_hf.py
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
