@@ -90,7 +90,7 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-# Deploy to Render is handled by Render's GitHub integration (auto-deploy on push to master).
-# Create a new Web Service in Render dashboard pointing to this repo.
-# The Dockerfile is already compatible with Render's Docker deployment.
-# Set environment variables in Render dashboard: DATABASE_URL, SECRET_KEY, ALLOWED_ORIGINS.
+# Deploy to Northflank is handled by Northflank's GitHub integration (auto-deploy on push to master).
+# Create a new Service in Northflank dashboard pointing to this repo.
+# The Dockerfile is already compatible with Northflank's Docker deployment.
+# Set environment variables in Northflank dashboard: DATABASE_URL, SECRET_KEY, ALLOWED_ORIGINS.
