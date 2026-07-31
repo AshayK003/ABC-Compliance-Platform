@@ -5,6 +5,7 @@ interface AuthContextType {
   user: TokenPayload | null;
   token: string | null;
   login: (credentials: { phone: string; password: string }) => Promise<void>;
+  register: (data: { name: string; phone: string; password: string; role: string; centreId?: string }) => Promise<void>;
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
@@ -50,6 +51,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
+  const register = async (data: { name: string; phone: string; password: string; role: string; centreId?: string }) => {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: data.name,
+        phone: data.phone,
+        password: data.password,
+        role: data.role,
+        centre_id: data.centreId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Registration failed');
+    }
+
+    // After successful registration, log in
+    await login({ phone: data.phone, password: data.password });
+  };
+
   const logout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
@@ -63,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         login,
+        register,
         logout,
         loading,
         isAuthenticated: !!token && !!user,

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading } = useAuth();
+  const { login, register, loading } = useAuth();
   const [formData, setFormData] = useState({ phone: '', password: '' });
   const [error, setError] = useState('');
   const [isRegister, setIsRegister] = useState(false);
@@ -19,9 +19,7 @@ export function Login() {
 
     try {
       if (isRegister) {
-        await login({ phone: registerData.phone, password: registerData.password });
-        // Note: In a real app, you'd call register API first, then login
-        // For now, we'll just use the login flow
+        await register(registerData);
       } else {
         await login(formData);
       }
