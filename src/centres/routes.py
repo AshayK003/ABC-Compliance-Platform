@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
@@ -36,7 +37,11 @@ async def list_centres(
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
-    result = await db.execute(select(Centre).order_by(Centre.name))
+    result = await db.execute(
+        select(Centre)
+        .options(selectinload(Centre.staff))
+        .order_by(Centre.name)
+    )
     centres = result.scalars().all()
     return [
         CentreOut(

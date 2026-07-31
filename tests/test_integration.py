@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -10,7 +11,6 @@ from src.auth.deps import TokenPayload, get_current_user
 from src.database import get_db
 from src.main import app as _app
 from src.models.base import Base
-
 
 # This test requires a real DATABASE_URL env var pointing to a Postgres instance
 # It's skipped by default unless RUN_INTEGRATION=1 is set
