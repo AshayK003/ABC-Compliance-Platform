@@ -160,7 +160,7 @@ class TestUpdateComplaint:
 
         resp = await client.patch(
             "/public/complaints/comp-1",
-            params={"status": "resolved", "resolution": "Centre visited, issue closed"},
+            json={"status": "resolved", "resolution": "Centre visited, issue closed"},
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "resolved"
@@ -173,5 +173,5 @@ class TestUpdateComplaint:
         mr.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mr
 
-        resp = await client.patch("/public/complaints/nonexistent", params={"status": "resolved"})
+        resp = await client.patch("/public/complaints/nonexistent", json={"status": "resolved"})
         assert resp.status_code == 404

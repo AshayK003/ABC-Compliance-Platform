@@ -15,11 +15,15 @@ from src.models.base import Complaint, SyncQueue
 # ─── Public Complaints Router ───
 public_router = APIRouter(prefix="/public", tags=["public"])
 
-
 class ComplaintCreate(BaseModel):
     centre_id: str
     citizen_phone: str
     description: str
+
+
+class ComplaintUpdate(BaseModel):
+    status: str
+    resolution: str | None = None
 
 
 @public_router.post("/complaints", status_code=status.HTTP_201_CREATED)
@@ -67,8 +71,7 @@ async def get_complaint(
 @public_router.patch("/complaints/{complaint_id}")
 async def update_complaint(
     complaint_id: str,
-    status: str,
-    resolution: str | None = None,
+    body: ComplaintUpdate,
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
@@ -77,9 +80,9 @@ async def update_complaint(
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
 
-    complaint.status = status
-    if resolution:
-        complaint.resolution = resolution
+    complaint.status = body.status
+    if body.resolution:
+        complaint.resolution = body.resolution
     await db.commit()
     await db.refresh(complaint)
     return complaint
