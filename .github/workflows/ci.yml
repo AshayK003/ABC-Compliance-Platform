@@ -90,28 +90,7 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-  deploy-hf-spaces:
-    needs: [backend, frontend]
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install deploy tooling
-        run: pip install --quiet huggingface_hub
-
-      - name: Deploy to Hugging Face Spaces
-        run: |
-          if [ -z "$HF_TOKEN" ]; then
-            echo "HF_TOKEN not set — skipping deploy"
-            exit 0
-          fi
-          python scripts/deploy_hf.py
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+# Deploy to Render is handled by Render's GitHub integration (auto-deploy on push to master).
+# Create a new Web Service in Render dashboard pointing to this repo.
+# The Dockerfile is already compatible with Render's Docker deployment.
+# Set environment variables in Render dashboard: DATABASE_URL, SECRET_KEY, ALLOWED_ORIGINS.

@@ -1,47 +1,57 @@
 # Deployment
 
-The backend runs on a **Hugging Face Spaces Docker space** (free tier, no credit card).
-The frontend is served separately on Vercel. The production contract target remains
-self-hostable infrastructure (NIC cloud.gov.in) — this deployment is the live demo.
+The backend runs on **Render** (Docker, free tier, no credit card) with **Neon Postgres** (free, no card).
+The frontend is served on **Vercel** (free, no card).
+Keep-alive: **UptimeRobot** free (5-min HTTP checks on `/health`) — keeps the Render service warm even when your laptop is off.
+The production contract target remains self-hostable on NIC cloud.gov.in; this demo stack is proof-only.
 
-## Architecture
+## Backend (Render)
 
-| Layer | Where | Cost |
-|-------|-------|------|
-| Backend (FastAPI, Docker) | HF Spaces Docker space | Free (2 vCPU / 16 GB) |
-| Database (PostgreSQL) | Neon free tier | Free (0.5 GB, no credit card) |
-| Frontend (React) | Vercel | Free |
+### Prerequisites
+- GitHub account
+- Render account (free, no card — https://render.com)
+- Neon Postgres project (free, no card — https://neon.tech)
 
-The Space suspends after ~48 h of inactivity. A keep-alive ping to `/health` every
-24 h keeps it warm so the demo link is always responsive.
+### One-time setup
+1. **Neon** → create project `abc` → region **Singapore** (closest to India) → copy pooled connection string → transform:
+   ```
+   postgresql+asyncpg://neondb_owner:<password>@<host>-pooler.<region>.aws.neon.tech/neondb?sslmode=require
+   ```
+2. **Render** → **New Web Service** → connect this GitHub repo → **Docker** → free tier
+   - Build command: (empty — uses Dockerfile)
+   - Start command: (empty — uses Dockerfile CMD)
+   - Environment variables (Space Settings → Environment):
+     - `DATABASE_URL` — your transformed Neon URL
+     - `SECRET_KEY` — generate: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
+     - `ALLOWED_ORIGINS` — JSON list: `["https://<your-vercel-app>.vercel.app"]`
+3. **UptimeRobot** (free) → add monitor on `https://<your-render-app>.onrender.com/health` → interval 5 min
+   - This pings 288×/day, keeping the free Render service (15-min spin-down) permanently warm
 
-## One-time setup
+### How it works
+- Push to `master` → GitHub Actions runs tests → Render auto-deploys the new image
+- Dockerfile runs `alembic upgrade head` on start → fresh DB auto-migrates
+- Health endpoint at `/health` → UptimeRobot keeps it warm
 
-1. **Create the Space** at https://huggingface.co/new-space — name it
-   `abc-compliance`, set SDK to **Docker**.
-2. **Create a token** at https://huggingface.co/settings/tokens with **write access
-   to Spaces**.
-3. **Add GitHub secrets/variables** (Settings → Secrets and variables → Actions):
-   - Secret `HF_TOKEN` — the token from step 2
-   - Variable `HF_SPACE_ID` — `AshayK003/abc-compliance`
-4. **Add Space secrets** (Space Settings → Variables and secrets):
-   - `DATABASE_URL` — Neon pooled connection string
-     (`postgresql+asyncpg://...@...neon.tech/...?sslmode=require`)
-   - `SECRET_KEY` — generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`
-   - `ALLOWED_ORIGINS` — your Vercel frontend URL, **JSON list format**:
-     `["https://your-frontend.vercel.app"]` (a plain string crashes the app —
-     pydantic-settings parses list fields as JSON)
-5. **Push to master.** CI runs tests, then the deploy job uploads the app to the
-   Space. The Space rebuilds and runs `alembic upgrade head` before starting.
+## Frontend (Vercel)
 
-## Deploying manually
+1. Vercel → **Add New → Project** → import this repo → framework **Vite**
+2. Root directory: `frontend`
+3. Environment Variable (build-time): `VITE_API_URL` = `https://<your-render-app>.onrender.com`
+4. Deploy
+5. Update Render's `ALLOWED_ORIGINS` with the Vercel URL, redeploy
+
+## Local development
 
 ```bash
-HF_TOKEN=... HF_SPACE_ID=... python scripts/deploy_hf.py
+cd D:/Personal\ projects/ABC-Compliance-Platform
+docker compose up  # if you have docker-compose.yml
+# or
+DATABASE_URL=... SECRET_KEY=... ALLOWED_ORIGINS='["http://localhost:5173"]' python -m uvicorn src.main:app --reload
 ```
 
-## After deploy
+## Verification
 
-- Backend URL: `https://ashayk003-abc-compliance.hf.space`
-- Health check: `https://ashayk003-abc-compliance.hf.space/health`
-- Point the Vercel frontend at the backend URL and add it to `ALLOWED_ORIGINS`.
+```bash
+curl https://<your-render-app>.onrender.com/health
+# {"status":"ok","version":"0.1.0"}
+```
