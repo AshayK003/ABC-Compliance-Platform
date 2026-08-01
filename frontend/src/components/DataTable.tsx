@@ -4,7 +4,7 @@ function getSortArrow(
   sortConfig: { key: string; direction: 'asc' | 'desc' } | null,
   columnKey: string
 ) {
-  if (sortConfig && sortConfig.key === columnKey) {
+  if (sortConfig?.key === columnKey) {
     return sortConfig.direction === 'asc' ? '▲' : '▼';
   }
   return <span className="text-on-surface-variant/50">▼</span>;
@@ -351,15 +351,15 @@ export function DataTable<T>({
 
   const totalPages = Math.ceil(filteredAndSortedData.length / pageSize);
 
-  const hasActiveFilters = Boolean(Object.values(filters).some(v => v) || globalFilter);
+  const hasActiveFilters = Object.values(filters).some(Boolean) || Boolean(globalFilter);
 
     const tbodyContent = paginatedData.length > 0 ? (
-      paginatedData.map((item, index) => (
-        <tr
-          key={index}
-          className={'hover:bg-surface-container-highest/50 transition-colors ' + (onRowClick ? 'cursor-pointer' : '')}
-          onClick={() => onRowClick && onRowClick(item)}
-        >
+          paginatedData.map((item, index) => (
+                  <tr
+                    key={((item as Record<string, unknown>).id as string) ?? index}
+                    className={'hover:bg-surface-container-highest/50 transition-colors ' + (onRowClick ? 'cursor-pointer' : '')}
+                    onClick={() => onRowClick && onRowClick(item)}
+                  >
           {columns.map((col) => (
             <td
               key={col.key}

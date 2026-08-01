@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -152,7 +153,7 @@ app.include_router(surgeries_router)
 
 
 @app.get("/health")
-async def health(db: AsyncSession = Depends(get_db)):  # noqa: B008
+async def health(db: Annotated[AsyncSession, Depends(get_db)]):  # noqa: B008
     checks = {
         "database": True,
         "redis": True,  # Redis check optional

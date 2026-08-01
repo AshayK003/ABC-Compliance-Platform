@@ -120,7 +120,7 @@ export function Inspections() {
                 <>
                   <div className="text-[11px] font-bold text-primary tracking-wider uppercase mb-2 mt-2">Today</div>
                   {todayRecords.map((record) => (
-                    <div key={record.id} className="group relative bg-surface-container-highest border border-primary rounded p-3 flex gap-4 cursor-pointer hover:bg-secondary-container transition-colors" onClick={() => setSelectedInspection(record)}>
+                    <div key={record.id} className="group relative bg-surface-container-highest border border-primary rounded p-3 flex gap-4 cursor-pointer hover:bg-secondary-container transition-colors" onClick={() => setSelectedInspection(record)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedInspection(record); }} } tabIndex={0} role="button" aria-label={`View inspection for ${record.centreName}`}>
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l"></div>
                       <div className="w-16 shrink-0 flex flex-col items-center justify-center border-r border-outline-variant pr-4">
                         <span className="font-label-bold text-on-surface">09:00</span>
@@ -145,7 +145,7 @@ export function Inspections() {
                 <>
                   <div className="text-[11px] font-bold text-on-surface-variant tracking-wider uppercase mb-2 mt-6">Tomorrow</div>
                   {tomorrowRecords.map((record) => (
-                    <div key={record.id} className="bg-surface-container border border-outline-variant rounded p-3 flex gap-4 cursor-pointer hover:bg-surface-container-highest transition-colors" onClick={() => setSelectedInspection(record)}>
+                    <div key={record.id} className="bg-surface-container border border-outline-variant rounded p-3 flex gap-4 cursor-pointer hover:bg-surface-container-highest transition-colors" onClick={() => setSelectedInspection(record)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedInspection(record); }} } tabIndex={0} role="button" aria-label={`View inspection for ${record.centreName}`}>
                       <div className="w-16 shrink-0 flex flex-col items-center justify-center border-r border-outline-variant pr-4 opacity-70">
                         <span className="font-label-bold text-on-surface">10:00</span>
                         <span className="text-[10px] text-on-surface-variant">AM</span>

@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
-          pip install --only-binary :all: --ignore-scripts .
+          pip install --only-binary :all: .
 
       - name: Run pytest
         run: |
@@ -29,7 +29,7 @@ jobs:
 
       - name: Run pip-audit
         run: |
-          pip install --only-binary :all: --ignore-scripts pip-audit
+          pip install --only-binary :all: pip-audit
           pip-audit --desc
 
   frontend:

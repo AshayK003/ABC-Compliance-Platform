@@ -93,14 +93,15 @@ export function Notifications() {
             <option value="unread">Unread Only</option>
           </select>
           {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllRead}
-              className="bg-primary text-on-primary font-label-bold text-label-sm px-3 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[16px]">done_all</span>
-              Mark All Read
-            </button>
-          )}
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="bg-primary text-on-primary font-label-bold text-label-sm px-3 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">done_all</span>
+                        Mark All Read
+                      </button>
+                    )}
         </div>
       </header>
 
@@ -166,21 +167,22 @@ export function Notifications() {
                     ),
                   },
                   {
-                    key: 'actions',
-                    header: '',
-                    width: '48px',
-                    align: 'center',
-                    render: (n: Notification) => (
-                      <button
-                        className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors"
-                        aria-label={n.read ? 'Mark as unread' : 'Mark as read'}
-                      >
-                        <span className="material-symbols-outlined text-[20px]">
-                          {n.read ? 'mark_email_unread' : 'mark_email_read'}
-                        </span>
-                      </button>
-                    ),
-                  },
+                                      key: 'actions',
+                                      header: '',
+                                      width: '48px',
+                                      align: 'center',
+                                      render: (n: Notification) => (
+                                        <button
+                                          type="button"
+                                          className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors"
+                                          aria-label={n.read ? 'Mark as unread' : 'Mark as read'}
+                                        >
+                                          <span className="material-symbols-outlined text-[20px]">
+                                            {n.read ? 'mark_email_unread' : 'mark_email_read'}
+                                          </span>
+                                        </button>
+                                      ),
+                                    },
                 ]}
               />
             </div>

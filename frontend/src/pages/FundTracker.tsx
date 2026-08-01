@@ -171,10 +171,10 @@ const formatCurrency = (amount: number) => {
 
           {/* Budget Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Allocation" value={`₹${(fundStats.total / 1_00_000).toFixed(1)}M`} trend="All grants" trendColor="primary" />
-            <StatCard label="Funds Disbursed" value={`₹${(fundStats.disbursed / 1_00_000).toFixed(1)}M`} trend={fundStats.total ? `${((fundStats.disbursed / fundStats.total) * 100).toFixed(1)}% of total` : '0% of total'} trendColor="secondary" />
-            <StatCard label="Pending Requests" value={`₹${(fundStats.pending / 1_00_000).toFixed(1)}M`} trend={`${disbursements.filter(d => d.status === 'Processing').length} Requests pending review`} trendColor="error" />
-            <StatCard label="Available Balance" value={`₹${(fundStats.available / 1_00_000).toFixed(1)}M`} trend="Computed from grants" trendColor="primary" />
+            <StatCard label="Total Allocation" value={`₹${(fundStats.total / 100000).toFixed(1)}L`} trend="All grants" trendColor="primary" />
+            <StatCard label="Funds Disbursed" value={`₹${(fundStats.disbursed / 100000).toFixed(1)}L`} trend={fundStats.total ? `${((fundStats.disbursed / fundStats.total) * 100).toFixed(1)}% of total` : '0% of total'} trendColor="secondary" />
+            <StatCard label="Pending Requests" value={`₹${(fundStats.pending / 100000).toFixed(1)}L`} trend={`${disbursements.filter(d => d.status === 'Processing').length} Requests pending review`} trendColor="error" />
+            <StatCard label="Available Balance" value={`₹${(fundStats.available / 100000).toFixed(1)}L`} trend="Computed from grants" trendColor="primary" />
           </div>
 
           {/* Main Content Area: Tabs */}

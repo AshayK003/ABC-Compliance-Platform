@@ -183,8 +183,8 @@ const topCentres = centres
             />
             <StatCard
               label="Funds Disbursed"
-              value={totalDisbursed >= 1_00_00_000
-                ? `₹${(totalDisbursed / 1_00_00_000).toFixed(1)} Cr`
+              value={totalDisbursed >= 1_0000_0000
+                ? `₹${(totalDisbursed / 1_0000_0000).toFixed(1)} Cr`
                 : `₹${(totalDisbursed / 100000).toFixed(1)} L`}
               trend="On Track"
               trendColor="primary"
@@ -230,9 +230,9 @@ const topCentres = centres
                 </button>
               </div>
               <div className="flex flex-col gap-3">
-                {upcomingInspections.map((inspection, index) => (
+                {upcomingInspections.map((inspection) => (
                                   <InspectionCard
-                                    key={index}
+                                    key={inspection.centreName + inspection.scheduledAt}
                     centreName={inspection.centreName}
                     scheduledAt={inspection.scheduledAt}
                     status={inspection.status}
@@ -258,8 +258,8 @@ const topCentres = centres
                   </tr>
                 </thead>
                 <tbody className="text-body-md">
-                  {alerts.map((alert, index) => (
-                    <tr key={index} className="border-b border-outline-variant/50 hover:bg-surface-variant/30 transition-colors">
+                  {alerts.map((alert) => (
+                    <tr key={alert.centre + alert.district + alert.issue} className="border-b border-outline-variant/50 hover:bg-surface-variant/30 transition-colors">
                       <td className="p-table-cell-padding font-medium text-on-surface">{alert.centre}</td>
                       <td className="p-table-cell-padding text-on-surface-variant">{alert.district}</td>
                       <td className="p-table-cell-padding text-on-surface-variant">{alert.issue}</td>

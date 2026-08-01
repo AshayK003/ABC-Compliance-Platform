@@ -34,15 +34,15 @@ export function Profile() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="bg-surface-container-high border border-outline-variant text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-surface-variant flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                    Edit Profile
-                  </button>
-                  <button className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">security</span>
-                    Security
-                  </button>
-                </div>
+                                  <button type="button" className="bg-surface-container-high border border-outline-variant text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-surface-variant flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                                    Edit Profile
+                                  </button>
+                                  <button type="button" className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px]">security</span>
+                                    Security
+                                  </button>
+                                </div>
               </div>
             </div>
           </section>
@@ -95,11 +95,11 @@ export function Profile() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                    Edit Profile
-                  </button>
-                </div>
+                                  <button type="button" className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                                    Edit Profile
+                                  </button>
+                                </div>
               </div>
             )}
 
@@ -108,35 +108,35 @@ export function Profile() {
                 <h3 className="font-headline-sm text-headline-sm text-on-surface">Password & Security</h3>
                 <div className="bg-surface-container border border-outline-variant rounded-lg p-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-on-surface">Change Password</h4>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">Update your password to keep your account secure</p>
-                    </div>
-                    <button className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px]">key</span>
-                      Change Password
-                    </button>
-                  </div>
+                                      <div>
+                                        <h4 className="font-medium text-on-surface">Change Password</h4>
+                                        <p className="font-body-sm text-body-sm text-on-surface-variant">Update your password to keep your account secure</p>
+                                      </div>
+                                      <button type="button" className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[18px]">key</span>
+                                        Change Password
+                                      </button>
+                                    </div>
                   <div className="flex items-center justify-between border-t border-outline-variant pt-4">
-                    <div>
-                      <h4 className="font-medium text-on-surface">Two-Factor Authentication</h4>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">Add an extra layer of security to your account</p>
-                    </div>
-                    <button className="bg-surface-container-high border border-outline-variant text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-surface-variant flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px]">shield</span>
-                      Enable 2FA
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-outline-variant pt-4">
-                    <div>
-                      <h4 className="font-medium text-on-surface">Active Sessions</h4>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">Manage devices logged into your account</p>
-                    </div>
-                    <button className="bg-surface-container-high border border-outline-variant text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-surface-variant flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px]">devices</span>
-                      Manage Sessions
-                    </button>
-                  </div>
+                                      <div>
+                                        <h4 className="font-medium text-on-surface">Two-Factor Authentication</h4>
+                                        <p className="font-body-sm text-body-sm text-on-surface-variant">Add an extra layer of security to your account</p>
+                                      </div>
+                                      <button type="button" className="bg-surface-container-high border border-outline-variant text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-surface-variant flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[18px]">shield</span>
+                                        Enable 2FA
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center justify-between border-t border-outline-variant pt-4">
+                                      <div>
+                                        <h4 className="font-medium text-on-surface">Active Sessions</h4>
+                                        <p className="font-body-sm text-body-sm text-on-surface-variant">Manage devices logged into your account</p>
+                                      </div>
+                                      <button type="button" className="bg-surface-container-high border border-outline-variant text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-surface-variant flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[18px]">devices</span>
+                                        Manage Sessions
+                                      </button>
+                                    </div>
                 </div>
               </div>
             )}

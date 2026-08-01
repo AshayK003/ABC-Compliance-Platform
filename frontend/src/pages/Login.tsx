@@ -102,6 +102,7 @@ export function Login() {
           <p className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
             Don't have an account?{' '}
             <button
+              type="button"
               onClick={handleSwitch}
               className="text-primary hover:text-primary-container font-medium underline"
             >
@@ -225,6 +226,7 @@ export function Login() {
         <p className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
           Already have an account?{' '}
           <button
+            type="button"
             onClick={handleSwitch}
             className="text-primary hover:text-primary-container font-medium underline"
           >
