@@ -8,6 +8,9 @@ import { FundTracker } from './pages/FundTracker';
 import { Reports } from './pages/Reports';
 import { CommitteePortal } from './pages/CommitteePortal';
 import { Login } from './pages/Login';
+import { Notifications } from './pages/Notifications';
+import { Settings } from './pages/Settings';
+import { Profile } from './pages/Profile';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -25,6 +28,9 @@ function AppRoutes() {
         <Route path="/funds" element={<FundTracker />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/committee" element={<CommitteePortal />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

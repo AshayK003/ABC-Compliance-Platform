@@ -56,11 +56,18 @@ export function DashboardLayout() {
         </ul>
         <div className="flex flex-col gap-1 px-3 mt-auto pt-4 border-t border-outline-variant/30">
           <NavLink
-            to="#"
+            to="/notifications"
             className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out cursor-pointer group"
           >
-            <span className="material-symbols-outlined group-hover:text-primary transition-colors">contact_support</span>
-            <span className="font-label-md text-label-md">Support</span>
+            <span className="material-symbols-outlined group-hover:text-primary transition-colors">notifications</span>
+            <span className="font-label-md text-label-md">Notifications</span>
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out cursor-pointer group"
+          >
+            <span className="material-symbols-outlined group-hover:text-primary transition-colors">settings</span>
+            <span className="font-label-md text-label-md">Settings</span>
           </NavLink>
           <button
             onClick={handleLogout}
@@ -80,15 +87,25 @@ export function DashboardLayout() {
             <h2 className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface">AWBI ABC Compliance</h2>
           </div>
           <div className="flex items-center gap-4 text-on-surface-variant">
-            <button className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
+            <NavLink
+              to="/notifications"
+              className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant relative"
+            >
               <span className="material-symbols-outlined">notifications</span>
-            </button>
-            <button className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
+              {/* Unread badge would go here */}
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant"
+            >
               <span className="material-symbols-outlined">settings</span>
-            </button>
-            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center cursor-pointer">
+            </NavLink>
+            <NavLink
+              to="/profile"
+              className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center hover:bg-primary-container/80 transition-colors"
+            >
               <span className="material-symbols-outlined text-on-primary-container">person</span>
-            </div>
+            </NavLink>
           </div>
         </header>
 

@@ -5,6 +5,7 @@ interface DataTableProps<T> {
     header: string;
     render?: (item: T) => React.ReactNode;
     align?: 'left' | 'center' | 'right';
+    width?: string;
   }>;
   emptyMessage?: string;
   onRowClick?: (item: T) => void;
@@ -24,7 +25,7 @@ export function DataTable<T>({
         <thead>
           <tr className="bg-surface-container border-b border-outline-variant text-on-surface-variant font-label-bold text-label-bold uppercase tracking-wider">
             {columns.map((col) => (
-              <th key={col.key} className={`p-table-cell-padding ${col.align ? `text-${col.align}` : ''}`}>
+              <th key={col.key} className={`p-table-cell-padding ${col.align ? `text-${col.align}` : ''}`} style={col.width ? { width: col.width } : undefined}>
                 {col.header}
               </th>
             ))}

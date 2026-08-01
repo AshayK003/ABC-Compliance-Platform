@@ -126,6 +126,9 @@ export interface RegisterResponse {
 export interface TokenPayload {
   user_id: string;
   role: string;
+  name?: string;
+  phone?: string;
+  centre_id?: string;
 }
 
 export interface User {
@@ -133,4 +136,5 @@ export interface User {
   name: string;
   role: string;
   centre_id?: string;
+  phone?: string;
 }
