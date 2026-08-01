@@ -113,15 +113,27 @@ export function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
+  function getAlertStatusColor(status: AlertItem['status']): string {
+  if (status === 'Critical') return 'bg-error';
+  if (status === 'Warning') return 'bg-yellow-500';
+  return 'bg-primary';
+}
 
-  const topCentres = centres
+function getAlertStatusTextColor(status: AlertItem['status']): string {
+  if (status === 'Critical') return 'text-error';
+  if (status === 'Warning') return 'text-yellow-500';
+  return 'text-primary';
+}
+
+if (loading) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+    </div>
+  );
+}
+
+const topCentres = centres
     .filter(c => c.status === 'active')
     .sort((a, b) => b.surgeriesThisMonth - a.surgeriesThisMonth)
     .slice(0, 10);
@@ -134,10 +146,10 @@ export function Dashboard() {
           <h2 className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface">AWBI ABC Compliance</h2>
         </div>
         <div className="flex items-center gap-4 text-on-surface-variant">
-          <button className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
+          <button type="button" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <button className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
+          <button type="button" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
             <span className="material-symbols-outlined">settings</span>
           </button>
           <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center cursor-pointer">
@@ -213,7 +225,7 @@ export function Dashboard() {
             <div className="bg-surface-container-high border border-outline-variant rounded-lg p-6 flex flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-headline-sm text-headline-sm">Upcoming Surprise Inspections</h3>
-                <button className="text-primary hover:text-primary-fixed transition-colors">
+                <button type="button" className="text-primary hover:text-primary-fixed transition-colors">
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
               </div>
@@ -253,8 +265,8 @@ export function Dashboard() {
                       <td className="p-table-cell-padding text-on-surface-variant">{alert.issue}</td>
                       <td className="p-table-cell-padding">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${alert.status === 'Critical' ? 'bg-error' : alert.status === 'Warning' ? 'bg-yellow-500' : 'bg-primary'}`}></div>
-                          <span className={alert.status === 'Critical' ? 'text-error' : alert.status === 'Warning' ? 'text-yellow-500' : 'text-primary'}>
+                          <div className={`w-2 h-2 rounded-full ${getAlertStatusColor(alert.status)}`}></div>
+                          <span className={getAlertStatusTextColor(alert.status)}>
                             {alert.status}
                           </span>
                         </div>

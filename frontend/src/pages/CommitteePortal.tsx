@@ -99,6 +99,7 @@ export function CommitteePortal() {
             <span>Settings</span>
           </NavLink>
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out font-label-bold text-label-bold w-full text-left"
           >
@@ -229,7 +230,10 @@ export function CommitteePortal() {
                     </div>
                   </div>
                 </div>
-                <button className="w-full py-2 border border-outline-variant rounded-DEFAULT text-on-surface font-label-bold text-label-bold hover:bg-surface-container transition-colors mt-2">
+                <button
+                type="button"
+                className="w-full py-2 border border-outline-variant rounded-DEFAULT text-on-surface font-label-bold text-label-bold hover:bg-surface-container transition-colors mt-2"
+              >
                   Sync Calendar
                 </button>
               </div>
@@ -295,10 +299,16 @@ export function CommitteePortal() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors">
+                    <button
+                  type="button"
+                  className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+                >
                       <span className="material-symbols-outlined text-[16px]">mail</span>
                     </button>
-                    <button className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors">
+                    <button
+                  type="button"
+                  className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+                >
                       <span className="material-symbols-outlined text-[16px]">call</span>
                     </button>
                   </div>
@@ -314,10 +324,16 @@ export function CommitteePortal() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors">
+                    <button
+                  type="button"
+                  className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+                >
                       <span className="material-symbols-outlined text-[16px]">mail</span>
                     </button>
-                    <button className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors">
+                    <button
+                  type="button"
+                  className="w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+                >
                       <span className="material-symbols-outlined text-[16px]">call</span>
                     </button>
                   </div>

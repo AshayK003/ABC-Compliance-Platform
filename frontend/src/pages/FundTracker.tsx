@@ -81,13 +81,30 @@ export function FundTracker() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount).replace('₹', '₹');
-  };
+  function getDisbursementStatusStyle(status: FundDisbursement['status']): { bg: string; icon?: string } {
+  if (status === 'Approved') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
+  if (status === 'Processing') return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
+  return { bg: 'bg-error/20 text-error', icon: 'error' };
+}
+
+function getAllocationStatusStyle(status: FundDisbursement['status']): { bg: string; icon?: string } {
+  if (status === 'Approved') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
+  if (status === 'Processing') return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
+  return { bg: 'bg-error/20 text-error', icon: 'error' };
+}
+
+function getExpenseStatusStyle(status: ExpenseRecord['status']): { bg: string; icon?: string } {
+  if (status === 'Paid') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
+  return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
+}
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(amount).replace('₹', '₹');
+};
 
   const tabs = [
     { id: 'grants', label: 'Grants', icon: 'account_balance' },
@@ -117,13 +134,13 @@ export function FundTracker() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <button type="button" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <button className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <button type="button" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <button type="button" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined">help</span>
           </button>
           <div className="w-8 h-8 rounded-full bg-secondary-container ml-2 overflow-hidden border border-outline-variant cursor-pointer">
@@ -161,6 +178,7 @@ export function FundTracker() {
               <nav className="flex -mb-px" aria-label="Fund tracking tabs">
                 {tabs.map((tab) => (
                   <button
+                    type="button"
                     key={tab.id}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
                       activeTab === tab.id
@@ -181,7 +199,7 @@ export function FundTracker() {
                 <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                   <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                     <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Disbursements</h2>
-                    <button className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
+                    <button type="button" className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
                   </div>
                   <div className="overflow-x-auto flex-1">
                     <DataTable
@@ -194,17 +212,15 @@ export function FundTracker() {
                         {
                           key: 'status',
                           header: 'Status',
-                          render: (r: FundDisbursement) => (
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${
-                              r.status === 'Approved' ? 'bg-primary-container/20 text-primary' :
-                              r.status === 'Processing' ? 'bg-secondary-container/50 text-secondary' :
-                              'bg-error/20 text-error'
-                            }`}>
-                              {r.status === 'Processing' && <span className="material-symbols-outlined text-[12px]">sync</span>}
-                              {r.status === 'Flagged' && <span className="material-symbols-outlined text-[12px]">error</span>}
-                              {r.status}
-                            </span>
-                          )
+                          render: (r: FundDisbursement) => {
+                            const style = getDisbursementStatusStyle(r.status);
+                            return (
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${style.bg}`}>
+                                {style.icon && <span className="material-symbols-outlined text-[12px]">{style.icon}</span>}
+                                {r.status}
+                              </span>
+                            );
+                          },
                         },
                       ]}
                     />
@@ -251,7 +267,7 @@ export function FundTracker() {
                   <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Disbursements</h2>
-                      <button className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
+                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
@@ -264,17 +280,15 @@ export function FundTracker() {
                           {
                             key: 'status',
                             header: 'Status',
-                            render: (r: FundDisbursement) => (
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${
-                                r.status === 'Approved' ? 'bg-primary-container/20 text-primary' :
-                                r.status === 'Processing' ? 'bg-secondary-container/50 text-secondary' :
-                                'bg-error/20 text-error'
-                              }`}>
-                                {r.status === 'Processing' && <span className="material-symbols-outlined text-[12px]">sync</span>}
-                                {r.status === 'Flagged' && <span className="material-symbols-outlined text-[12px]">error</span>}
-                                {r.status}
-                              </span>
-                            )
+                            render: (r: FundDisbursement) => {
+                              const style = getAllocationStatusStyle(r.status);
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${style.bg}`}>
+                                  {style.icon && <span className="material-symbols-outlined text-[12px]">{style.icon}</span>}
+                                  {r.status}
+                                </span>
+                              );
+                            },
                           },
                         ]}
                       />
@@ -301,7 +315,7 @@ export function FundTracker() {
                   <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Expenses</h2>
-                      <button className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
+                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
@@ -315,14 +329,15 @@ export function FundTracker() {
                           {
                             key: 'status',
                             header: 'Status',
-                            render: (r: ExpenseRecord) => (
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${
-                                r.status === 'Paid' ? 'bg-primary-container/20 text-primary' : 'bg-secondary-container/50 text-secondary'
-                              }`}>
-                                {r.status === 'Pending' && <span className="material-symbols-outlined text-[12px]">sync</span>}
-                                {r.status}
-                              </span>
-                            )
+                            render: (r: ExpenseRecord) => {
+                              const style = getExpenseStatusStyle(r.status);
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold ${style.bg}`}>
+                                  {style.icon && <span className="material-symbols-outlined text-[12px]">{style.icon}</span>}
+                                  {r.status}
+                                </span>
+                              );
+                            },
                           },
                         ]}
                       />
