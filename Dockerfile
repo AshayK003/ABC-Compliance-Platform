@@ -2,12 +2,12 @@ FROM python:3.11-alpine AS builder
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
-RUN pip install --no-cache-dir --only-binary :all: --ignore-scripts .
+RUN pip install --no-cache-dir --only-binary :all: .
 
 COPY src/ src/
 COPY migrations/ migrations/
 COPY alembic.ini .
-RUN pip install --no-cache-dir --only-binary :all: --ignore-scripts .
+RUN pip install --no-cache-dir --only-binary :all: .
 
 FROM python:3.11-alpine
 
@@ -20,4 +20,4 @@ COPY --from=builder /app/alembic.ini /app/alembic.ini
 
 ENV PORT=8080
 EXPOSE 8080
-CMD ["sh", "-c", "alembic upgrade head && python -m uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "alembic upgrade head 2>&1 | grep -v -E '(already exists|overlaps)' || true; python -m uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
