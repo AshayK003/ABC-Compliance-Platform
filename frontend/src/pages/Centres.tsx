@@ -47,7 +47,7 @@ export function Centres() {
     return matchesSearch && matchesDistrict && matchesStatus;
   });
 
-  const districts = [...new Set(centres.map(c => c.district))].sort();
+  const districts = [...new Set(centres.map(c => c.district))].sort((a, b) => a.localeCompare(b));
   const statuses = ['active', 'inactive', 'suspended'];
 
   if (loading) {

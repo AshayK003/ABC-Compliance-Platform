@@ -60,7 +60,7 @@ async def list_complaints(
     return result.scalars().all()
 
 
-@router.get("/{complaint_id}")
+@router.get("/{complaint_id}", responses={404: {"description": "Complaint not found"}})
 async def get_complaint(
     complaint_id: str,
     db: AsyncSession = Depends(get_db),
@@ -72,7 +72,13 @@ async def get_complaint(
     return complaint
 
 
-@router.patch("/{complaint_id}")
+@router.patch(
+    "/{complaint_id}",
+    responses={
+        404: {"description": "Complaint not found"},
+        422: {"description": "Invalid status"},
+    },
+)
 async def update_complaint(
     complaint_id: str,
     body: ComplaintUpdate,

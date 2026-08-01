@@ -54,7 +54,11 @@ class RegisterResponse(BaseModel):
     access_token: str
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    responses={409: {"description": "Phone already registered"}},
+)
 @limiter.limit("3/hour")
 async def register(
     request: Request,
@@ -127,7 +131,7 @@ async def logout(response: Response):
     return {"message": "Logged out"}
 
 
-@router.delete("/me")
+@router.delete("/me", responses={404: {"description": "User not found"}})
 async def delete_account(
     user: TokenPayload = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

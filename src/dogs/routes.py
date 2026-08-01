@@ -51,7 +51,7 @@ async def list_dogs(
     return result.scalars().all()
 
 
-@router.get("/{dog_id}")
+@router.get("/{dog_id}", responses={404: {"description": "Dog not found"}})
 async def get_dog(
     dog_id: str,
     db: AsyncSession = Depends(get_db),

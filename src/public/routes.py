@@ -52,7 +52,10 @@ async def list_complaints(
     return result.scalars().all()
 
 
-@public_router.get("/complaints/{complaint_id}")
+@public_router.get(
+    "/complaints/{complaint_id}",
+    responses={404: {"description": "Complaint not found"}},
+)
 async def get_complaint(
     complaint_id: str,
     db: AsyncSession = Depends(get_db),
@@ -65,7 +68,10 @@ async def get_complaint(
     return complaint
 
 
-@public_router.patch("/complaints/{complaint_id}")
+@public_router.patch(
+    "/complaints/{complaint_id}",
+    responses={404: {"description": "Complaint not found"}},
+)
 async def update_complaint(
     complaint_id: str,
     body: ComplaintUpdate,
@@ -87,6 +93,9 @@ async def update_complaint(
 
 # ─── Sync Queue Router ───
 sync_router = APIRouter(prefix="/sync", tags=["sync"])
+
+# Constants to avoid duplication
+SYNC_NOT_FOUND = "Sync item not found"
 
 
 class SyncEnqueue(BaseModel):
@@ -160,7 +169,7 @@ async def list_pending_sync(
     return result.scalars().all()
 
 
-@sync_router.post("/mark-synced/{sync_id}")
+@sync_router.post("/mark-synced/{sync_id}", responses={404: {"description": "Sync item not found"}})
 async def mark_synced(
     sync_id: str,
     db: AsyncSession = Depends(get_db),
@@ -169,7 +178,7 @@ async def mark_synced(
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
     if not item:
-        raise HTTPException(status_code=404, detail="Sync item not found")
+            raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
 
     item.status = "synced"
     # synced_at is set by model default
@@ -177,7 +186,7 @@ async def mark_synced(
     return item
 
 
-@sync_router.post("/mark-failed/{sync_id}")
+@sync_router.post("/mark-failed/{sync_id}", responses={404: {"description": "Sync item not found"}})
 async def mark_failed(
     sync_id: str,
     body: MarkFailedRequest,
@@ -187,7 +196,7 @@ async def mark_failed(
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
     if not item:
-        raise HTTPException(status_code=404, detail="Sync item not found")
+            raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
 
     item.status = "failed"
     item.error = body.error
@@ -215,7 +224,10 @@ async def retry_failed(
     return {"retried": count}
 
 
-@sync_router.get("/status/{idempotency_key}")
+@sync_router.get(
+    "/status/{idempotency_key}",
+    responses={404: {"description": "Sync item not found"}},
+)
 async def sync_status(
     idempotency_key: str,
     db: AsyncSession = Depends(get_db),
@@ -224,5 +236,5 @@ async def sync_status(
     result = await db.execute(select(SyncQueue).where(SyncQueue.idempotency_key == idempotency_key))
     item = result.scalar_one_or_none()
     if not item:
-        raise HTTPException(status_code=404, detail="Sync item not found")
+            raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
     return item

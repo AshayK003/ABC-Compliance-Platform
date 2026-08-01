@@ -15,6 +15,9 @@ down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+# FK target constant to avoid duplication
+CENTRES_FK = "centres.id"
+
 
 def upgrade() -> None:
     op.create_table(
@@ -34,7 +37,7 @@ def upgrade() -> None:
     op.create_table(
         "staff",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("centre_id", sa.String(36), sa.ForeignKey("centres.id"), nullable=False),
+        sa.Column("centre_id", sa.String(36), sa.ForeignKey(CENTRES_FK), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("role", sa.String(50), nullable=False),
         sa.Column("phone", sa.String(20), nullable=False, unique=True),
@@ -46,7 +49,7 @@ def upgrade() -> None:
     op.create_table(
         "dogs",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("centre_id", sa.String(36), sa.ForeignKey("centres.id"), nullable=False),
+        sa.Column("centre_id", sa.String(36), sa.ForeignKey(CENTRES_FK), nullable=False),
         sa.Column("tag_id", sa.String(50), nullable=False),
         sa.Column("sex", sa.String(10), nullable=False),
         sa.Column("age_estimate", sa.Integer, nullable=True),
@@ -60,7 +63,7 @@ def upgrade() -> None:
         "surgeries",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("dog_id", sa.String(36), sa.ForeignKey("dogs.id"), nullable=False),
-        sa.Column("centre_id", sa.String(36), sa.ForeignKey("centres.id"), nullable=False),
+        sa.Column("centre_id", sa.String(36), sa.ForeignKey(CENTRES_FK), nullable=False),
         sa.Column("staff_id", sa.String(36), sa.ForeignKey("staff.id"), nullable=False),
         sa.Column("surgery_type", sa.String(100), nullable=False),
         sa.Column("weight", sa.Float, nullable=True),
@@ -76,7 +79,7 @@ def upgrade() -> None:
     op.create_table(
         "inspections",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("centre_id", sa.String(36), sa.ForeignKey("centres.id"), nullable=False),
+        sa.Column("centre_id", sa.String(36), sa.ForeignKey(CENTRES_FK), nullable=False),
         sa.Column("inspector_id", sa.String(36), nullable=False),
         sa.Column("scheduled_at", sa.DateTime, nullable=True),
         sa.Column("conducted_at", sa.DateTime, nullable=True),
@@ -100,7 +103,7 @@ def upgrade() -> None:
         "allocations",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("grant_id", sa.String(36), sa.ForeignKey("grants.id"), nullable=False),
-        sa.Column("centre_id", sa.String(36), sa.ForeignKey("centres.id"), nullable=False),
+        sa.Column("centre_id", sa.String(36), sa.ForeignKey(CENTRES_FK), nullable=False),
         sa.Column("amount", sa.Numeric(12, 2), nullable=False),
         sa.Column("allocated_at", sa.DateTime, server_default=sa.func.now(), nullable=False),
     )
@@ -135,7 +138,7 @@ def upgrade() -> None:
     op.create_table(
         "complaints",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("centre_id", sa.String(36), sa.ForeignKey("centres.id"), nullable=False),
+        sa.Column("centre_id", sa.String(36), sa.ForeignKey(CENTRES_FK), nullable=False),
         sa.Column("citizen_phone", sa.String(20), nullable=False),
         sa.Column("description", sa.Text, nullable=False),
         sa.Column("status", sa.String(20), server_default="open", nullable=False),

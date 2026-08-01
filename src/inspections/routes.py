@@ -53,7 +53,7 @@ async def list_inspections(
     return result.scalars().all()
 
 
-@router.get("/{inspection_id}")
+@router.get("/{inspection_id}", responses={404: {"description": "Inspection not found"}})
 async def get_inspection(
     inspection_id: str,
     db: AsyncSession = Depends(get_db),

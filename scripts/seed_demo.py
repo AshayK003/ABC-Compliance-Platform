@@ -11,7 +11,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import delete, select
@@ -59,7 +59,7 @@ async def seed() -> None:
             await db.refresh(d)
 
         # ─── Surgeries ───────────────────────────────────────────────────────
-        now = datetime.utcnow().replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         surgeries = [
             Surgery(
                 dog_id=dogs[0].id, centre_id=c1.id, staff_id=vet.id,

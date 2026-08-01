@@ -45,7 +45,7 @@ async def list_grants(
     return result.scalars().all()
 
 
-@router.get("/{grant_id}")
+@router.get("/{grant_id}", responses={404: {"description": "Grant not found"}})
 async def get_grant(
     grant_id: str,
     db: AsyncSession = Depends(get_db),
@@ -103,7 +103,7 @@ async def list_allocations(
     return result.scalars().all()
 
 
-@alloc_router.get("/{allocation_id}")
+@alloc_router.get("/{allocation_id}", responses={404: {"description": "Allocation not found"}})
 async def get_allocation(
     allocation_id: str,
     db: AsyncSession = Depends(get_db),
@@ -130,7 +130,14 @@ class ExpenseCreate(BaseModel):
     expense_at: datetime | None = None
 
 
-@exp_router.post("", status_code=201)
+@exp_router.post(
+    "",
+    status_code=201,
+    responses={
+        404: {"description": "Allocation not found"},
+        400: {"description": "Expense exceeds allocation balance"},
+    },
+)
 async def create_expense(
     body: ExpenseCreate,
     db: AsyncSession = Depends(get_db),
@@ -185,7 +192,7 @@ async def list_expenses(
     return result.scalars().all()
 
 
-@exp_router.get("/{expense_id}")
+@exp_router.get("/{expense_id}", responses={404: {"description": "Expense not found"}})
 async def get_expense(
     expense_id: str,
     db: AsyncSession = Depends(get_db),

@@ -16,6 +16,11 @@ def pk_uuid() -> str:
     return str(uuid4())
 
 
+# Constants to avoid duplication
+CASCADE_ALL_DELETE_ORPHAN = "all, delete-orphan"
+CENTRES_FK = "centres.id"
+
+
 # ─── Centre ───────────────────────────────────────────────────────────────────
 
 
@@ -34,19 +39,19 @@ class Centre(Base):
     )
 
     staff: Mapped[list[Staff]] = relationship(
-        back_populates="centre", cascade="all, delete-orphan"
+        back_populates="centre", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
     dogs: Mapped[list[Dog]] = relationship(
-        back_populates="centre", cascade="all, delete-orphan"
+        back_populates="centre", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
     surgeries: Mapped[list[Surgery]] = relationship(
-        back_populates="centre", cascade="all, delete-orphan"
+        back_populates="centre", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
     inspections: Mapped[list[Inspection]] = relationship(
-        back_populates="centre", cascade="all, delete-orphan"
+        back_populates="centre", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
     allocations: Mapped[list[Allocation]] = relationship(
-        back_populates="centre", cascade="all, delete-orphan"
+        back_populates="centre", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
 
 
@@ -55,7 +60,7 @@ class Staff(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     centre_id: Mapped[str | None] = mapped_column(
-        ForeignKey("centres.id"), index=True, nullable=True
+        ForeignKey(CENTRES_FK), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(50))  # vet, surgeon, admin
@@ -71,7 +76,7 @@ class Dog(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     centre_id: Mapped[str] = mapped_column(
-        ForeignKey("centres.id", ondelete="CASCADE"), index=True
+        ForeignKey(CENTRES_FK, ondelete="CASCADE"), index=True
     )
     tag_id: Mapped[str] = mapped_column(String(50), index=True)
     sex: Mapped[str] = mapped_column(String(10))
@@ -81,7 +86,7 @@ class Dog(Base):
 
     centre: Mapped[Centre] = relationship(back_populates="dogs")
     surgeries: Mapped[list[Surgery]] = relationship(
-        back_populates="dog", cascade="all, delete-orphan"
+        back_populates="dog", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
 
 
@@ -94,7 +99,7 @@ class Surgery(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     dog_id: Mapped[str] = mapped_column(ForeignKey("dogs.id"), index=True)
     centre_id: Mapped[str] = mapped_column(
-        ForeignKey("centres.id", ondelete="CASCADE"), index=True
+        ForeignKey(CENTRES_FK, ondelete="CASCADE"), index=True
     )
     staff_id: Mapped[str] = mapped_column(ForeignKey("staff.id"), index=True)
     surgery_type: Mapped[str] = mapped_column(String(100))
@@ -120,7 +125,7 @@ class Inspection(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     centre_id: Mapped[str] = mapped_column(
-        ForeignKey("centres.id", ondelete="CASCADE"), index=True
+        ForeignKey(CENTRES_FK, ondelete="CASCADE"), index=True
     )
     inspector_id: Mapped[str] = mapped_column(String(36))
     scheduled_at: Mapped[datetime | None] = mapped_column(default=None)
@@ -147,7 +152,7 @@ class Grant(Base):
 
     allocations: Mapped[list[Allocation]] = relationship(
         back_populates="grant",
-        cascade="all, delete-orphan",
+        cascade=CASCADE_ALL_DELETE_ORPHAN,
     )
 
 
@@ -157,7 +162,7 @@ class Allocation(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     grant_id: Mapped[str] = mapped_column(ForeignKey("grants.id"), index=True)
     centre_id: Mapped[str] = mapped_column(
-        ForeignKey("centres.id", ondelete="CASCADE"), index=True
+        ForeignKey(CENTRES_FK, ondelete="CASCADE"), index=True
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     allocated_at: Mapped[datetime] = mapped_column(
@@ -168,7 +173,7 @@ class Allocation(Base):
     centre: Mapped[Centre] = relationship(back_populates="allocations")
     expenses: Mapped[list[Expense]] = relationship(
         back_populates="allocation",
-        cascade="all, delete-orphan",
+        cascade=CASCADE_ALL_DELETE_ORPHAN,
     )
 
 
@@ -214,7 +219,7 @@ class Complaint(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     centre_id: Mapped[str] = mapped_column(
-        ForeignKey("centres.id", ondelete="CASCADE"), index=True
+        ForeignKey(CENTRES_FK, ondelete="CASCADE"), index=True
     )
     citizen_phone: Mapped[str] = mapped_column(String(20))
     description: Mapped[str] = mapped_column(Text)

@@ -63,7 +63,7 @@ async def list_surgeries(
     return result.scalars().all()
 
 
-@router.get("/{surgery_id}")
+@router.get("/{surgery_id}", responses={404: {"description": "Surgery not found"}})
 async def get_surgery(
     surgery_id: str,
     db: AsyncSession = Depends(get_db),
