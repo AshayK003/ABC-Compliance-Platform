@@ -40,19 +40,38 @@ export function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [centreData, inspectionData, complaintData, grantData] = await Promise.all([
+      const [centreData, inspectionData, complaintData, surgeryData, allocationData] = await Promise.all([
         api.getCentres(),
         api.getInspections(),
         api.getComplaints().catch(() => [] as never[]),
-        api.getGrants().catch(() => [] as never[]),
+        api.getSurgeries().catch(() => [] as never[]),
+        api.getAllocations().catch(() => [] as never[]),
       ]);
 
-      const totalDisbursed = (grantData as Array<{ amount: number; status: string }>)
-        .filter(g => g.status === 'approved' || g.status === 'disbursed')
-        .reduce((sum, g) => sum + (g.amount ?? 0), 0);
+      const totalDisbursed = (allocationData as Array<{ amount: number }>)
+        .reduce((sum, a) => sum + (a.amount ?? 0), 0);
       setTotalDisbursed(totalDisbursed);
 
       const centreMap = new Map(centreData.map(c => [c.id, c]));
+
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const surgeryCounts = new Map<string, number>();
+      for (const s of surgeryData as Array<{ centre_id: string; timestamp?: string }>) {
+        const ts = s.timestamp ? new Date(s.timestamp) : null;
+        if (ts && ts >= monthStart) {
+          surgeryCounts.set(s.centre_id, (surgeryCounts.get(s.centre_id) ?? 0) + 1);
+        }
+      }
+
+      const completedInspections = new Set(
+        (inspectionData as Array<{ centre_id: string; status: string }>)
+          .filter(i => i.status === 'completed')
+          .map(i => i.centre_id),
+      );
+
       const summaries: CentreSummary[] = centreData.map(c => ({
         id: c.id,
         name: c.name,
@@ -61,8 +80,8 @@ export function Dashboard() {
         state: c.state,
         capacity: c.capacity ?? 0,
         status: c.status,
-        complianceScore: 0,
-        surgeriesThisMonth: 0,
+        complianceScore: completedInspections.has(c.id) ? 100 : 0,
+        surgeriesThisMonth: surgeryCounts.get(c.id) ?? 0,
       }));
 
       setCentres(summaries);
@@ -152,7 +171,9 @@ export function Dashboard() {
             />
             <StatCard
               label="Funds Disbursed"
-              value={`₹${(totalDisbursed / 1_00_00_000).toFixed(1)} Cr`}
+              value={totalDisbursed >= 1_00_00_000
+                ? `₹${(totalDisbursed / 1_00_00_000).toFixed(1)} Cr`
+                : `₹${(totalDisbursed / 100000).toFixed(1)} L`}
               trend="On Track"
               trendColor="primary"
             />
