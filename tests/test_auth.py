@@ -9,7 +9,13 @@ from fastapi import FastAPI, HTTPException
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, decode_token, get_current_user, hash_password
+from src.auth.deps import (
+    TokenPayload,
+    create_refresh_token,
+    decode_token,
+    get_current_user,
+    hash_password,
+)
 from src.config import settings
 from src.database import get_db
 from src.main import app as _app
@@ -165,11 +171,11 @@ class TestRefresh:
         def vet_override():
             return TokenPayload(user_id="staff-1", role="vet")
         app.dependency_overrides[get_current_user] = vet_override
-        
+
         _setup_mock_execute(mock_session, _make_staff())
-        
-        client.cookies.set("refresh_token", "test-refresh-token")
-        
+
+        client.cookies.set("refresh_token", create_refresh_token("staff-1"))
+
         resp = await client.post("/auth/refresh")
         assert resp.status_code == 200
         body = resp.json()
@@ -186,9 +192,11 @@ class TestLogout:
         resp = await client.post("/auth/logout")
         assert resp.status_code == 200
         assert resp.json() == {"message": "Logged out"}
-        # Cookies should be cleared (deleted)
-        assert resp.cookies.get("access_token") == ""
-        assert resp.cookies.get("refresh_token") == ""
+        # Cookies should be cleared (deleted) via Set-Cookie headers
+        set_cookie = resp.headers.get("set-cookie", "")
+        assert "access_token=" in set_cookie
+        assert "refresh_token=" in set_cookie
+        assert "Max-Age=0" in set_cookie
 
 
 class TestDeleteAccount:
@@ -205,9 +213,11 @@ class TestDeleteAccount:
         resp = await client.delete("/auth/me")
         assert resp.status_code == 200
         assert resp.json() == {"message": "Account deleted"}
-        # Cookies should be cleared
-        assert resp.cookies.get("access_token") == ""
-        assert resp.cookies.get("refresh_token") == ""
+        # Cookies should be cleared (deleted) via Set-Cookie headers
+        set_cookie = resp.headers.get("set-cookie", "")
+        assert "access_token=" in set_cookie
+        assert "refresh_token=" in set_cookie
+        assert "Max-Age=0" in set_cookie
         mock_session.delete.assert_called_once()
         mock_session.commit.assert_awaited_once()
 
