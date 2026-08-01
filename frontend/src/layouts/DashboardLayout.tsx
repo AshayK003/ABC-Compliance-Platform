@@ -70,9 +70,10 @@ export function DashboardLayout() {
             <span className="font-label-md text-label-md">Settings</span>
           </NavLink>
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out cursor-pointer group w-full text-left"
-          >
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out cursor-pointer group w-full text-left"
+                    >
             <span className="material-symbols-outlined group-hover:text-error transition-colors">logout</span>
             <span className="font-label-md text-label-md">Sign Out</span>
           </button>

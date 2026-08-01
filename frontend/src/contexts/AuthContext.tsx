@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
 import type { TokenPayload } from '../types';
 import { setAuthToken } from '../services/api';
 
@@ -129,19 +129,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const authValue = useMemo(
+    () => ({
+      user,
+      login,
+      register,
+      logout,
+      refresh,
+      deleteAccount,
+      loading,
+      isAuthenticated: !!user,
+    }),
+    [user, login, register, logout, refresh, deleteAccount, loading]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        register,
-        logout,
-        refresh,
-        deleteAccount,
-        loading,
-        isAuthenticated: !!user,
-      }}
-    >
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );
