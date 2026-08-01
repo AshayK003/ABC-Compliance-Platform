@@ -88,7 +88,8 @@ class TestListCentres:
     ):
         c1 = _make_centre(id="c1", staff=[_make_staff(id="s1"), _make_staff(id="s2")])
         mr = MagicMock()
-        mr.scalars.return_value.all.return_value = [c1]
+        # New query returns tuples (Centre, staff_count)
+        mr.all.return_value = [(c1, 2)]
         mock_session.execute.return_value = mr
 
         resp = await client.get("/centres")

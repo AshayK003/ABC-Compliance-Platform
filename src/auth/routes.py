@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +22,9 @@ from src.database import get_db
 from src.models.base import Staff
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Rate limiter instance (shared with main app)
+limiter = Limiter(key_func=get_remote_address)
 
 
 class RegisterRequest(BaseModel):
@@ -50,7 +55,8 @@ class RegisterResponse(BaseModel):
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("3/hour")
+async def register(request: Request, body: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Staff).where(Staff.phone == body.phone))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already registered")
@@ -76,7 +82,8 @@ async def register(body: RegisterRequest, response: Response, db: AsyncSession =
 
 
 @router.post("/login")
-async def login(body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Staff).where(Staff.phone == body.phone))
     staff = result.scalar_one_or_none()
     if not staff or not verify_password(body.password, staff.password_hash):

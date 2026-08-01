@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -36,13 +36,25 @@ class CentreOut(BaseModel):
 async def list_centres(
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
-    result = await db.execute(
-        select(Centre)
-        .options(selectinload(Centre.staff))
-        .order_by(Centre.name)
+    # Subquery for staff count per centre to avoid N+1
+    staff_count_subq = (
+        select(Staff.centre_id, func.count(Staff.id).label("staff_count"))
+        .where(Staff.centre_id.is_not(None))
+        .group_by(Staff.centre_id)
+        .subquery()
     )
-    centres = result.scalars().all()
+
+    result = await db.execute(
+        select(Centre, staff_count_subq.c.staff_count)
+        .outerjoin(staff_count_subq, Centre.id == staff_count_subq.c.centre_id)
+        .order_by(Centre.name)
+        .limit(limit)
+        .offset(offset)
+    )
+    rows = result.all()
     return [
         CentreOut(
             id=c.id,
@@ -52,9 +64,9 @@ async def list_centres(
             state=c.state,
             capacity=c.capacity,
             status=c.status,
-            staff_count=len(c.staff),
+            staff_count=staff_count or 0,
         )
-        for c in centres
+        for c, staff_count in rows
     ]
 
 

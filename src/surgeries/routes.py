@@ -43,10 +43,12 @@ async def list_surgeries(
     dog_id: str | None = Query(None),
     from_date: str | None = Query(None),
     to_date: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(Surgery).order_by(Surgery.timestamp.desc())
+    stmt = select(Surgery).order_by(Surgery.timestamp.desc()).limit(limit).offset(offset)
 
     if centre_id:
         stmt = stmt.where(Surgery.centre_id == centre_id)

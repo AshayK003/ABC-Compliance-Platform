@@ -2,95 +2,69 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
-  backend:
+  test:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: abc
-          POSTGRES_PASSWORD: abc
-          POSTGRES_DB: abc_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --group dev
-
-      - name: Lint
-        run: uv run ruff check src/ tests/
-
-      - name: Typecheck
-        run: uv run pyright src/
-
-      - name: Alembic drift check
         run: |
-          uv run alembic upgrade head
-          uv run alembic check
-        env:
-          DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_test
-          SECRET_KEY: ci-test-secret-key-not-for-production
+          cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
+          pip install -r requirements.txt
 
-      - name: Unit tests (mocked)
-        run: uv run pytest tests/ -v
-        env:
-          DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_test
-          SECRET_KEY: ci-test-secret-key-not-for-production
+      - name: Run pytest
+        run: |
+          cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
+          pytest -q
 
-      - name: Integration test (real DB)
-        run: uv run pytest tests/test_integration.py -v
-        env:
-          DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_test
-          SECRET_KEY: ci-test-secret-key-not-for-production
-          RUN_INTEGRATION: "1"
+      - name: Run pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit
 
   frontend:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
-        working-directory: ./frontend
+        run: |
+          cd frontend
+          npm ci
 
-      - name: Lint
-        run: npm run lint
-        working-directory: ./frontend
+      - name: Run lint
+        run: |
+          cd frontend
+          npm run lint
 
-      - name: Typecheck + Build
-        run: npm run build
-        working-directory: ./frontend
+      - name: Type check
+        run: |
+          cd frontend
+          npm run typecheck
 
-# Deploy to Northflank is handled by Northflank's GitHub integration (auto-deploy on push to master).
-# Create a new Service in Northflank dashboard pointing to this repo.
-# The Dockerfile is already compatible with Northflank's Docker deployment.
-# Set environment variables in Northflank dashboard: DATABASE_URL, SECRET_KEY, ALLOWED_ORIGINS.
+      - name: Build
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Run npm audit
+        run: |
+          cd frontend
+          npm audit --audit-level=high

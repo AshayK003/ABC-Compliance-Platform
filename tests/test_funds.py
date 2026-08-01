@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -162,6 +163,18 @@ class TestExpenseCRUD:
     async def test_create_expense(self, client: AsyncClient, mock_session: AsyncMock):
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
+
+        # Mock allocation lookup
+        alloc = _make_allocation(id="alloc-1", amount=Decimal("100000.0"))
+        mr_alloc = MagicMock()
+        mr_alloc.scalar_one_or_none.return_value = alloc
+
+        # Mock sum query
+        mr_sum = MagicMock()
+        mr_sum.scalar.return_value = Decimal("0")
+
+        # Return different mocks for the two queries
+        mock_session.execute.side_effect = [mr_alloc, mr_sum]
 
         resp = await client.post("/expenses", json={
             "allocation_id": "alloc-1",

@@ -69,6 +69,51 @@ export function Surgeries() {
     );
   }
 
+  const renderEmptyState = () => (
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <header className="md:hidden flex justify-between items-center h-16 px-gutter w-full sticky top-0 z-40 border-b border-outline-variant bg-surface-container">
+        <div className="flex items-center gap-4">
+          <span className="material-symbols-outlined text-primary cursor-pointer" data-icon="menu">menu</span>
+          <span className="font-headline-md text-headline-md font-bold text-primary">ABC Digital Compliance</span>
+        </div>
+      </header>
+      <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="font-display-lg text-display-lg text-on-background">Surgery Audit Log</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-1">Detailed view of animal surgeries performed across compliant centres.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-element-gap">
+          <StatCard label="Total Surgeries" value="0" trend="—" trendColor="primary" />
+          <StatCard label="Pre-op" value="0" trend="—" trendColor="primary" />
+          <StatCard label="Post-op / Recovering" value="0" trend="—" trendColor="secondary" />
+          <StatCard label="Complications" value="0" trend="—" trendColor="error" />
+        </div>
+        <div className="bg-surface-container-high border border-outline-variant rounded overflow-hidden flex-1 flex flex-col">
+          <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">Surgery Records</h2>
+          </div>
+          <div className="flex-1 flex items-center justify-center bg-background">
+            <div className="text-center p-8 fade-in">
+              <span className="material-symbols-outlined text-6xl text-on-surface-variant mb-4 block" data-icon="medical_services">medical_services</span>
+              <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">No Surgeries Recorded</h3>
+              <p className="font-body-md text-body-md text-on-surface-variant mb-6">Start by recording the first surgery at a compliant centre.</p>
+              <button onClick={() => alert('Create surgery flow not yet implemented')} className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mx-auto">
+                <span className="material-symbols-outlined" data-icon="add">add</span>
+                Record Surgery
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+
+  if (records.length === 0) {
+    return renderEmptyState();
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}

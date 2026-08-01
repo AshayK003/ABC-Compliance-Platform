@@ -38,10 +38,12 @@ async def create_inspection(
 async def list_inspections(
     centre_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(Inspection).order_by(Inspection.scheduled_at.desc())
+    stmt = select(Inspection).order_by(Inspection.scheduled_at.desc()).limit(limit).offset(offset)
     if centre_id:
         stmt = stmt.where(Inspection.centre_id == centre_id)
     if status:

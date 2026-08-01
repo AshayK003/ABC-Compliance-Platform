@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -121,7 +120,7 @@ async def enqueue_sync(
             "entity_type": existing.entity_type,
             "entity_id": existing.entity_id,
             "operation": existing.operation,
-            "payload": json.loads(str(existing.payload)) if existing.payload else {},
+            "payload": existing.payload or {},
             "idempotency_key": existing.idempotency_key,
             "status": existing.status,
             "retry_count": existing.retry_count,
@@ -134,7 +133,7 @@ async def enqueue_sync(
         entity_type=body.entity_type,
         entity_id=body.entity_id,
         operation=body.operation,
-        payload=json.dumps(body.payload),
+        payload=body.payload,
         idempotency_key=body.idempotency_key,
     )
     db.add(item)

@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -33,6 +33,9 @@ class Centre(Base):
 
     staff: Mapped[list[Staff]] = relationship(back_populates="centre", cascade="all, delete-orphan")
     dogs: Mapped[list[Dog]] = relationship(back_populates="centre", cascade="all, delete-orphan")
+    surgeries: Mapped[list[Surgery]] = relationship(back_populates="centre", cascade="all, delete-orphan")
+    inspections: Mapped[list[Inspection]] = relationship(back_populates="centre", cascade="all, delete-orphan")
+    allocations: Mapped[list[Allocation]] = relationship(back_populates="centre", cascade="all, delete-orphan")
 
 
 class Staff(Base):
@@ -55,7 +58,7 @@ class Dog(Base):
     __tablename__ = "dogs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
-    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
+    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id", ondelete="CASCADE"), index=True)
     tag_id: Mapped[str] = mapped_column(String(50), index=True)
     sex: Mapped[str] = mapped_column(String(10))
     age_estimate: Mapped[int | None] = mapped_column(default=None)
@@ -76,8 +79,8 @@ class Surgery(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     dog_id: Mapped[str] = mapped_column(ForeignKey("dogs.id"), index=True)
-    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
-    staff_id: Mapped[str] = mapped_column(ForeignKey("staff.id"))
+    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id", ondelete="CASCADE"), index=True)
+    staff_id: Mapped[str] = mapped_column(ForeignKey("staff.id"), index=True)
     surgery_type: Mapped[str] = mapped_column(String(100))
     weight: Mapped[float | None] = mapped_column(default=None)
     complications: Mapped[str | None] = mapped_column(Text, default=None)
@@ -86,6 +89,7 @@ class Surgery(Base):
     audit_hash: Mapped[str | None] = mapped_column(String(64), default=None)
 
     dog: Mapped[Dog] = relationship(back_populates="surgeries")
+    centre: Mapped[Centre] = relationship(back_populates="surgeries")
 
 
 # ─── Inspection ───────────────────────────────────────────────────────────────
@@ -95,13 +99,15 @@ class Inspection(Base):
     __tablename__ = "inspections"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
-    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
+    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id", ondelete="CASCADE"), index=True)
     inspector_id: Mapped[str] = mapped_column(String(36))
     scheduled_at: Mapped[datetime | None] = mapped_column(default=None)
     conducted_at: Mapped[datetime | None] = mapped_column(default=None)
     status: Mapped[str] = mapped_column(String(20), default="scheduled")
     findings: Mapped[str | None] = mapped_column(Text, default=None)
     signoff_hash: Mapped[str | None] = mapped_column(String(64), default=None)
+
+    centre: Mapped[Centre] = relationship(back_populates="inspections")
 
 
 # ─── Fund Tracking ────────────────────────────────────────────────────────────
@@ -117,27 +123,35 @@ class Grant(Base):
     financial_year: Mapped[str] = mapped_column(String(9))
     status: Mapped[str] = mapped_column(String(20), default="active")
 
+    allocations: Mapped[list[Allocation]] = relationship(back_populates="grant", cascade="all, delete-orphan")
+
 
 class Allocation(Base):
     __tablename__ = "allocations"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
     grant_id: Mapped[str] = mapped_column(ForeignKey("grants.id"), index=True)
-    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
+    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id", ondelete="CASCADE"), index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     allocated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+    grant: Mapped[Grant] = relationship(back_populates="allocations")
+    centre: Mapped[Centre] = relationship(back_populates="allocations")
+    expenses: Mapped[list[Expense]] = relationship(back_populates="allocation", cascade="all, delete-orphan")
 
 
 class Expense(Base):
     __tablename__ = "expenses"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
-    allocation_id: Mapped[str] = mapped_column(ForeignKey("allocations.id"), index=True)
+    allocation_id: Mapped[str] = mapped_column(ForeignKey("allocations.id", ondelete="CASCADE"), index=True)
     surgery_id: Mapped[str | None] = mapped_column(ForeignKey("surgeries.id"), default=None)
     category: Mapped[str] = mapped_column(String(100))
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     bill_ref: Mapped[str | None] = mapped_column(String(100), default=None)
     expense_at: Mapped[date] = mapped_column(Date, default=date.today)
+
+    allocation: Mapped[Allocation] = relationship(back_populates="expenses")
 
 
 # ─── Audit ────────────────────────────────────────────────────────────────────
@@ -161,7 +175,7 @@ class Complaint(Base):
     __tablename__ = "complaints"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
-    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
+    centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id", ondelete="CASCADE"), index=True)
     citizen_phone: Mapped[str] = mapped_column(String(20))
     description: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="open")
@@ -182,7 +196,7 @@ class SyncQueue(Base):
     )  # surgery, dog, inspection, etc.
     entity_id: Mapped[str] = mapped_column(String(36), index=True)
     operation: Mapped[str] = mapped_column(String(20))  # create, update, delete
-    payload: Mapped[dict] = mapped_column(Text, default="{}")  # JSON-serialized
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)  # JSONB in PostgreSQL
     idempotency_key: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     status: Mapped[str] = mapped_column(
         String(20), default="pending", index=True

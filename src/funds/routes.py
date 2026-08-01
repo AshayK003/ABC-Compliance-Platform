@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
-from sqlalchemy import select
+from pydantic import BaseModel, Field
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/grants", tags=["grants"])
 
 class GrantCreate(BaseModel):
     awbi_ref: str
-    amount: float
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     purpose: str
     financial_year: str
     status: str = "active"
@@ -65,7 +66,7 @@ alloc_router = APIRouter(prefix="/allocations", tags=["allocations"])
 class AllocationCreate(BaseModel):
     grant_id: str
     centre_id: str
-    amount: float
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
 
 
 @alloc_router.post("", status_code=201)
@@ -88,10 +89,12 @@ async def create_allocation(
 async def list_allocations(
     grant_id: str | None = Query(None),
     centre_id: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(Allocation).order_by(Allocation.allocated_at.desc())
+    stmt = select(Allocation).order_by(Allocation.allocated_at.desc()).limit(limit).offset(offset)
     if grant_id:
         stmt = stmt.where(Allocation.grant_id == grant_id)
     if centre_id:
@@ -123,7 +126,7 @@ class ExpenseCreate(BaseModel):
     allocation_id: str
     surgery_id: str | None = None
     category: str
-    amount: float
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     bill_ref: str | None = None
     expense_at: datetime | None = None
 
@@ -134,6 +137,26 @@ async def create_expense(
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(require_role("admin", "vet")),
 ):
+    # Validate allocation exists and has sufficient balance
+    allocation_result = await db.execute(
+        select(Allocation).where(Allocation.id == body.allocation_id)
+    )
+    allocation = allocation_result.scalar_one_or_none()
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Allocation not found")
+
+    # Sum existing expenses for this allocation
+    existing_expenses_result = await db.execute(
+        select(func.sum(Expense.amount)).where(Expense.allocation_id == body.allocation_id)
+    )
+    total_existing = existing_expenses_result.scalar() or Decimal("0")
+
+    if total_existing + body.amount > allocation.amount:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Expense exceeds allocation balance. Available: {allocation.amount - total_existing}, Requested: {body.amount}"
+        )
+
     expense = Expense(
         **body.model_dump(exclude_none=True),
         expense_at=body.expense_at or datetime.now(UTC).replace(tzinfo=None).date(),
@@ -147,10 +170,12 @@ async def create_expense(
 @exp_router.get("")
 async def list_expenses(
     allocation_id: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(Expense).order_by(Expense.expense_at.desc())
+    stmt = select(Expense).order_by(Expense.expense_at.desc()).limit(limit).offset(offset)
     if allocation_id:
         stmt = stmt.where(Expense.allocation_id == allocation_id)
 
