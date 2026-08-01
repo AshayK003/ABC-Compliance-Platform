@@ -114,6 +114,15 @@ export interface AuthResponse {
   role: string;
 }
 
+export interface LoginResponse extends AuthResponse {}
+
+export interface RegisterResponse {
+  id: string;
+  name: string;
+  role: string;
+  access_token: string;
+}
+
 export interface TokenPayload {
   user_id: string;
   role: string;

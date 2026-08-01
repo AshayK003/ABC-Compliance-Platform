@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -11,6 +12,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth.routes import router as auth_router
 from src.auth.deps import get_db
@@ -23,11 +25,37 @@ from src.inspections.routes import router as inspections_router
 from src.public.routes import public_router, sync_router
 from src.surgeries.routes import router as surgeries_router
 
+
+# API v1 router
+api_v1_router = APIRouter(prefix="/api/v1")
+api_v1_router.include_router(auth_router)
+api_v1_router.include_router(centres_router)
+api_v1_router.include_router(dogs_router)
+api_v1_router.include_router(funds_router)
+api_v1_router.include_router(alloc_router)
+api_v1_router.include_router(exp_router)
+api_v1_router.include_router(inspections_router)
+api_v1_router.include_router(public_router)
+api_v1_router.include_router(sync_router)
+api_v1_router.include_router(surgeries_router)
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+# Correlation ID middleware
+class CorrelationIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        correlation_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())[:8]
+        request.state.correlation_id = correlation_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = correlation_id
+        return response
+
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -44,12 +72,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
 app.state.limiter = limiter
+app.add_middleware(CorrelationIDMiddleware)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception("Unhandled error: %s %s", request.method, request.url.path)
+    correlation_id = getattr(request.state, "correlation_id", "unknown")
+    logger.exception("Unhandled error: %s %s | correlation_id=%s", request.method, request.url.path, correlation_id)
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
@@ -102,6 +132,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(api_v1_router)
+
+# Backward compatibility - include routers at root level for existing tests
 app.include_router(auth_router)
 app.include_router(centres_router)
 app.include_router(dogs_router)
@@ -123,7 +156,7 @@ async def health(db: AsyncSession = Depends(get_db)):
     try:
         await db.execute(select(1))
     except Exception as e:
-        logger.warning("Health check DB failed: %s", e)
+        logger.warning("Health check DB failed: %s | correlation_id=%s", e, getattr(db, "state", {}).get("correlation_id", "unknown"))
         checks["database"] = False
 
     healthy = all(checks.values())

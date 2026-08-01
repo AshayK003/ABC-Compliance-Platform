@@ -21,6 +21,10 @@ class Settings(BaseSettings):
 
     allowed_origins: list[str] = ["http://localhost:5173"]
 
+    # Cache settings
+    cache_ttl_seconds: int = 30
+    cache_enabled: bool = True
+
     @field_validator("secret_key")
     @classmethod
     def _secret_key_not_default(cls, v: str) -> str:

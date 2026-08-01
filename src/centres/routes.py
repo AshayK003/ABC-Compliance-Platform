@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
 from src.models.base import Centre, Staff
+from src.cache import cache, cache_key, invalidate_pattern
 
 router = APIRouter(prefix="/centres", tags=["centres"])
 
@@ -39,6 +39,12 @@ async def list_centres(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
+    # Cache key includes pagination params
+    cache_k = cache_key("centres", "list", f"limit={limit}", f"offset={offset}")
+    cached_data = cache.get(cache_k)
+    if cached_data is not None:
+        return cached_data
+
     # Subquery for staff count per centre to avoid N+1
     staff_count_subq = (
         select(Staff.centre_id, func.count(Staff.id).label("staff_count"))
@@ -55,19 +61,21 @@ async def list_centres(
         .offset(offset)
     )
     rows = result.all()
-    return [
-        CentreOut(
-            id=c.id,
-            name=c.name,
-            code=c.code,
-            district=c.district,
-            state=c.state,
-            capacity=c.capacity,
-            status=c.status,
-            staff_count=staff_count or 0,
-        )
+    data = [
+        {
+            "id": c.id,
+            "name": c.name,
+            "code": c.code,
+            "district": c.district,
+            "state": c.state,
+            "capacity": c.capacity,
+            "status": c.status,
+            "staff_count": staff_count or 0,
+        }
         for c, staff_count in rows
     ]
+    cache.set(cache_k, data)
+    return data
 
 
 @router.post("", status_code=201)
@@ -80,6 +88,8 @@ async def create_centre(
     db.add(centre)
     await db.commit()
     await db.refresh(centre)
+    # Invalidate cache
+    invalidate_pattern("centres:")
     return centre
 
 
