@@ -28,16 +28,16 @@ export function Inspections() {
       ]);
       const centreMap = new Map((centreData as Array<{ id: string; name: string; code: string }>).map(c => [c.id, c]));
       setRecords((inspectionData as Array<{
-        id: string; centre_id: string; inspector_id: string; scheduled_at?: string; status: string;
-      }>).map(i => ({
-        id: i.id,
-        centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
-        centreCode: centreMap.get(i.centre_id)?.code ?? '—',
-        inspectorName: i.inspector_id,
-        priority: i.status === 'overdue' ? 'OVERDUE' : i.status === 'completed' ? 'DONE' : 'SCHEDULED',
-        type: 'Compliance Inspection',
-        scheduledAt: i.scheduled_at ?? '',
-      })));
+              id: string; centre_id: string; inspector_id: string; scheduled_at?: string; status: string;
+            }>).map(i => ({
+              id: i.id,
+              centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
+              centreCode: centreMap.get(i.centre_id)?.code ?? '—',
+              inspectorName: i.inspector_id,
+              priority: getPriorityLabel(i.status),
+              type: 'Compliance Inspection',
+              scheduledAt: i.scheduled_at ?? '',
+            })));
     } catch (error) {
       console.error('Failed to load inspections:', error);
     } finally {
@@ -51,6 +51,12 @@ export function Inspections() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     return new Date(r.scheduledAt).toDateString() === tomorrow.toDateString();
   });
+
+  const getPriorityLabel = (status: string): string => {
+    if (status === 'overdue') return 'OVERDUE';
+    if (status === 'completed') return 'DONE';
+    return 'SCHEDULED';
+  };
 
   if (loading) {
     return (

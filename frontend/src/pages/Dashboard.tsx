@@ -231,8 +231,8 @@ const topCentres = centres
               </div>
               <div className="flex flex-col gap-3">
                 {upcomingInspections.map((inspection, index) => (
-                  <InspectionCard
-                    key={index}
+                                  <InspectionCard
+                                    key={index}
                     centreName={inspection.centreName}
                     scheduledAt={inspection.scheduledAt}
                     status={inspection.status}
