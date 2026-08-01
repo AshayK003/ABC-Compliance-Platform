@@ -56,7 +56,12 @@ class RegisterResponse(BaseModel):
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 @limiter.limit("3/hour")
-async def register(request: Request, body: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
+async def register(
+    request: Request,
+    body: RegisterRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(select(Staff).where(Staff.phone == body.phone))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already registered")
@@ -83,7 +88,12 @@ async def register(request: Request, body: RegisterRequest, response: Response, 
 
 @router.post("/login")
 @limiter.limit("5/minute")
-async def login(request: Request, body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+async def login(
+    request: Request,
+    body: LoginRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(select(Staff).where(Staff.phone == body.phone))
     staff = result.scalar_one_or_none()
     if not staff or not verify_password(body.password, staff.password_hash):
@@ -118,15 +128,18 @@ async def logout(response: Response):
 
 
 @router.delete("/me")
-async def delete_account(user: TokenPayload = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def delete_account(
+    user: TokenPayload = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(select(Staff).where(Staff.id == user.user_id))
     staff = result.scalar_one_or_none()
     if not staff:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     await db.delete(staff)
     await db.commit()
-    
+
     response = Response(content='{"message": "Account deleted"}', media_type="application/json")
     clear_auth_cookies(response)
     return response

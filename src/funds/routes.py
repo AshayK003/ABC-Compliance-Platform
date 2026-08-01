@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
-from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
@@ -77,7 +77,6 @@ async def create_allocation(
 ):
     allocation = Allocation(
         **body.model_dump(),
-        allocated_at=datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(allocation)
     await db.commit()
@@ -152,15 +151,18 @@ async def create_expense(
     total_existing = existing_expenses_result.scalar() or Decimal("0")
 
     if total_existing + body.amount > allocation.amount:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Expense exceeds allocation balance. Available: {allocation.amount - total_existing}, Requested: {body.amount}"
-        )
+            available = allocation.amount - total_existing
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Expense exceeds allocation balance. "
+                    f"Available: {available}, Requested: {body.amount}"
+                ),
+            )
 
     expense = Expense(
-        **body.model_dump(exclude_none=True),
-        expense_at=body.expense_at or datetime.now(UTC).replace(tzinfo=None).date(),
-    )
+            **body.model_dump(exclude_none=True),
+        )
     db.add(expense)
     await db.commit()
     await db.refresh(expense)

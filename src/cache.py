@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 
 from src.config import settings
 
@@ -14,7 +14,7 @@ class Cache:
     def __init__(self) -> None:
         self._store: dict[str, tuple[Any, float]] = {}
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         if not settings.cache_enabled:
             return None
         entry = self._store.get(key)
@@ -26,7 +26,7 @@ class Cache:
             return None
         return value
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         if not settings.cache_enabled:
             return
         ttl = ttl or settings.cache_ttl_seconds
@@ -49,12 +49,14 @@ def cache_key(*parts: str) -> str:
     return ":".join(parts)
 
 
-def cached(ttl: Optional[int] = None):
+def cached(ttl: int | None = None):
     """Decorator for caching function results."""
     def decorator(func):
         async def wrapper(*args, **kwargs):
             # Generate cache key from function name and args
-            key_parts = [func.__name__] + [str(arg) for arg in args] + [f"{k}={v}" for k, v in sorted(kwargs.items())]
+            key_parts = [
+                func.__name__,
+            ] + [str(arg) for arg in args] + [f"{k}={v}" for k, v in sorted(kwargs.items())]
             key = cache_key(*key_parts)
 
             cached_value = cache.get(key)
@@ -76,6 +78,6 @@ def invalidate_cache(*key_parts: str) -> None:
 
 def invalidate_pattern(pattern: str) -> None:
     """Invalidate all keys matching a pattern (simple prefix match)."""
-    keys_to_delete = [k for k in cache._store.keys() if k.startswith(pattern)]
+    keys_to_delete = [k for k in cache._store if k.startswith(pattern)]
     for key in keys_to_delete:
         cache.delete(key)

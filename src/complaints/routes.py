@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -39,7 +37,6 @@ async def create_complaint(
     complaint = Complaint(
         **body.model_dump(),
         status="open",
-        created_at=datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(complaint)
     await db.commit()
@@ -82,7 +79,8 @@ async def update_complaint(
     db: AsyncSession = Depends(get_db),
 ):
     if body.status not in VALID_STATUSES:
-        raise HTTPException(status_code=422, detail=f"Invalid status. Must be one of: {', '.join(VALID_STATUSES)}")
+            valid = ", ".join(VALID_STATUSES)
+            raise HTTPException(status_code=422, detail=f"Invalid status. Must be one of: {valid}")
 
     result = await db.execute(select(Complaint).where(Complaint.id == complaint_id))
     complaint = result.scalar_one_or_none()

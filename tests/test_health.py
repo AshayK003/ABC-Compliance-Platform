@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 from httpx import ASGITransport, AsyncClient
-from unittest.mock import AsyncMock
 
 from src.database import get_db
 from src.main import app
@@ -28,9 +29,6 @@ async def client(app_with_db):
     transport = ASGITransport(app=app_with_db)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
-
-
-from unittest.mock import MagicMock
 
 
 @pytest.mark.asyncio

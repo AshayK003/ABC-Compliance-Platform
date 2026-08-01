@@ -82,8 +82,9 @@ class TestRegister:
     async def test_registers_new_staff(self, client: AsyncClient, mock_session: AsyncMock):
         _setup_mock_execute(mock_session, None)
         mock_session.commit = AsyncMock()
-        # Mock refresh to set ID on the staff object - but we can't easily test the response body
-        # since the staff object is created inside the route handler. Just verify status and cookies.
+        # Mock refresh to set ID on the staff object - but we can't easily test
+        # the response body since the staff object is created inside the
+        # route handler. Just verify status and cookies.
         async def mock_refresh(obj):
             if hasattr(obj, 'id') and obj.id is None:
                 obj.id = "staff-new-id"
@@ -205,7 +206,7 @@ class TestDeleteAccount:
         def vet_override():
             return TokenPayload(user_id="staff-1", role="vet")
         app.dependency_overrides[get_current_user] = vet_override
-        
+
         _setup_mock_execute(mock_session, _make_staff())
         mock_session.delete = AsyncMock()
         mock_session.commit = AsyncMock()

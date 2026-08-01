@@ -8,12 +8,11 @@ import jwt
 from fastapi import Depends, HTTPException, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
-
-from src.config import settings
-from src.database import get_db
-from src.models.base import Staff
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.config import settings
+from src.models.base import Staff
 
 security_scheme = HTTPBearer()
 
@@ -84,7 +83,10 @@ async def verify_refresh_token(refresh_token: str, db: AsyncSession) -> TokenPay
     result = await db.execute(select(Staff).where(Staff.id == user_id))
     staff = result.scalar_one_or_none()
     if not staff or not staff.active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
     return TokenPayload(user_id=staff.id, role=staff.role)
 
 

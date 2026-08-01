@@ -4,27 +4,26 @@ import logging
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, Depends, FastAPI, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth.routes import router as auth_router
-from src.auth.deps import get_db
 from src.centres.routes import router as centres_router
 from src.config import settings
+from src.database import get_db
 from src.dogs.routes import router as dogs_router
 from src.funds.routes import alloc_router, exp_router
 from src.funds.routes import router as funds_router
 from src.inspections.routes import router as inspections_router
 from src.public.routes import public_router, sync_router
 from src.surgeries.routes import router as surgeries_router
-
 
 # API v1 router
 api_v1_router = APIRouter(prefix="/api/v1")
@@ -79,7 +78,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     correlation_id = getattr(request.state, "correlation_id", "unknown")
-    logger.exception("Unhandled error: %s %s | correlation_id=%s", request.method, request.url.path, correlation_id)
+    logger.exception(
+        "Unhandled error: %s %s | correlation_id=%s",
+        request.method,
+        request.url.path,
+        correlation_id,
+    )
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
@@ -148,7 +152,7 @@ app.include_router(surgeries_router)
 
 
 @app.get("/health")
-async def health(db: AsyncSession = Depends(get_db)):
+async def health(db: AsyncSession = Depends(get_db)):  # noqa: B008
     checks = {
         "database": True,
         "redis": True,  # Redis check optional
@@ -156,11 +160,14 @@ async def health(db: AsyncSession = Depends(get_db)):
     try:
         await db.execute(select(1))
     except Exception as e:
-        logger.warning("Health check DB failed: %s | correlation_id=%s", e, getattr(db, "state", {}).get("correlation_id", "unknown"))
+        correlation_id = getattr(db, "state", {}).get("correlation_id", "unknown")
+        logger.warning(
+            "Health check DB failed: %s | correlation_id=%s", e, correlation_id
+        )
         checks["database"] = False
 
     healthy = all(checks.values())
     return JSONResponse(
         status_code=200 if healthy else 503,
-        content={"status": "healthy" if healthy else "degraded", "checks": checks}
+        content={"status": "healthy" if healthy else "degraded", "checks": checks},
     )

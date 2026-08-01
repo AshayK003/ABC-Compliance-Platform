@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -174,7 +172,7 @@ async def mark_synced(
         raise HTTPException(status_code=404, detail="Sync item not found")
 
     item.status = "synced"
-    item.synced_at = datetime.now(UTC).replace(tzinfo=None)
+    # synced_at is set by model default
     await db.commit()
     return item
 
