@@ -2,12 +2,19 @@ import type { Centre, Dog, Surgery, Inspection, Grant, Allocation, Expense, Comp
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     credentials: 'include', // Include cookies for authentication
     headers: {
       'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...options.headers,
     },
   });

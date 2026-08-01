@@ -1,22 +1,55 @@
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
-import { 
-  type SurgeryRecord, 
-  type SurgerySummary,
-  MOCK_SURGERY_SUMMARY,
-  MOCK_SURGERIES
-} from '../mocks';
+import { api } from '../services/api';
+
+type SurgeryRecord = {
+  date: string;
+  centreName: string;
+  centreCode: string;
+  animalId: string;
+  procedureType: string;
+  outcome: string;
+};
+
+type SurgerySummary = {
+  total: number;
+  preOp: number;
+  postOp: number;
+  complications: number;
+};
+
+const emptySummary: SurgerySummary = { total: 0, preOp: 0, postOp: 0, complications: 0 };
 
 export function Surgeries() {
   const [records, setRecords] = useState<SurgeryRecord[]>([]);
-  const [summary, setSummary] = useState<SurgerySummary>(MOCK_SURGERY_SUMMARY);
+  const [summary, setSummary] = useState<SurgerySummary>(emptySummary);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      setSummary(MOCK_SURGERY_SUMMARY);
-      setRecords(MOCK_SURGERIES);
+      const [surgeryData, centreData] = await Promise.all([
+        api.getSurgeries(),
+        api.getCentres().catch(() => [] as never[]),
+      ]);
+      const centreMap = new Map((centreData as Array<{ id: string; name: string; code: string }>).map(c => [c.id, c]));
+      const mapped = (surgeryData as Array<{
+        id: string; dog_id: string; centre_id: string; surgery_type: string; timestamp: string; complications?: string;
+      }>).map(s => ({
+        date: (s.timestamp ?? '').slice(0, 10),
+        centreName: centreMap.get(s.centre_id)?.name ?? s.centre_id,
+        centreCode: centreMap.get(s.centre_id)?.code ?? '—',
+        animalId: s.dog_id,
+        procedureType: s.surgery_type,
+        outcome: s.complications ? 'Complications' : 'Recovered',
+      }));
+      setRecords(mapped);
+      setSummary({
+        total: mapped.length,
+        preOp: 0,
+        postOp: mapped.filter(r => r.outcome === 'Recovered').length,
+        complications: mapped.filter(r => r.outcome === 'Complications').length,
+      });
     } catch (error) {
       console.error('Failed to load surgeries:', error);
     } finally {
@@ -59,7 +92,7 @@ export function Surgeries() {
           </div>
           <div className="flex items-center gap-2 bg-surface-container-high border border-outline-variant rounded p-2">
             <span className="material-symbols-outlined text-on-surface-variant" data-icon="calendar_month">calendar_month</span>
-            <span className="font-label-bold text-label-bold text-on-surface">Oct 01, 2023 - Oct 31, 2023</span>
+            <span className="font-label-bold text-label-bold text-on-surface">All Time</span>
             <span className="material-symbols-outlined text-on-surface-variant cursor-pointer ml-2" data-icon="arrow_drop_down">arrow_drop_down</span>
           </div>
         </div>
@@ -111,12 +144,12 @@ export function Surgeries() {
             />
           </div>
           <div className="p-4 border-t border-outline-variant flex justify-between items-center bg-surface-container text-on-surface-variant font-label-md text-label-md">
-            <span>Showing 1-6 of 1,248 records</span>
+            <span>Showing 1-{records.length} of {records.length} records</span>
             <div className="flex items-center gap-2">
               <button className="material-symbols-outlined hover:text-on-surface cursor-pointer" data-icon="chevron_left">chevron_left</button>
               <span className="text-on-surface">1</span>
               <span>/</span>
-              <span>312</span>
+              <span>{Math.max(1, Math.ceil(records.length / 6))}</span>
               <button className="material-symbols-outlined hover:text-on-surface cursor-pointer" data-icon="chevron_right">chevron_right</button>
             </div>
           </div>

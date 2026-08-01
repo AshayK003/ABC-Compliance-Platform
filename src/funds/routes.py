@@ -76,7 +76,7 @@ async def create_allocation(
 ):
     allocation = Allocation(
         **body.model_dump(),
-        allocated_at=datetime.now(UTC),
+        allocated_at=datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(allocation)
     await db.commit()
@@ -136,7 +136,7 @@ async def create_expense(
 ):
     expense = Expense(
         **body.model_dump(exclude_none=True),
-        expense_at=body.expense_at or datetime.now(UTC).date(),
+        expense_at=body.expense_at or datetime.now(UTC).replace(tzinfo=None).date(),
     )
     db.add(expense)
     await db.commit()

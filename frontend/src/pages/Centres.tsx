@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
+import { CentreFormModal } from '../components/CentreFormModal';
 import type { Centre } from '../types';
-import { MOCK_CENTRES_EXTENDED } from '../mocks';
+import { api } from '../services/api';
 
 export function Centres() {
   const [centres, setCentres] = useState<Centre[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -16,12 +18,23 @@ export function Centres() {
 
   const loadCentres = async () => {
     try {
-      // Mock data matching the HTML designs
-      setCentres(MOCK_CENTRES_EXTENDED);
+      const data = await api.getCentres();
+      setCentres(data);
     } catch (error) {
       console.error('Failed to load centres:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateCentre = async (data: { name: string; code: string; district: string; state: string; capacity?: number }) => {
+    try {
+      await api.createCentre(data);
+      setModalOpen(false);
+      await loadCentres();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create centre';
+      alert(message);
     }
   };
 
@@ -50,7 +63,7 @@ export function Centres() {
       {/* Page Header */}
       <header className="bg-surface-container dark:bg-surface-container w-full sticky top-0 z-40 border-b border-outline-variant flex justify-between items-center h-16 px-gutter shrink-0">
         <h1 className="font-headline-sm text-headline-sm font-semibold text-on-surface">Registered Centres Directory</h1>
-        <button className="bg-primary hover:bg-primary-container text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded transition-colors flex items-center justify-center gap-2 w-full lg:w-auto shrink-0 shadow-sm">
+        <button onClick={() => setModalOpen(true)} className="bg-primary hover:bg-primary-container text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded transition-colors flex items-center justify-center gap-2 w-full lg:w-auto shrink-0 shadow-sm">
           <span className="material-symbols-outlined text-[18px]">add</span>
           Add New Centre
         </button>
@@ -181,6 +194,14 @@ export function Centres() {
           </div>
         </div>
       </div>
+
+      {modalOpen && (
+        <CentreFormModal
+          centre={null}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleCreateCentre}
+        />
+      )}
     </div>
   );
 }

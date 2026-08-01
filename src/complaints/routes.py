@@ -39,7 +39,7 @@ async def create_complaint(
     complaint = Complaint(
         **body.model_dump(),
         status="open",
-        created_at=datetime.now(UTC),
+        created_at=datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(complaint)
     await db.commit()

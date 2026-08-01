@@ -2,20 +2,84 @@ import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
-import { 
-  type FundDisbursement, 
-  type ExpenseRecord,
-  MOCK_FUND_DISBURSEMENTS,
-  MOCK_EXPENSES
-} from '../mocks';
+import { api } from '../services/api';
+
+type FundDisbursement = {
+  date: string;
+  centre: string;
+  amount: number;
+  purpose: string;
+  status: 'Approved' | 'Processing' | 'Flagged';
+};
+
+type ExpenseRecord = {
+  date: string;
+  allocation: string;
+  category: string;
+  amount: number;
+  billRef: string;
+  status: 'Paid' | 'Pending';
+};
 
 export function FundTracker() {
   const [activeTab, setActiveTab] = useState<'grants' | 'allocations' | 'expenses'>('grants');
   const [loading, setLoading] = useState(true);
+  const [disbursements, setDisbursements] = useState<FundDisbursement[]>([]);
+  const [allocations, setAllocations] = useState<FundDisbursement[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [fundStats, setFundStats] = useState({ total: 0, disbursed: 0, pending: 0, available: 0 });
 
   useEffect(() => {
-    setLoading(false);
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      const [grantData, allocationData, expenseData, centreData] = await Promise.all([
+        api.getGrants(),
+        api.getAllocations().catch(() => [] as never[]),
+        api.getExpenses().catch(() => [] as never[]),
+        api.getCentres().catch(() => [] as never[]),
+      ]);
+      const centreMap = new Map((centreData as Array<{ id: string; name: string }>).map(c => [c.id, c.name]));
+
+      const grants = grantData as Array<{ awbi_ref: string; amount: number; purpose: string; financial_year: string; status: string }>;
+      const allocs = allocationData as Array<{ id: string; grant_id: string; centre_id: string; amount: number; allocated_at: string }>;
+      const exps = expenseData as Array<{ allocation_id: string; category: string; amount: number; bill_ref?: string; expense_at: string }>;
+
+      setDisbursements(grants.map(g => ({
+        date: g.financial_year,
+        centre: 'AWBI Central',
+        amount: g.amount,
+        purpose: g.purpose,
+        status: (g.status === 'approved' ? 'Approved' : g.status === 'pending' ? 'Processing' : 'Flagged') as FundDisbursement['status'],
+      })));
+      setAllocations(allocs.map(a => ({
+        date: (a.allocated_at ?? '').slice(0, 10),
+        centre: centreMap.get(a.centre_id) ?? a.centre_id,
+        amount: a.amount,
+        purpose: `Allocation ${a.id.slice(0, 8)}`,
+        status: 'Approved' as const,
+      })));
+      setExpenses(exps.map(e => ({
+        date: (e.expense_at ?? '').slice(0, 10),
+        allocation: e.allocation_id.slice(0, 8),
+        category: e.category,
+        amount: e.amount,
+        billRef: e.bill_ref ?? '—',
+        status: 'Paid' as const,
+      })));
+
+      const total = grants.reduce((s, g) => s + g.amount, 0);
+      const disbursed = grants.filter(g => g.status === 'approved' || g.status === 'disbursed').reduce((s, g) => s + g.amount, 0);
+      const pending = grants.filter(g => g.status === 'pending').reduce((s, g) => s + g.amount, 0);
+      setFundStats({ total, disbursed, pending, available: total - disbursed });
+    } catch (error) {
+      console.error('Failed to load fund data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -85,10 +149,10 @@ export function FundTracker() {
 
           {/* Budget Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Allocation" value="₹450.0M" trend="FY 2024" trendColor="primary" />
-            <StatCard label="Funds Disbursed" value="₹285.5M" trend="63.4% of total" trendColor="secondary" />
-            <StatCard label="Pending Requests" value="₹42.8M" trend="14 Requests pending review" trendColor="error" />
-            <StatCard label="Available Balance" value="₹121.7M" trend="Projected end-of-Q3" trendColor="primary" />
+            <StatCard label="Total Allocation" value={`₹${(fundStats.total / 1_00_000).toFixed(1)}M`} trend="All grants" trendColor="primary" />
+            <StatCard label="Funds Disbursed" value={`₹${(fundStats.disbursed / 1_00_000).toFixed(1)}M`} trend={fundStats.total ? `${((fundStats.disbursed / fundStats.total) * 100).toFixed(1)}% of total` : '0% of total'} trendColor="secondary" />
+            <StatCard label="Pending Requests" value={`₹${(fundStats.pending / 1_00_000).toFixed(1)}M`} trend={`${disbursements.filter(d => d.status === 'Processing').length} Requests pending review`} trendColor="error" />
+            <StatCard label="Available Balance" value={`₹${(fundStats.available / 1_00_000).toFixed(1)}M`} trend="Computed from grants" trendColor="primary" />
           </div>
 
           {/* Main Content Area: Tabs */}
@@ -121,7 +185,7 @@ export function FundTracker() {
                   </div>
                   <div className="overflow-x-auto flex-1">
                     <DataTable
-                      data={MOCK_FUND_DISBURSEMENTS}
+                      data={disbursements}
                       columns={[
                         { key: 'date', header: 'Date' },
                         { key: 'centre', header: 'Centre' },
@@ -191,7 +255,7 @@ export function FundTracker() {
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
-                        data={MOCK_FUND_DISBURSEMENTS}
+                        data={allocations}
                         columns={[
                           { key: 'date', header: 'Date' },
                           { key: 'centre', header: 'Centre' },
@@ -241,7 +305,7 @@ export function FundTracker() {
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
-                        data={MOCK_EXPENSES}
+                        data={expenses}
                         columns={[
                           { key: 'date', header: 'Date' },
                           { key: 'allocation', header: 'Allocation' },

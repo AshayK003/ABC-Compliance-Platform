@@ -175,7 +175,7 @@ async def mark_synced(
         raise HTTPException(status_code=404, detail="Sync item not found")
 
     item.status = "synced"
-    item.synced_at = datetime.now(UTC)
+    item.synced_at = datetime.now(UTC).replace(tzinfo=None)
     await db.commit()
     return item
 

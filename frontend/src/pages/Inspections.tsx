@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { 
-  type InspectionRecord,
-  MOCK_INSPECTIONS
-} from '../mocks';
+import { api } from '../services/api';
+
+type InspectionRecord = {
+  id: string;
+  centreName: string;
+  centreCode: string;
+  inspectorName: string;
+  priority: string;
+  type: string;
+  scheduledAt: string;
+};
 
 export function Inspections() {
   const [records, setRecords] = useState<InspectionRecord[]>([]);
@@ -15,7 +22,22 @@ export function Inspections() {
 
   const loadData = async () => {
     try {
-      setRecords(MOCK_INSPECTIONS);
+      const [inspectionData, centreData] = await Promise.all([
+        api.getInspections(),
+        api.getCentres().catch(() => [] as never[]),
+      ]);
+      const centreMap = new Map((centreData as Array<{ id: string; name: string; code: string }>).map(c => [c.id, c]));
+      setRecords((inspectionData as Array<{
+        id: string; centre_id: string; inspector_id: string; scheduled_at?: string; status: string;
+      }>).map(i => ({
+        id: i.id,
+        centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
+        centreCode: centreMap.get(i.centre_id)?.code ?? '—',
+        inspectorName: i.inspector_id,
+        priority: i.status === 'overdue' ? 'OVERDUE' : i.status === 'completed' ? 'DONE' : 'SCHEDULED',
+        type: 'Compliance Inspection',
+        scheduledAt: i.scheduled_at ?? '',
+      })));
     } catch (error) {
       console.error('Failed to load inspections:', error);
     } finally {
@@ -81,7 +103,7 @@ export function Inspections() {
           {/* Left: Calendar / Schedule List */}
           <div className="lg:col-span-8 bg-surface-container rounded-lg border border-outline-variant flex flex-col overflow-hidden">
             <div className="p-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
-              <h3 className="font-label-bold text-label-bold uppercase text-on-surface-variant tracking-wider">October 2024</h3>
+              <h3 className="font-label-bold text-label-bold uppercase text-on-surface-variant tracking-wider">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
               <div className="flex gap-1">
                 <button className="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
                 <button className="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span className="material-symbols-outlined text-[18px]">chevron_right</span></button>

@@ -64,6 +64,7 @@ async def register(body: RegisterRequest, response: Response, db: AsyncSession =
     )
     db.add(staff)
     await db.commit()
+    await db.refresh(staff)
 
     access_token = create_access_token(user_id=staff.id, role=staff.role)
     refresh_token = create_refresh_token(user_id=staff.id)

@@ -2,13 +2,26 @@ import { useState, useEffect } from 'react';
 import { StatCard } from '../components/StatCard';
 import { InspectionCard } from '../components/InspectionCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
-import { 
-  type CentreSummary, 
-  type AlertItem,
-  MOCK_CENTRES,
-  MOCK_ALERTS,
-  MOCK_UPCOMING_INSPECTIONS
-} from '../mocks';
+import { api } from '../services/api';
+
+type CentreSummary = {
+  id: string;
+  name: string;
+  code: string;
+  district: string;
+  state: string;
+  capacity: number;
+  status: 'active' | 'inactive' | 'suspended';
+  complianceScore: number;
+  surgeriesThisMonth: number;
+};
+
+type AlertItem = {
+  centre: string;
+  district: string;
+  issue: string;
+  status: 'Critical' | 'Warning' | 'Resolved';
+};
 
 export function Dashboard() {
   const [centres, setCentres] = useState<CentreSummary[]>([]);
@@ -18,6 +31,7 @@ export function Dashboard() {
     status: 'Scheduled' | 'Completed' | 'Overdue';
   }>>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [totalDisbursed, setTotalDisbursed] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,11 +40,53 @@ export function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // In a real app, these would be API calls
-      // For now, using shared mock data
-      setCentres(MOCK_CENTRES);
-      setUpcomingInspections(MOCK_UPCOMING_INSPECTIONS);
-      setAlerts(MOCK_ALERTS);
+      const [centreData, inspectionData, complaintData, grantData] = await Promise.all([
+        api.getCentres(),
+        api.getInspections(),
+        api.getComplaints().catch(() => [] as never[]),
+        api.getGrants().catch(() => [] as never[]),
+      ]);
+
+      const totalDisbursed = (grantData as Array<{ amount: number; status: string }>)
+        .filter(g => g.status === 'approved' || g.status === 'disbursed')
+        .reduce((sum, g) => sum + (g.amount ?? 0), 0);
+      setTotalDisbursed(totalDisbursed);
+
+      const centreMap = new Map(centreData.map(c => [c.id, c]));
+      const summaries: CentreSummary[] = centreData.map(c => ({
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        district: c.district,
+        state: c.state,
+        capacity: c.capacity ?? 0,
+        status: c.status,
+        complianceScore: 0,
+        surgeriesThisMonth: 0,
+      }));
+
+      setCentres(summaries);
+      setUpcomingInspections(
+        inspectionData
+          .filter(i => i.status === 'scheduled')
+          .slice(0, 5)
+          .map(i => ({
+            centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
+            scheduledAt: i.scheduled_at ?? 'Not scheduled',
+            status: 'Scheduled' as const,
+          })),
+      );
+      setAlerts(
+        (complaintData as Array<{ centre_id: string; description: string; status: string }>)
+          .filter(c => c.status === 'open' || c.status === 'in_progress')
+          .slice(0, 5)
+          .map(c => ({
+            centre: centreMap.get(c.centre_id)?.name ?? c.centre_id,
+            district: centreMap.get(c.centre_id)?.district ?? '—',
+            issue: c.description,
+            status: c.status === 'open' ? 'Critical' as const : 'Warning' as const,
+          })),
+      );
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -96,7 +152,7 @@ export function Dashboard() {
             />
             <StatCard
               label="Funds Disbursed"
-              value="₹12.5 Cr"
+              value={`₹${(totalDisbursed / 1_00_00_000).toFixed(1)} Cr`}
               trend="On Track"
               trendColor="primary"
             />

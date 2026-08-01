@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { TokenPayload } from '../types';
+import { setAuthToken } from '../services/api';
 
 interface AuthContextType {
   user: TokenPayload | null;
@@ -20,6 +21,7 @@ let accessToken: string | null = null;
 
 function setAccessToken(token: string | null) {
   accessToken = token;
+  setAuthToken(token);
 }
 
 async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
