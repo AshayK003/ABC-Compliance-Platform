@@ -247,12 +247,12 @@ export function Settings() {
               <div>
                               <label className="block font-label-md text-label-md text-on-surface-variant mb-2" htmlFor="refresh-interval">Refresh Interval (seconds)</label>
                               <select
-                                                              id="refresh-interval"
-                                                              value={settings.refreshInterval}
-                                                              onChange={(e) => handleChange('refreshInterval', parseInt(e.target.value))}
-                                                              disabled={!settings.autoRefresh}
-                                                              className="w-full md:w-1/3 bg-background border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                                                            >
+                                                                                            id="refresh-interval"
+                                                                                            value={settings.refreshInterval}
+                                                                                            onChange={(e) => handleChange('refreshInterval', Number.parseInt(e.target.value))}
+                                                                                            disabled={!settings.autoRefresh}
+                                                                                            className="w-full md:w-1/3 bg-background border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                                                                                          >
                   <option value={15}>15 seconds</option>
                   <option value={30}>30 seconds</option>
                   <option value={60}>1 minute</option>

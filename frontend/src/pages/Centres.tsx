@@ -178,7 +178,7 @@ export function Centres() {
                   header: 'Actions',
                   align: 'right',
                   render: () => (
-                    <button className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors">
+                    <button type="button" className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors">
                       <span className="material-symbols-outlined text-[20px]">visibility</span>
                     </button>
                   ),

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
+function getRoleIcon(role?: string): string {
+  if (role === 'admin') return 'admin_panel_settings';
+  if (role === 'surgeon') return 'medical_services';
+  return 'pets';
+}
+
 export function Profile() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'activity'>('profile');
@@ -21,7 +27,7 @@ export function Profile() {
                 <div className="flex items-center gap-4">
                   <div className="w-24 h-24 rounded-full bg-primary-container flex items-center justify-center">
                     <span className="material-symbols-outlined text-4xl text-on-primary-container">
-                      {user?.role === 'admin' ? 'admin_panel_settings' : user?.role === 'surgeon' ? 'medical_services' : 'pets'}
+                      {getRoleIcon(user?.role)}
                     </span>
                   </div>
                   <div>

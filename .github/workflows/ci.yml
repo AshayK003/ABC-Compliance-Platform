@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
-          pip install --only-binary :all: .
+          pip install --only-binary :all: -r requirements.txt
 
       - name: Run pytest
         run: |
@@ -30,7 +30,7 @@ jobs:
       - name: Run pip-audit
         run: |
           pip install --only-binary :all: pip-audit
-          pip-audit --desc
+          pip-audit -r requirements.txt --desc
 
   frontend:
     runs-on: ubuntu-latest

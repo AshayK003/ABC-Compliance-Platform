@@ -1,11 +1,11 @@
 FROM python:3.11-alpine AS builder
 
 WORKDIR /app
-COPY pyproject.toml ./
+COPY requirements.txt ./
 COPY src/ src/
 COPY migrations/ migrations/
 COPY alembic.ini ./
-RUN pip install --no-cache-dir --only-binary :all: .
+RUN pip install --no-cache-dir --only-binary :all: -r requirements.txt
 
 FROM python:3.11-alpine
 

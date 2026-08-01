@@ -196,7 +196,7 @@ export function Surgeries() {
                     );
                   },
                 },
-                { key: 'actions', header: 'Actions', align: 'right', render: () => <button className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button> },
+                { key: 'actions', header: 'Actions', align: 'right', render: () => <button type="button" className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button> },
               ]}
             />
           </div>

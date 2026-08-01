@@ -1,0 +1,11 @@
+fastapi==0.133.1
+uvicorn[standard]==0.41.0
+sqlalchemy[asyncio]==2.0.40
+asyncpg==0.30.0
+alembic==1.14.0
+pydantic==2.13.4
+pydantic-settings==2.14.2
+pyjwt==2.13.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.32
+slowapi==0.1.9
