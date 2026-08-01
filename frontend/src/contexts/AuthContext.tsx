@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { TokenPayload } from '../types';
 import { setAuthToken } from '../services/api';
 
@@ -48,7 +48,7 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
   return response.json();
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
   const [user, setUser] = useState<TokenPayload | null>(null);
   const [loading, setLoading] = useState(true);
 

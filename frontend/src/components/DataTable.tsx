@@ -351,7 +351,7 @@ export function DataTable<T>({
 
   const totalPages = Math.ceil(filteredAndSortedData.length / pageSize);
 
-  const hasActiveFilters = Object.values(filters).some(v => v) || globalFilter ? true : false;
+  const hasActiveFilters = Boolean(Object.values(filters).some(v => v) || globalFilter);
 
     const tbodyContent = paginatedData.length > 0 ? (
       paginatedData.map((item, index) => (
