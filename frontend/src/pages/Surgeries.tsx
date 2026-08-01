@@ -99,7 +99,11 @@ export function Surgeries() {
               <span className="material-symbols-outlined text-6xl text-on-surface-variant mb-4 block" data-icon="medical_services">medical_services</span>
               <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">No Surgeries Recorded</h3>
               <p className="font-body-md text-body-md text-on-surface-variant mb-6">Start by recording the first surgery at a compliant centre.</p>
-              <button onClick={() => alert('Create surgery flow not yet implemented')} className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mx-auto">
+              <button
+                type="button"
+                onClick={() => alert('Create surgery flow not yet implemented')}
+                className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mx-auto"
+              >
                 <span className="material-symbols-outlined" data-icon="add">add</span>
                 Record Surgery
               </button>
@@ -155,10 +159,16 @@ export function Surgeries() {
           <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
             <h2 className="font-headline-sm text-headline-sm text-on-surface">Surgery Records</h2>
             <div className="flex gap-2">
-              <button className="bg-surface-container-highest border border-outline-variant text-on-surface px-3 py-1 rounded font-label-bold text-label-bold flex items-center gap-2 hover:bg-surface-variant transition-colors">
+              <button
+                type="button"
+                className="bg-surface-container-highest border border-outline-variant text-on-surface px-3 py-1 rounded font-label-bold text-label-bold flex items-center gap-2 hover:bg-surface-variant transition-colors"
+              >
                 <span className="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span> Filter
               </button>
-              <button className="bg-surface-container-highest border border-outline-variant text-on-surface px-3 py-1 rounded font-label-bold text-label-bold flex items-center gap-2 hover:bg-surface-variant transition-colors">
+              <button
+                type="button"
+                className="bg-surface-container-highest border border-outline-variant text-on-surface px-3 py-1 rounded font-label-bold text-label-bold flex items-center gap-2 hover:bg-surface-variant transition-colors"
+              >
                 <span className="material-symbols-outlined text-sm" data-icon="download">download</span> Export
               </button>
             </div>
@@ -174,15 +184,17 @@ export function Surgeries() {
                 {
                   key: 'outcome',
                   header: 'Outcome',
-                  render: (r: SurgeryRecord) => (
-                    <span className={`inline-flex items-center px-2 py-1 rounded ${
-                      r.outcome === 'Recovered' ? 'bg-primary/10 text-primary font-label-bold text-label-bold' :
-                      r.outcome === 'In Observation' ? 'bg-secondary-container text-on-secondary-container font-label-bold text-label-bold' :
-                      'bg-error-container text-on-error-container font-label-bold text-label-bold'
-                    }`}>
-                      {r.outcome}
-                    </span>
-                  ),
+                  render: (r: SurgeryRecord) => {
+                    const outcomeStyles = {
+                      Recovered: 'bg-primary/10 text-primary font-label-bold text-label-bold',
+                      'In Observation': 'bg-secondary-container text-on-secondary-container font-label-bold text-label-bold',
+                    };
+                    return (
+                      <span className={`inline-flex items-center px-2 py-1 rounded ${outcomeStyles[r.outcome as keyof typeof outcomeStyles] ?? 'bg-error-container text-on-error-container font-label-bold text-label-bold'}`}>
+                        {r.outcome}
+                      </span>
+                    );
+                  },
                 },
                 { key: 'actions', header: 'Actions', align: 'right', render: () => <button className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button> },
               ]}
@@ -191,11 +203,23 @@ export function Surgeries() {
           <div className="p-4 border-t border-outline-variant flex justify-between items-center bg-surface-container text-on-surface-variant font-label-md text-label-md">
             <span>Showing 1-{records.length} of {records.length} records</span>
             <div className="flex items-center gap-2">
-              <button className="material-symbols-outlined hover:text-on-surface cursor-pointer" data-icon="chevron_left">chevron_left</button>
+              <button
+                type="button"
+                className="material-symbols-outlined hover:text-on-surface cursor-pointer"
+                data-icon="chevron_left"
+              >
+                chevron_left
+              </button>
               <span className="text-on-surface">1</span>
               <span>/</span>
               <span>{Math.max(1, Math.ceil(records.length / 6))}</span>
-              <button className="material-symbols-outlined hover:text-on-surface cursor-pointer" data-icon="chevron_right">chevron_right</button>
+              <button
+                type="button"
+                className="material-symbols-outlined hover:text-on-surface cursor-pointer"
+                data-icon="chevron_right"
+              >
+                chevron_right
+              </button>
             </div>
           </div>
         </div>

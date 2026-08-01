@@ -67,15 +67,15 @@ export function Reports() {
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Generate, preview, and export high-density compliance data.</p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface hover:bg-surface-container-highest transition-colors">
+              <button type="button" className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface hover:bg-surface-container-highest transition-colors">
                 <span className="material-symbols-outlined text-[18px]">calendar_month</span>
                 <span className="font-label-md text-label-md">{dateRange}</span>
               </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface text-secondary hover:text-on-surface hover:border-secondary transition-colors group">
+              <button type="button" className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface text-secondary hover:text-on-surface hover:border-secondary transition-colors group">
                 <span className="material-symbols-outlined text-[18px]">download</span>
                 <span className="font-label-md text-label-md">Excel</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container transition-colors">
+              <button type="button" className="flex items-center gap-2 px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container transition-colors">
                 <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                 <span className="font-label-md text-label-md font-bold">Export PDF</span>
               </button>
@@ -160,6 +160,7 @@ export function Reports() {
               <div className="space-y-2">
                 {templates.map((template) => (
                   <button
+                    type="button"
                     key={template.id}
                     className="w-full flex items-center justify-between p-3 rounded bg-background border border-outline-variant hover:border-primary/50 hover:bg-surface-container-lowest transition-all group text-left"
                   >
