@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { MOCK_REPORT_TEMPLATES } from '../mocks';
 
 export function Reports() {
@@ -31,19 +32,28 @@ export function Reports() {
           />
         </div>
         <div className="flex items-center gap-1 ml-auto">
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <NavLink
+            to="/notifications"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80"
+          >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
-          </button>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80"
+          >
             <span className="material-symbols-outlined text-[20px]">settings</span>
-          </button>
+          </NavLink>
           <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined text-[20px]">help</span>
           </button>
           <div className="h-8 w-px bg-outline-variant mx-2"></div>
-          <button className="w-8 h-8 rounded-full bg-tertiary-container overflow-hidden border border-outline-variant ml-1 cursor-pointer active:opacity-80 transition-opacity">
+          <NavLink
+            to="/profile"
+            className="w-8 h-8 rounded-full bg-tertiary-container overflow-hidden border border-outline-variant ml-1 cursor-pointer active:opacity-80 transition-opacity"
+          >
             <span className="material-symbols-outlined text-on-tertiary-container icon-fill text-lg">person</span>
-          </button>
+          </NavLink>
         </div>
       </header>
 

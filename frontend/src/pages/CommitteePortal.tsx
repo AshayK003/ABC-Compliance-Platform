@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 export function CommitteePortal() {
   const [loading, setLoading] = useState(true);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   if (loading) {
     return (
@@ -44,36 +53,58 @@ export function CommitteePortal() {
           </div>
         </div>
         <div className="flex-1 flex flex-col gap-1 px-3">
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
+          <NavLink
+            to="/"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+          >
             <span className="material-symbols-outlined text-[20px]">dashboard</span>
             <span>Dashboard</span>
-          </a>
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-primary font-bold bg-secondary-container/10 hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
+          </NavLink>
+          <NavLink
+            to="/inspections"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-primary font-bold bg-secondary-container/10 hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+          >
             <span className="material-symbols-outlined text-[20px] icon-fill">gavel</span>
             <span>Compliance Risk</span>
-          </a>
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
+          </NavLink>
+          <NavLink
+            to="/reports"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            end
+          >
             <span className="material-symbols-outlined text-[20px]">history_edu</span>
             <span>Audit Logs</span>
-          </a>
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+          >
             <span className="material-symbols-outlined text-[20px]">security</span>
             <span>Entity Monitor</span>
-          </a>
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
+          </NavLink>
+          <NavLink
+            to="/reports"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+          >
             <span className="material-symbols-outlined text-[20px]">analytics</span>
             <span>Reports</span>
-          </a>
+          </NavLink>
         </div>
         <div className="px-3 pt-4 border-t border-outline-variant/30 flex flex-col gap-1">
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
-            <span className="material-symbols-outlined text-[20px]">contact_support</span>
-            <span>Support</span>
-          </a>
-          <a className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold" href="#">
-            <span className="material-symbols-outlined text-[20px]">logout</span>
+          <NavLink
+            to="/settings"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+          >
+            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <span>Settings</span>
+          </NavLink>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out font-label-bold text-label-bold w-full text-left"
+          >
+            <span className="material-symbols-outlined">logout</span>
             <span>Sign Out</span>
-          </a>
+          </button>
         </div>
       </nav>
 
@@ -87,11 +118,25 @@ export function CommitteePortal() {
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
               <input className="bg-background border border-outline-variant rounded-DEFAULT pl-9 pr-4 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-64 placeholder:text-on-surface-variant/50" placeholder="Search repository..." type="text" />
             </div>
-            <button className="w-8 h-8 rounded-DEFAULT hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors relative">
+            <NavLink
+              to="/notifications"
+              className="w-8 h-8 rounded-DEFAULT hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors relative"
+            >
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
-            </button>
-            <span className="material-symbols-outlined text-on-surface-variant text-[24px]">person</span>
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className="w-8 h-8 rounded-DEFAULT hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors"
+            >
+              <span className="material-symbols-outlined">settings</span>
+            </NavLink>
+            <NavLink
+              to="/profile"
+              className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center hover:bg-primary-container/80 transition-colors"
+            >
+              <span className="material-symbols-outlined text-on-primary-container">person</span>
+            </NavLink>
           </div>
         </div>
 
