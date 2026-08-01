@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import type { Centre } from '../types';
 
 interface CentreFormModalProps {
-  centre: Centre | null;
-  onClose: () => void;
-  onSubmit: (data: { name: string; code: string; district: string; state: string; capacity?: number }) => Promise<void>;
+  readonly centre: Centre | null;
+  readonly onClose: () => void;
+  readonly onSubmit: (data: { name: string; code: string; district: string; state: string; capacity?: number }) => Promise<void>;
 }
 
 export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalProps) {
@@ -57,7 +57,11 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
     }
   };
 
-  const submitText = submitting ? 'Saving...' : (centre ? 'Update' : 'Create');
+  const submitText = submitting ? 'Saving...' : getSubmitText();
+
+  function getSubmitText(): string {
+    return centre ? 'Update' : 'Create';
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

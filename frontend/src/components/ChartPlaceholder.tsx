@@ -1,7 +1,7 @@
 interface ChartPlaceholderProps {
-  className?: string;
-  height?: string;
-  children?: React.ReactNode;
+  readonly className?: string;
+  readonly height?: string;
+  readonly children?: React.ReactNode;
 }
 
 export function ChartPlaceholder({ className = '', height = '300px', children }: ChartPlaceholderProps) {

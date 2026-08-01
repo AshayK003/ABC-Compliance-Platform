@@ -73,10 +73,10 @@ export function Inspections() {
             <span className="text-[11px] font-label-md text-on-surface-variant">Online & Synced</span>
           </div>
           <div className="flex items-center gap-2 border-l border-outline-variant pl-4 ml-2">
-            <button className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
+            <button type="button" className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
               <span className="material-symbols-outlined">notifications</span>
             </button>
-            <button className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
+            <button type="button" className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
               <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
@@ -90,10 +90,10 @@ export function Inspections() {
             <p className="font-body-sm text-body-sm text-on-surface-variant">Manage and execute compliance inspections for ABC centres.</p>
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+            <button type="button" className="px-4 py-2 border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-highest transition-colors flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">filter_list</span> Filter
             </button>
-            <button className="px-4 py-2 border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+            <button type="button" className="px-4 py-2 border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-highest transition-colors flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">calendar_month</span> Month View
             </button>
           </div>
@@ -105,8 +105,8 @@ export function Inspections() {
             <div className="p-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
               <h3 className="font-label-bold text-label-bold uppercase text-on-surface-variant tracking-wider">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
               <div className="flex gap-1">
-                <button className="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
-                <button className="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span className="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                <button type="button" className="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                <button type="button" className="p-1 rounded hover:bg-secondary-container text-on-surface-variant"><span className="material-symbols-outlined text-[18px]">chevron_right</span></button>
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4 space-y-3">
@@ -212,7 +212,10 @@ export function Inspections() {
                   </div>
                 </div>
                 <div className="mt-6 pt-4 border-t border-outline-variant">
-                  <button className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-label-bold rounded transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                  <button
+                  type="button"
+                  className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-label-bold rounded transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(249,115,22,0.2)]"
+                >
                     <span className="material-symbols-outlined icon-fill">play_circle</span> START INSPECTION
                   </button>
                   <p className="text-[10px] text-center text-on-surface-variant mt-2">Entering inspection mode will lock device location.</p>

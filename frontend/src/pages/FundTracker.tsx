@@ -47,12 +47,19 @@ export function FundTracker() {
       const allocs = allocationData as Array<{ id: string; grant_id: string; centre_id: string; amount: number; allocated_at: string }>;
       const exps = expenseData as Array<{ allocation_id: string; category: string; amount: number; bill_ref?: string; expense_at: string }>;
 
+      // Helper to get status from grant
+      const getGrantStatus = (status: string): FundDisbursement['status'] => {
+        if (status === 'approved') return 'Approved';
+        if (status === 'pending') return 'Processing';
+        return 'Flagged';
+      };
+
       setDisbursements(grants.map(g => ({
         date: g.financial_year,
         centre: 'AWBI Central',
         amount: g.amount,
         purpose: g.purpose,
-        status: (g.status === 'approved' ? 'Approved' : g.status === 'pending' ? 'Processing' : 'Flagged') as FundDisbursement['status'],
+        status: getGrantStatus(g.status),
       })));
       setAllocations(allocs.map(a => ({
         date: (a.allocated_at ?? '').slice(0, 10),
@@ -88,9 +95,7 @@ export function FundTracker() {
 }
 
 function getAllocationStatusStyle(status: FundDisbursement['status']): { bg: string; icon?: string } {
-  if (status === 'Approved') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
-  if (status === 'Processing') return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
-  return { bg: 'bg-error/20 text-error', icon: 'error' };
+  return getDisbursementStatusStyle(status);
 }
 
 function getExpenseStatusStyle(status: ExpenseRecord['status']): { bg: string; icon?: string } {
@@ -158,7 +163,7 @@ const formatCurrency = (amount: number) => {
               <h1 className="font-headline-md text-headline-md text-on-surface">Financial Monitoring Dashboard</h1>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">ABC Program Funds Allocation & Disbursement Tracking</p>
             </div>
-            <button className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors">
+            <button type="button" className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors">
               <span className="material-symbols-outlined text-[18px]">add</span>
               New Fund Request
             </button>

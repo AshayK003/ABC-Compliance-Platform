@@ -1,8 +1,8 @@
 export interface StatCardProps {
-  label: string;
-  value: string;
-  trend?: string;
-  trendColor?: 'primary' | 'error' | 'secondary' | 'tertiary';
+  readonly label: string;
+  readonly value: string;
+  readonly trend?: string;
+  readonly trendColor?: 'primary' | 'error' | 'secondary' | 'tertiary';
 }
 
 function getTrendIcon(trend: string): string {

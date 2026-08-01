@@ -2,12 +2,12 @@ FROM python:3.11-alpine AS builder
 
 WORKDIR /app
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir --only-binary :all: .
+RUN pip install --no-cache-dir --only-binary :all: --ignore-scripts .
 
 COPY src/ src/
 COPY migrations/ migrations/
 COPY alembic.ini .
-RUN pip install --no-cache-dir --only-binary :all: .
+RUN pip install --no-cache-dir --only-binary :all: --ignore-scripts .
 
 FROM python:3.11-alpine
 
@@ -17,6 +17,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/migrations /app/migrations
 COPY --from=builder /app/alembic.ini /app/alembic.ini
+
+# Create non-root user
+RUN adduser -D -u 1000 appuser
+USER appuser
 
 ENV PORT=8080
 EXPOSE 8080

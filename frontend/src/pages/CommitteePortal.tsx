@@ -151,7 +151,10 @@ export function CommitteePortal() {
                   <span className="material-symbols-outlined text-primary text-[20px]">how_to_vote</span>
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Decision Log</h2>
                 </div>
-                <button className="text-primary hover:text-primary-fixed font-label-bold text-label-bold flex items-center gap-1 transition-colors">
+                <button
+                type="button"
+                className="text-primary hover:text-primary-fixed font-label-bold text-label-bold flex items-center gap-1 transition-colors"
+              >
                   View All <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               </div>

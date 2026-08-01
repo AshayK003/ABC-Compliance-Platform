@@ -38,6 +38,19 @@ export function Centres() {
     }
   };
 
+  const getStatusBadge = (status: Centre['status']) => {
+    const styles = {
+      active: 'bg-primary-container/10 text-primary border border-primary/20',
+      inactive: 'bg-error/10 text-error border border-error/20',
+      suspended: 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase ${styles[status] || styles.suspended}`}>
+        {status}
+      </span>
+    );
+  };
+
   const filteredCentres = centres.filter(centre => {
     const matchesSearch = centre.name.toLowerCase().includes(search.toLowerCase()) ||
       centre.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -145,11 +158,7 @@ export function Centres() {
                   key: 'status',
                   header: 'Status',
                   align: 'center',
-                  render: (c: Centre) => (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase ${c.status === 'active' ? 'bg-primary-container/10 text-primary border border-primary/20' : c.status === 'inactive' ? 'bg-error/10 text-error border border-error/20' : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'}`}>
-                      {c.status}
-                    </span>
-                  ),
+                  render: (c: Centre) => getStatusBadge(c.status),
                 },
                 {
                   key: 'complianceScore',

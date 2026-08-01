@@ -30,7 +30,7 @@ jobs:
       - name: Run pip-audit
         run: |
           pip install --only-binary :all: --ignore-scripts pip-audit
-          pip-audit
+          pip-audit --desc
 
   frontend:
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd frontend
-          npm ci
+          npm ci --ignore-scripts
 
       - name: Run lint
         run: |
@@ -67,4 +67,4 @@ jobs:
       - name: Run npm audit
         run: |
           cd frontend
-          npm audit --audit-level=high
+          npm audit --audit-level=high --ignore-scripts

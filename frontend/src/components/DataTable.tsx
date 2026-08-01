@@ -11,37 +11,37 @@ function getSortArrow(
 }
 
 interface Column<T> {
-  key: string;
-  header: string;
-  render?: (item: T) => React.ReactNode;
-  align?: 'left' | 'center' | 'right';
-  width?: string;
-  sortable?: boolean;
-  filterable?: boolean;
-  filterOptions?: Array<{ value: string; label: string }>;
+  readonly key: string;
+  readonly header: string;
+  readonly render?: (item: T) => React.ReactNode;
+  readonly align?: 'left' | 'center' | 'right';
+  readonly width?: string;
+  readonly sortable?: boolean;
+  readonly filterable?: boolean;
+  readonly filterOptions?: readonly { readonly value: string; readonly label: string }[];
 }
 
 interface DataTableProps<T> {
-  data: T[];
-  columns: Column<T>[];
-  emptyMessage?: string;
-  onRowClick?: (item: T) => void;
-  className?: string;
-  enablePagination?: boolean;
-  pageSize?: number;
-  enableSorting?: boolean;
-  enableFiltering?: boolean;
-  enableExport?: boolean;
-  exportFilename?: string;
-  onFilterChange?: (filters: Record<string, string>) => void;
-  onSortChange?: (sort: { key: string; direction: 'asc' | 'desc' } | null) => void;
+  readonly data: readonly T[];
+  readonly columns: readonly Column<T>[];
+  readonly emptyMessage?: string;
+  readonly onRowClick?: (item: T) => void;
+  readonly className?: string;
+  readonly enablePagination?: boolean;
+  readonly pageSize?: number;
+  readonly enableSorting?: boolean;
+  readonly enableFiltering?: boolean;
+  readonly enableExport?: boolean;
+  readonly exportFilename?: string;
+  readonly onFilterChange?: (filters: Record<string, string>) => void;
+  readonly onSortChange?: (sort: { key: string; direction: 'asc' | 'desc' } | null) => void;
 }
 
 function getFilterElement(col: Column<any>, filters: Record<string, string>, onFilterChange: (key: string, value: string) => void) {
   if (col.filterOptions && col.filterOptions.length > 0) {
     return (
       <select
-        value={filters[col.key] || ''}
+        value={filters[col.key] ?? ''}
         onChange={e => onFilterChange(col.key, e.target.value)}
         className="w-full bg-background border border-outline-variant rounded px-3 py-1.5 text-on-surface font-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer"
       >
@@ -57,7 +57,7 @@ function getFilterElement(col: Column<any>, filters: Record<string, string>, onF
     <input
       type="text"
       placeholder={'Filter ' + col.header + '...'}
-      value={filters[col.key] || ''}
+      value={filters[col.key] ?? ''}
       onChange={e => onFilterChange(col.key, e.target.value)}
       className="w-full bg-background border border-outline-variant rounded px-3 py-1.5 text-on-surface font-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none placeholder:text-outline"
     />
@@ -70,8 +70,8 @@ function FilterRow({
   columns 
 }: { 
   filters: Record<string, string>; 
-  onFilterChange: (key: string, value: string) => void; 
-  columns: Column<any>[]; 
+  readonly onFilterChange: (key: string, value: string) => void; 
+  readonly columns: readonly Column<any>[]; 
 }) {
   const filterableColumns = columns.filter(col => col.filterable);
   if (filterableColumns.length === 0) return null;
@@ -102,29 +102,29 @@ function Toolbar({
   hasActiveFilters,
   columns,
 }: {
-  enableFiltering: boolean;
-  enableExport: boolean;
-  exportFilename: string;
-  globalFilter: string;
-  setGlobalFilter: (value: string) => void;
-  setFilters: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
-  filteredAndSortedData: any[];
-  hasActiveFilters: boolean;
-  columns: any[];
+  readonly enableFiltering: boolean;
+  readonly enableExport: boolean;
+  readonly exportFilename: string;
+  readonly globalFilter: string;
+  readonly setGlobalFilter: (value: string) => void;
+  readonly setFilters: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  readonly setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+  readonly filteredAndSortedData: readonly any[];
+  readonly hasActiveFilters: boolean;
+  readonly columns: readonly any[];
 }) {
   if (!enableFiltering && !enableExport) return null;
 
   const handleExport = () => {
-    const csvContent = [
-      columns.map(c => c.header).join(','),
-      filteredAndSortedData.map(row =>
-        columns.map(col => {
-          const value = (row as Record<string, unknown>)[col.key];
-          return '"' + String(value ?? '').replace(/"/g, '""') + '"';
-        }).join(',')
-      ),
-    ].join('\n');
+      const csvContent = [
+        columns.map(c => c.header).join(','),
+        filteredAndSortedData.map(row =>
+          columns.map(col => {
+            const value = (row as Record<string, unknown>)[col.key];
+            return '"' + String(value ?? '').replaceAll('"', '""') + '"';
+          }).join(',')
+        ),
+      ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -153,16 +153,16 @@ function Toolbar({
           />
         </div>
         {hasActiveFilters && (
-                          <button
-                            type="button"
-                            onClick={handleClearFilters}
-                            className="px-3 py-2 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant font-label-sm hover:bg-surface-variant transition-colors flex items-center gap-1"
-                            disabled={!hasActiveFilters}
-                          >
-                    <span className="material-symbols-outlined w-4 h-4">filter_list</span>
-                    Clear Filters
-                  </button>
-                )}
+                                  <button
+                                    type="button"
+                                    onClick={handleClearFilters}
+                                    className="px-3 py-2 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant font-label-sm hover:bg-surface-variant transition-colors flex items-center gap-1"
+                                    disabled={!hasActiveFilters}
+                                  >
+                            <span className="material-symbols-outlined w-4 h-4">filter_list</span>
+                            <span>Clear Filters</span>
+                          </button>
+                        )}
       </div>
       <div className="flex items-center gap-2">
               <button
@@ -185,11 +185,11 @@ function Pagination({
   pageSize, 
   filteredAndSortedData,
 }: {
-  currentPage: number;
-  setCurrentPage: (page: number | ((prev: number) => number)) => void;
-  totalPages: number;
-  pageSize: number;
-  filteredAndSortedData: any[];
+  readonly currentPage: number;
+  readonly setCurrentPage: (page: number | ((prev: number) => number)) => void;
+  readonly totalPages: number;
+  readonly pageSize: number;
+  readonly filteredAndSortedData: readonly any[];
 }) {
   if (totalPages <= 1) return null;
 
@@ -308,20 +308,20 @@ export function DataTable<T>({
     });
 
     if (sortConfig) {
-          result.sort((a, b) => {
-            const aVal = (a as Record<string, unknown>)[sortConfig.key];
-            const bVal = (b as Record<string, unknown>)[sortConfig.key];
-            if (aVal === bVal) return 0;
-            const direction = sortConfig.direction === 'asc' ? 1 : -1;
-            if (typeof aVal === 'string' && typeof bVal === 'string') {
-              return aVal.localeCompare(bVal) * direction;
+              result.sort((a, b) => {
+                const aVal = (a as Record<string, unknown>)[sortConfig.key];
+                const bVal = (b as Record<string, unknown>)[sortConfig.key];
+                if (aVal === bVal) return 0;
+                const direction = sortConfig.direction === 'asc' ? 1 : -1;
+                if (typeof aVal === 'string' && typeof bVal === 'string') {
+                  return aVal.localeCompare(bVal) * direction;
+                }
+                if (typeof aVal === 'number' && typeof bVal === 'number') {
+                  return (aVal - bVal) * direction;
+                }
+                return String(aVal ?? '').localeCompare(String(bVal ?? '')) * direction;
+              });
             }
-            if (typeof aVal === 'number' && typeof bVal === 'number') {
-              return (aVal - bVal) * direction;
-            }
-            return String(aVal).localeCompare(String(bVal)) * direction;
-          });
-        }
 
     return result;
   }, [data, filters, globalFilter, sortConfig]);
@@ -351,24 +351,50 @@ export function DataTable<T>({
 
   const totalPages = Math.ceil(filteredAndSortedData.length / pageSize);
 
-  const hasActiveFilters = (Object.values(filters).some(v => v) || globalFilter) ? true : false;
+  const hasActiveFilters = Object.values(filters).some(v => v) || globalFilter ? true : false;
 
-  // Early return for empty data without filters
-  if (!data.length && !hasActiveFilters) {
-    return (
-      <div className={'overflow-x-auto flex-1 ' + className}>
-        <div className="flex flex-col items-center justify-center h-full p-8">
-          <span className="material-symbols-outlined w-12 h-12 text-on-surface-variant/50 mb-4">search</span>
-          <h3 className="font-headline-sm text-on-surface mb-1">{emptyMessage}</h3>
-          <p className="font-body-sm text-on-surface-variant">Try adjusting your filters or search terms</p>
-        </div>
-      </div>
+    const tbodyContent = paginatedData.length > 0 ? (
+      paginatedData.map((item, index) => (
+        <tr
+          key={index}
+          className={'hover:bg-surface-container-highest/50 transition-colors ' + (onRowClick ? 'cursor-pointer' : '')}
+          onClick={() => onRowClick && onRowClick(item)}
+        >
+          {columns.map((col) => (
+            <td
+              key={col.key}
+              className={'p-table-cell-padding ' + (col.align ? 'text-' + col.align : '')}
+              style={col.width ? { width: col.width, minWidth: col.width } : undefined}
+            >
+              {col.render ? col.render(item as T) : String((item as Record<string, unknown>)[col.key] ?? '')}
+            </td>
+          ))}
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan={columns.length} className="p-table-cell-padding text-center text-on-surface-variant py-12">
+          {hasActiveFilters ? 'No results match your filters' : 'No data available'}
+        </td>
+      </tr>
     );
-  }
 
-  return (
-    <div className={'flex flex-col h-full ' + className}>
-      <Toolbar
+    // Early return for empty data without filters
+    if (!data.length && !hasActiveFilters) {
+      return (
+        <div className={'overflow-x-auto flex-1 ' + className}>
+          <div className="flex flex-col items-center justify-center h-full p-8">
+            <span className="material-symbols-outlined w-12 h-12 text-on-surface-variant/50 mb-4">search</span>
+            <h3 className="font-headline-sm text-on-surface mb-1">{emptyMessage}</h3>
+            <p className="font-body-sm text-on-surface-variant">Try adjusting your filters or search terms</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={'flex flex-col h-full ' + className}>
+        <Toolbar
               enableFiltering={enableFiltering}
               enableExport={enableExport}
               exportFilename={exportFilename}
@@ -411,31 +437,7 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="font-body-sm text-body-sm text-on-surface divide-y divide-outline-variant">
-            {paginatedData.length > 0 ? (
-              paginatedData.map((item, index) => (
-                <tr
-                  key={index}
-                  className={'hover:bg-surface-container-highest/50 transition-colors ' + (onRowClick ? 'cursor-pointer' : '')}
-                  onClick={() => onRowClick && onRowClick(item)}
-                >
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={'p-table-cell-padding ' + (col.align ? 'text-' + col.align : '')}
-                      style={col.width ? { width: col.width, minWidth: col.width } : undefined}
-                    >
-                      {col.render ? col.render(item as T) : String((item as Record<string, unknown>)[col.key] ?? '')}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={columns.length} className="p-table-cell-padding text-center text-on-surface-variant py-12">
-                  {hasActiveFilters ? 'No results match your filters' : 'No data available'}
-                </td>
-              </tr>
-            )}
+            {tbodyContent}
           </tbody>
         </table>
       </div>

@@ -1,7 +1,7 @@
 export interface InspectionCardProps {
-  centreName: string;
-  scheduledAt: string;
-  status: 'Scheduled' | 'Completed' | 'Overdue';
+  readonly centreName: string;
+  readonly scheduledAt: string;
+  readonly status: 'Scheduled' | 'Completed' | 'Overdue';
 }
 
 export function InspectionCard({ centreName, scheduledAt, status }: InspectionCardProps) {
