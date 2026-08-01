@@ -1,7 +1,7 @@
 FROM python:3.11-alpine AS builder
 
 WORKDIR /app
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml ./
 RUN pip install --no-cache-dir --only-binary :all: .
 
 COPY src/ src/
