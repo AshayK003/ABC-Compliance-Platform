@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -29,7 +29,7 @@ class Centre(Base):
     state: Mapped[str] = mapped_column(String(100), index=True)
     capacity: Mapped[int] = mapped_column(default=0)
     status: Mapped[str] = mapped_column(String(20), default="active")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     staff: Mapped[list[Staff]] = relationship(back_populates="centre", cascade="all, delete-orphan")
     dogs: Mapped[list[Dog]] = relationship(back_populates="centre", cascade="all, delete-orphan")
@@ -81,7 +81,7 @@ class Surgery(Base):
     surgery_type: Mapped[str] = mapped_column(String(100))
     weight: Mapped[float | None] = mapped_column(default=None)
     complications: Mapped[str | None] = mapped_column(Text, default=None)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
     synced_at: Mapped[datetime | None] = mapped_column(default=None)
     audit_hash: Mapped[str | None] = mapped_column(String(64), default=None)
 
@@ -125,7 +125,7 @@ class Allocation(Base):
     grant_id: Mapped[str] = mapped_column(ForeignKey("grants.id"), index=True)
     centre_id: Mapped[str] = mapped_column(ForeignKey("centres.id"), index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
-    allocated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    allocated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class Expense(Base):
@@ -151,7 +151,7 @@ class AuditEvent(Base):
     entity_id: Mapped[str] = mapped_column(String(36), index=True)
     action: Mapped[str] = mapped_column(String(50))
     actor_id: Mapped[str] = mapped_column(String(36))
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
 
 
 # ─── Complaint (Public) ───────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ class Complaint(Base):
     status: Mapped[str] = mapped_column(String(20), default="open")
     sla_deadline: Mapped[datetime | None] = mapped_column(default=None)
     resolution: Mapped[str | None] = mapped_column(Text, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 # ─── Offline Sync Queue ───────────────────────────────────────────────────────
@@ -188,6 +188,6 @@ class SyncQueue(Base):
         String(20), default="pending", index=True
     )  # pending, synced, failed
     retry_count: Mapped[int] = mapped_column(default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     synced_at: Mapped[datetime | None] = mapped_column(default=None)
     error: Mapped[str | None] = mapped_column(Text, default=None)

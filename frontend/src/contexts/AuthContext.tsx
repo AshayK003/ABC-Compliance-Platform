@@ -3,93 +3,141 @@ import type { TokenPayload } from '../types';
 
 interface AuthContextType {
   user: TokenPayload | null;
-  token: string | null;
   login: (credentials: { phone: string; password: string }) => Promise<void>;
   register: (data: { name: string; phone: string; password: string; role: string; centreId?: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+let accessToken: string | null = null;
+
+function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  headers.set('Content-Type', 'application/json');
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    credentials: 'include', // Include cookies for refresh token
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<TokenPayload | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Check auth status on load
+    fetchWithAuth<TokenPayload>('/auth/me')
+      .then((userData) => {
+        setUser(userData);
+      })
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const login = async (credentials: { phone: string; password: string }) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/login`, {
+    const data = await fetchWithAuth<{ access_token: string }>('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
+    setAccessToken(data.access_token);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Login failed');
-    }
-
-    const data = await response.json();
-    const userData: TokenPayload = { user_id: data.user_id, role: data.role };
-    const accessToken = data.access_token;
-
-    localStorage.setItem('auth_token', accessToken);
-    localStorage.setItem('auth_user', JSON.stringify(userData));
-    setToken(accessToken);
+    // Fetch user after login
+    const userData = await fetchWithAuth<TokenPayload>('/auth/me');
     setUser(userData);
   };
 
   const register = async (data: { name: string; phone: string; password: string; role: string; centreId?: string }) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/register`, {
+    const res = await fetchWithAuth<{ access_token: string }>('/auth/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: data.name,
         phone: data.phone,
         password: data.password,
         role: data.role,
-        centre_id: data.centreId,
+        centre_id: data.centreId || null,
       }),
     });
+    setAccessToken(res.access_token);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Registration failed');
-    }
-
-    // After successful registration, log in
-    await login({ phone: data.phone, password: data.password });
+    // Fetch user after registration
+    const userData = await fetchWithAuth<TokenPayload>('/auth/me');
+    setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    setToken(null);
-    setUser(null);
+  const refresh = async () => {
+    const data = await fetchWithAuth<{ access_token: string }>('/auth/refresh', {
+      method: 'POST',
+    });
+    setAccessToken(data.access_token);
+
+    // Fetch user after refresh
+    const userData = await fetchWithAuth<TokenPayload>('/auth/me');
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    try {
+      await fetchWithAuth('/auth/logout', {
+        method: 'POST',
+      });
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      await fetchWithAuth('/auth/me', {
+        method: 'DELETE',
+      });
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         login,
         register,
         logout,
+        refresh,
+        deleteAccount,
         loading,
-        isAuthenticated: !!token && !!user,
+        isAuthenticated: !!user,
       }}
     >
       {children}

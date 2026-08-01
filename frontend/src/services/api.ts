@@ -3,14 +3,14 @@ import type { Centre, Dog, Surgery, Inspection, Grant, Allocation, Expense, Comp
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('auth_token');
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
-  };
-
-  const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    credentials: 'include', // Include cookies for authentication
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
@@ -39,6 +39,9 @@ export const api = {
     }),
 
   getMe: () => request<{ user_id: string; role: string }>('/auth/me'),
+  refresh: () => request<{ access_token: string; token_type: string; user_id: string; role: string }>('/auth/refresh', { method: 'POST' }),
+  logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
+  deleteAccount: () => request<{ message: string }>('/auth/me', { method: 'DELETE' }),
 
   // Centres
   getCentres: () => request<Centre[]>('/centres'),

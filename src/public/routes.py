@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -100,6 +100,10 @@ class SyncEnqueue(BaseModel):
     idempotency_key: str
 
 
+class MarkFailedRequest(BaseModel):
+    error: str
+
+
 @sync_router.post("/enqueue", status_code=status.HTTP_200_OK)
 async def enqueue_sync(
     body: SyncEnqueue,
@@ -171,7 +175,7 @@ async def mark_synced(
         raise HTTPException(status_code=404, detail="Sync item not found")
 
     item.status = "synced"
-    item.synced_at = datetime.utcnow()
+    item.synced_at = datetime.now(UTC)
     await db.commit()
     return item
 
@@ -179,7 +183,7 @@ async def mark_synced(
 @sync_router.post("/mark-failed/{sync_id}")
 async def mark_failed(
     sync_id: str,
-    body: dict,
+    body: MarkFailedRequest,
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
@@ -189,7 +193,7 @@ async def mark_failed(
         raise HTTPException(status_code=404, detail="Sync item not found")
 
     item.status = "failed"
-    item.error = body.get("error", "Unknown error")
+    item.error = body.error
     item.retry_count += 1
     await db.commit()
     return item

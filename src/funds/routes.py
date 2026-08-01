@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -76,7 +76,7 @@ async def create_allocation(
 ):
     allocation = Allocation(
         **body.model_dump(),
-        allocated_at=datetime.utcnow(),
+        allocated_at=datetime.now(UTC),
     )
     db.add(allocation)
     await db.commit()
@@ -136,7 +136,7 @@ async def create_expense(
 ):
     expense = Expense(
         **body.model_dump(exclude_none=True),
-        expense_at=body.expense_at or datetime.utcnow().date(),
+        expense_at=body.expense_at or datetime.now(UTC).date(),
     )
     db.add(expense)
     await db.commit()
