@@ -1,5 +1,15 @@
 import { useState, useMemo, useCallback } from 'react';
 
+function getSortArrow(
+  sortConfig: { key: string; direction: 'asc' | 'desc' } | null,
+  columnKey: string
+) {
+  if (sortConfig && sortConfig.key === columnKey) {
+    return sortConfig.direction === 'asc' ? '▲' : '▼';
+  }
+  return <span className="text-on-surface-variant/50">▼</span>;
+}
+
 interface Column<T> {
   key: string;
   header: string;
@@ -111,7 +121,7 @@ function Toolbar({
       filteredAndSortedData.map(row =>
         columns.map(col => {
           const value = (row as Record<string, unknown>)[col.key];
-          return '"' + String(value ?? '').replace(/\"/g, '""') + '"';
+          return '"' + String(value ?? '').replace(/"/g, '""') + '"';
         }).join(',')
       ),
     ].join('\n');
@@ -143,25 +153,27 @@ function Toolbar({
           />
         </div>
         {hasActiveFilters && (
-                  <button
-                    onClick={handleClearFilters}
-                    className="px-3 py-2 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant font-label-sm hover:bg-surface-variant transition-colors flex items-center gap-1"
-                    disabled={!hasActiveFilters}
-                  >
-            <span className="material-symbols-outlined w-4 h-4">filter_list</span>
-            Clear Filters
-          </button>
-        )}
+                          <button
+                            type="button"
+                            onClick={handleClearFilters}
+                            className="px-3 py-2 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant font-label-sm hover:bg-surface-variant transition-colors flex items-center gap-1"
+                            disabled={!hasActiveFilters}
+                          >
+                    <span className="material-symbols-outlined w-4 h-4">filter_list</span>
+                    Clear Filters
+                  </button>
+                )}
       </div>
       <div className="flex items-center gap-2">
-        <button
-          onClick={handleExport}
-          className="px-3 py-2 bg-primary text-on-primary font-label-bold text-label-sm rounded transition-colors hover:bg-primary/90 flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined w-4 h-4">download</span>
-          Export CSV
-        </button>
-      </div>
+              <button
+                type="button"
+                onClick={handleExport}
+                className="px-3 py-2 bg-primary text-on-primary font-label-bold text-label-sm rounded transition-colors hover:bg-primary/90 flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined w-4 h-4">download</span>
+                Export CSV
+              </button>
+            </div>
     </div>
   );
 }
@@ -188,21 +200,23 @@ function Pagination({
       </div>
       <div className="flex items-center gap-1">
         <button
-          onClick={() => setCurrentPage(1)}
-          disabled={currentPage === 1}
-          className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="First page"
-        >
-          <span className="material-symbols-outlined w-5 h-5">first_page</span>
-        </button>
-        <button
-          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Previous page"
-        >
-          <span className="material-symbols-outlined w-5 h-5">chevron_left</span>
-        </button>
+                  type="button"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="First page"
+                >
+                  <span className="material-symbols-outlined w-5 h-5">first_page</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Previous page"
+                >
+                  <span className="material-symbols-outlined w-5 h-5">chevron_left</span>
+                </button>
         <div className="flex items-center gap-1 mx-2">
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
             let pageNum;
@@ -231,21 +245,23 @@ function Pagination({
           })}
         </div>
         <button
-          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages}
-          className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Next page"
-        >
-          <span className="material-symbols-outlined w-5 h-5">chevron_right</span>
-        </button>
-        <button
-          onClick={() => setCurrentPage(totalPages)}
-          disabled={currentPage === totalPages}
-          className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Last page"
-        >
-          <span className="material-symbols-outlined w-5 h-5">last_page</span>
-        </button>
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Next page"
+                >
+                  <span className="material-symbols-outlined w-5 h-5">chevron_right</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Last page"
+                >
+                  <span className="material-symbols-outlined w-5 h-5">last_page</span>
+                </button>
       </div>
     </div>
   );
@@ -380,18 +396,15 @@ export function DataTable<T>({
                   <div className="flex items-center gap-1">
                     {col.header}
                     {enableSorting && col.sortable && (
-                      <button
-                        onClick={() => handleSort(col.key)}
-                        className="p-1 rounded hover:bg-surface-variant transition-colors"
-                        aria-label={'Sort by ' + col.header}
-                      >
-                        {sortConfig && sortConfig.key === col.key ? (
-                          sortConfig.direction === 'asc' ? '▲' : '▼'
-                        ) : (
-                          <span className="text-on-surface-variant/50">▼</span>
-                        )}
-                      </button>
-                    )}
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSort(col.key)}
+                                            className="p-1 rounded hover:bg-surface-variant transition-colors"
+                                            aria-label={'Sort by ' + col.header}
+                                          >
+                                            {getSortArrow(sortConfig, col.key)}
+                                          </button>
+                                        )}
                   </div>
                 </th>
               ))}

@@ -1,13 +1,13 @@
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
-COPY pyproject.toml .
-RUN pip install --no-cache-dir .
+COPY pyproject.toml uv.lock ./
+RUN pip install --no-cache-dir --only-binary :all: --ignore-scripts .
 
 COPY src/ src/
 COPY migrations/ migrations/
 COPY alembic.ini .
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir --only-binary :all: --ignore-scripts .
 
 FROM python:3.11-slim
 

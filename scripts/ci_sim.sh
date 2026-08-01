@@ -17,7 +17,7 @@ docker run --rm --network abc-compliance-platform_default \
   -e RUN_INTEGRATION="${RUN_INTEGRATION:-1}" \
   -e PYTHONPATH="/app" \
   abc-backend:test sh -c "
-    pip install -q pytest pytest-asyncio httpx 2>&1 | tail -1
+    pip install -q --only-binary :all: --ignore-scripts pytest pytest-asyncio httpx 2>&1 | tail -1
     cd /app
     echo '=== ALEMBIC UPGRADE ==='
     python -m alembic upgrade head 2>&1 | tail -3

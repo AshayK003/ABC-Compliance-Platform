@@ -48,7 +48,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
         code: formData.code,
         district: formData.district,
         state: formData.state,
-        capacity: formData.capacity ? parseInt(formData.capacity, 10) : undefined,
+        capacity: formData.capacity ? Number.parseInt(formData.capacity, 10) : undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save centre');
@@ -56,6 +56,8 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
       setSubmitting(false);
     }
   };
+
+  const submitText = submitting ? 'Saving...' : (centre ? 'Update' : 'Create');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -65,6 +67,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
             {centre ? 'Edit Centre' : 'Add New Centre'}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-full transition-colors"
             disabled={submitting}
@@ -176,7 +179,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
               disabled={submitting}
               className="flex-1 bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded transition-colors hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Saving...' : (centre ? 'Update' : 'Create')}
+              {submitText}
             </button>
           </div>
         </form>
