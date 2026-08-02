@@ -36,10 +36,14 @@ export function ThemeProvider({ children }: { readonly children: React.ReactNode
     return theme;
   }, [theme]);
 
-  // Apply theme on mount and when resolvedTheme changes
+  // Apply theme synchronously during render to avoid flash
+  // Also apply on mount for SSR hydration mismatch prevention
   useEffect(() => {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
+
+  // Synchronous apply during render (avoids flash on first load)
+  applyTheme(resolvedTheme);
 
   // Listen for system theme changes
   useEffect(() => {
