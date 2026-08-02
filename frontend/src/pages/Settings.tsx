@@ -24,8 +24,11 @@ const DEFAULT_SETTINGS: UserSettings = {
 
 export function Settings() {
   const { user } = useAuth();
-    const { setTheme } = useTheme();
-  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  const { theme: contextTheme, setTheme } = useTheme();
+  const [settings, setSettings] = useState<UserSettings>({
+    ...DEFAULT_SETTINGS,
+    theme: contextTheme, // Sync with actual theme from context
+  });
   const [saved, setSaved] = useState(false);
 
   // Sync theme from context to settings
@@ -189,7 +192,7 @@ export function Settings() {
                 <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Theme</label>
                 <div className="flex gap-4">
                   {['light', 'dark', 'system'].map((theme) => (
-                    <label key={theme} className={`flex-1 flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    <label key={theme} className={`flex-1 flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                       settings.theme === theme
                         ? 'border-primary bg-primary-container/20'
                         : 'border-outline-variant hover:border-primary/50'
