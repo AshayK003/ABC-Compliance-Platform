@@ -78,7 +78,7 @@ class TestListCentres:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/centres")
+        resp = await client.get("/api/v1/centres")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -92,7 +92,7 @@ class TestListCentres:
         mr.all.return_value = [(c1, 2)]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/centres")
+        resp = await client.get("/api/v1/centres")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -106,7 +106,7 @@ class TestCreateCentre:
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 
-        resp = await client.post("/centres", json={
+        resp = await client.post("/api/v1/centres", json={
             "name": "New Centre",
             "code": "NCR-02",
             "district": "Noida",
@@ -124,7 +124,7 @@ class TestCreateCentre:
             return TokenPayload(user_id="vet-1", role="vet")
         app.dependency_overrides[get_current_user] = _vet
 
-        resp = await client.post("/centres", json={
+        resp = await client.post("/api/v1/centres", json={
             "name": "New Centre",
             "code": "NCR-02",
             "district": "Noida",
@@ -140,7 +140,7 @@ class TestGetCentre:
         mr.scalar_one_or_none.return_value = _make_centre()
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/centres/centre-1")
+        resp = await client.get("/api/v1/centres/centre-1")
         assert resp.status_code == 200
         assert resp.json()["id"] == "centre-1"
 
@@ -150,7 +150,7 @@ class TestGetCentre:
         mr.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/centres/nonexistent")
+        resp = await client.get("/api/v1/centres/nonexistent")
         assert resp.status_code == 404
 
 
@@ -161,7 +161,7 @@ class TestListCentreStaff:
         mr.scalars.return_value.all.return_value = [_make_staff()]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/centres/centre-1/staff")
+        resp = await client.get("/api/v1/centres/centre-1/staff")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -173,6 +173,6 @@ class TestListCentreStaff:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/centres/centre-1/staff")
+        resp = await client.get("/api/v1/centres/centre-1/staff")
         assert resp.status_code == 200
         assert resp.json() == []

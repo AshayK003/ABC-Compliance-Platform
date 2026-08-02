@@ -90,11 +90,10 @@ class TestRegister:
                 obj.id = "staff-new-id"
         mock_session.refresh = AsyncMock(side_effect=mock_refresh)
 
-        resp = await client.post("/auth/register", json={
+        resp = await client.post("/api/v1/auth/register", json={
             "name": "Dr. Test",
             "phone": "9876543210",
             "password": "secret123",
-            "role": "vet",
         })
         assert resp.status_code == 201
         assert "access_token" in resp.cookies
@@ -106,7 +105,7 @@ class TestRegister:
     async def test_rejects_duplicate_phone(self, client: AsyncClient, mock_session: AsyncMock):
         _setup_mock_execute(mock_session, _make_staff())
 
-        resp = await client.post("/auth/register", json={
+        resp = await client.post("/api/v1/auth/register", json={
             "name": "Dr. Test",
             "phone": "9876543210",
             "password": "secret123",
@@ -116,7 +115,7 @@ class TestRegister:
 
     @pytest.mark.asyncio
     async def test_validates_payload(self, client: AsyncClient):
-        resp = await client.post("/auth/register", json={"phone": "123"})
+        resp = await client.post("/api/v1/auth/register", json={"phone": "123"})
         assert resp.status_code == 422
 
 
@@ -125,7 +124,7 @@ class TestLogin:
     async def test_login_returns_token(self, client: AsyncClient, mock_session: AsyncMock):
         _setup_mock_execute(mock_session, _make_staff())
 
-        resp = await client.post("/auth/login", json={
+        resp = await client.post("/api/v1/auth/login", json={
             "phone": "9876543210",
             "password": "secret123",
         })
@@ -141,7 +140,7 @@ class TestLogin:
     async def test_login_wrong_password(self, client: AsyncClient, mock_session: AsyncMock):
         _setup_mock_execute(mock_session, _make_staff(password_hash=hash_password("other")))
 
-        resp = await client.post("/auth/login", json={
+        resp = await client.post("/api/v1/auth/login", json={
             "phone": "9876543210",
             "password": "secret123",
         })
@@ -151,7 +150,7 @@ class TestLogin:
     async def test_login_unknown_phone(self, client: AsyncClient, mock_session: AsyncMock):
         _setup_mock_execute(mock_session, None)
 
-        resp = await client.post("/auth/login", json={
+        resp = await client.post("/api/v1/auth/login", json={
             "phone": "0000000000",
             "password": "whatever",
         })
@@ -161,7 +160,7 @@ class TestLogin:
 class TestMe:
     @pytest.mark.asyncio
     async def test_returns_current_user(self, client: AsyncClient):
-        resp = await client.get("/auth/me")
+        resp = await client.get("/api/v1/auth/me")
         assert resp.status_code == 200
         assert resp.json() == {"user_id": "test-user-id", "role": "admin"}
 
@@ -177,7 +176,7 @@ class TestRefresh:
 
         client.cookies.set("refresh_token", create_refresh_token("staff-1"))
 
-        resp = await client.post("/auth/refresh")
+        resp = await client.post("/api/v1/auth/refresh")
         assert resp.status_code == 200
         body = resp.json()
         assert body["token_type"] == "bearer"
@@ -190,7 +189,7 @@ class TestRefresh:
 class TestLogout:
     @pytest.mark.asyncio
     async def test_logout_clears_cookies(self, client: AsyncClient):
-        resp = await client.post("/auth/logout")
+        resp = await client.post("/api/v1/auth/logout")
         assert resp.status_code == 200
         assert resp.json() == {"message": "Logged out"}
         # Cookies should be cleared (deleted) via Set-Cookie headers
@@ -211,7 +210,7 @@ class TestDeleteAccount:
         mock_session.delete = AsyncMock()
         mock_session.commit = AsyncMock()
 
-        resp = await client.delete("/auth/me")
+        resp = await client.delete("/api/v1/auth/me")
         assert resp.status_code == 200
         assert resp.json() == {"message": "Account deleted"}
         # Cookies should be cleared (deleted) via Set-Cookie headers

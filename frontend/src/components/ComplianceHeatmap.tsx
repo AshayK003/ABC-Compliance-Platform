@@ -38,12 +38,14 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
     fetchHeatmap();
   }, []);
 
-  // Register India map before the chart can render with map: 'india'
+  // Load India map dynamically
   useEffect(() => {
     const registerMap = async () => {
       try {
-        const response = await fetch('/india-states.geojson');
-        const geoJson = await response.json();
+        // Dynamic import to avoid bundling 21.9 MB GeoJSON
+        const geoJsonModule = await import('../assets/india-states.geojson?raw');
+        const geoJson = JSON.parse(geoJsonModule.default);
+        
         // GeoJSON uses NAME_1 as the state name property; ECharts matches regions by `name`
         const normalized = {
           ...geoJson,

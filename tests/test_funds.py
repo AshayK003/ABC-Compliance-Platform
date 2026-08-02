@@ -93,7 +93,7 @@ class TestGrantCRUD:
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 
-        resp = await client.post("/grants", json={
+        resp = await client.post("/api/v1/grants", json={
             "awbi_ref": "AWBI/2026/001",
             "amount": 1000000.0,
             "purpose": "ABC Programme",
@@ -110,7 +110,7 @@ class TestGrantCRUD:
         mr.scalars.return_value.all.return_value = [g1]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/grants")
+        resp = await client.get("/api/v1/grants")
         assert resp.status_code == 200
         assert len(resp.json()) == 1
 
@@ -121,7 +121,7 @@ class TestAllocationCRUD:
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 
-        resp = await client.post("/allocations", json={
+        resp = await client.post("/api/v1/allocations", json={
             "grant_id": "grant-1",
             "centre_id": "centre-1",
             "amount": 500000.0,
@@ -135,7 +135,7 @@ class TestAllocationCRUD:
         mr.scalars.return_value.all.return_value = [a1]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/allocations")
+        resp = await client.get("/api/v1/allocations")
         assert resp.status_code == 200
         assert len(resp.json()) == 1
 
@@ -145,7 +145,7 @@ class TestAllocationCRUD:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/allocations?grant_id=grant-1")
+        resp = await client.get("/api/v1/allocations?grant_id=grant-1")
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
@@ -154,7 +154,7 @@ class TestAllocationCRUD:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/allocations?centre_id=centre-1")
+        resp = await client.get("/api/v1/allocations?centre_id=centre-1")
         assert resp.status_code == 200
 
 
@@ -176,7 +176,7 @@ class TestExpenseCRUD:
         # Return different mocks for the two queries
         mock_session.execute.side_effect = [mr_alloc, mr_sum]
 
-        resp = await client.post("/expenses", json={
+        resp = await client.post("/api/v1/expenses", json={
             "allocation_id": "alloc-1",
             "category": "medicine",
             "amount": 25000.0,
@@ -191,7 +191,7 @@ class TestExpenseCRUD:
         mr.scalars.return_value.all.return_value = [e1]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/expenses")
+        resp = await client.get("/api/v1/expenses")
         assert resp.status_code == 200
         assert len(resp.json()) == 1
 
@@ -201,5 +201,5 @@ class TestExpenseCRUD:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/expenses?allocation_id=alloc-1")
+        resp = await client.get("/api/v1/expenses?allocation_id=alloc-1")
         assert resp.status_code == 200

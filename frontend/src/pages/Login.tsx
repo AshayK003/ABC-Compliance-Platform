@@ -9,7 +9,7 @@ export function Login() {
   const [formData, setFormData] = useState({ phone: '', password: '' });
   const [error, setError] = useState('');
   const [isRegister, setIsRegister] = useState(false);
-  const [registerData, setRegisterData] = useState({ name: '', phone: '', password: '', role: 'vet', centreId: '' });
+  const [registerData, setRegisterData] = useState({ name: '', phone: '', password: '', centreId: '' });
 
   const from = (location.state as { from?: Location })?.from?.pathname || '/';
 
@@ -175,22 +175,6 @@ export function Login() {
               placeholder="Enter password"
               required
             />
-          </div>
-
-          <div>
-            <label htmlFor="role" className="block font-label-md text-label-md text-on-surface-variant mb-1.5">
-              Role
-            </label>
-            <select
-              id="role"
-              value={registerData.role}
-              onChange={(e) => setRegisterData({ ...registerData, role: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer"
-            >
-              <option value="vet">Veterinarian</option>
-              <option value="surgeon">Surgeon</option>
-              <option value="admin">Administrator</option>
-            </select>
           </div>
 
           <div>

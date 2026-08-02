@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,8 +29,14 @@ async def create_inspection(
 ):
     inspection = Inspection(**body.model_dump())
     db.add(inspection)
-    await db.commit()
-    await db.refresh(inspection)
+    try:
+        await db.commit()
+        await db.refresh(inspection)
+    except Exception as e:
+        await db.rollback()
+        if "foreign" in str(e).lower() or "centre" in str(e).lower() or "inspector" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid centre_id or inspector_id")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Inspection creation failed")
     return inspection
 
 

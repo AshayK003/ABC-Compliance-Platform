@@ -31,6 +31,7 @@
 | **Reports** | Compliance reporting and export (templates ready for Excel/PDF), including a state-level compliance heatmap |
 | **Committee Portal** | Governance oversight views for AWBI/state board officials |
 | **Sync Queue** | Offline-first mutation queue with idempotency keys for unreliable connectivity |
+| **Dashboard** | Real-time compliance trends, surgery/fund/centre metrics computed from live data |
 
 ---
 
@@ -82,10 +83,10 @@
 
 **Stack:**
 - **Backend:** FastAPI 0.115+ (Python 3.11), SQLAlchemy 2.0 async, asyncpg, Pydantic v2, slowapi (rate limiting), JWT (HS256)
-- **Frontend:** React 18, TypeScript 5, Vite 5, TanStack Table patterns (custom DataTable), CSS Modules
+- **Frontend:** React 18, TypeScript 5, Vite 5, React.lazy code-splitting, TanStack Table patterns (custom DataTable), CSS Modules
 - **Database:** PostgreSQL 16 (Docker), SQLAlchemy 2.0 ORM with async session
 - **Cache:** Redis 7 (Docker) — in-memory fallback when unavailable
-- **Auth:** JWT access (15 min) + refresh (7 days) tokens in `httpOnly` `SameSite=Strict` cookies
+- **Auth:** JWT access (15 min) + refresh (7 days) tokens in `httpOnly` `SameSite=Strict` cookies with auto-refresh on 401
 - **Deployment:** Docker Compose (local), HF Spaces + Vercel (prod)
 
 ---

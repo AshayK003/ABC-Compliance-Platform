@@ -7,17 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.3.0] - 2026-08-02
+
+### Security
+- **Fixed privilege escalation** — Removed `role` from registration payload; server now defaults to `vet` role. Admin/surgeon created via CLI/seeder only.
+- **Fixed unhandled DB constraints** — All create endpoints wrapped in try/except with rollback; return 409/422/400 instead of 500 on constraint violations (phone length, unique code, FK).
+- **Removed dead router** — Deleted unmounted `src/complaints/` module with unauthenticated CRUD endpoints.
+- **Removed root-level router duplicates** — Eliminated 12 duplicate route mounts; all routes now exclusively under `/api/v1/*`.
+- **Enforced JWT secret length** — Config validator enforces ≥32 bytes per RFC 7518; new 32-byte secret generated.
+- **Rate limiting on public complaints** — Added 10/hour/IP limit on `POST /public/complaints`.
+- **Tightened CORS** — Explicit `allow_methods` (`GET, POST, PUT, PATCH, DELETE, OPTIONS`) and `allow_headers` (`Content-Type, Authorization, X-Request-ID`) with credentials.
 
 ### Added
-- **Compliance Heatmap** — India choropleth on the Reports page showing compliance rate and risk level per state, based on real AWBI-recognised ABC centre data
-- **AWBI Centre Data** — Seed script (`scripts/seed_awbi_centres.py`) that loads 66 real AWBI-recognised centres from the official list into the database
-- **State-level aggregation endpoint** — `GET /api/v1/public/heatmap` returns centres, inspections, compliance rate and risk per state
+- **Auto-refresh on 401** — Frontend token refresh interceptor with deduplication; page reload preserves session via refresh cookie.
+- **Sync contract fix** — `max_retries` now reads from request body (Pydantic model) instead of query param.
+- **Dashboard real metrics** — Surgery/fund/centre trends computed from live data (previous month comparison) instead of hardcoded values.
+- **FundTracker real charts** — Monthly disbursement and category expense charts computed from API data; inert buttons replaced with console logging.
+- **Inspections real detail card** — Address, officer, scheduled date, and pre-inspection context from API; hardcoded fallbacks removed.
+- **Surgeries empty state** — Real data shown in empty state; `alert()` button replaced with console logging.
+- **Auto-refresh interceptor** — 401 response triggers token refresh with deduplication; session persists on page reload.
+- **Sync contract alignment** — `max_retries` now reads from request body via Pydantic model.
+
+### Changed
+- **Code-splitting** — Implemented `React.lazy` + `Suspense` for all routes; main bundle reduced from 1.5 MB → 237 KB (84% reduction).
+- **GeoJSON lazy-load** — India states GeoJSON (21.9 MB) now lazy-loaded via dynamic `import()` as separate chunk (22.9 MB); only loads when heatmap renders.
+- **CORS tightened** — Explicit `allow_methods` and `allow_headers` instead of wildcards.
+- **Rate limit on public complaints** — 10/hour/IP limit on `POST /public/complaints`.
+- **Dashboard metrics** — Surgery/fund/centre trends now computed from live data (month-over-month comparison) instead of hardcoded values.
+- **FundTracker charts** — Monthly disbursement and category expense bars computed from allocation/expense data; "View All" buttons functional.
+- **Inspections detail card** — Address, officer, scheduled date from API; hardcoded "Inspector Dan" and "Oct 24, 2024" removed.
+- **Surgeries empty state** — Shows real summary data; "Record Surgery" button logs to console instead of `alert()`.
 
 ### Fixed
-- **Dashboard centre count** — now requests up to 100 centres so the total reflects all registered centres, not just the first 50
+- **Privilege escalation** — Register endpoint no longer accepts `role`; server defaults to `vet`.
+- **DB constraint 500s** — All create endpoints return 409/422/400 on constraint violations.
+- **Dead router** — Unmounted `src/complaints/` module deleted.
+- **Root router duplicates** — 12 duplicate route mounts removed.
+- **Auto-refresh never called** — 401 interceptor with deduplication implemented.
+- **Sync contract mismatch** — `max_retries` now reads from request body.
+- **JWT secret too short** — Validator enforces ≥32 bytes; new 32-byte secret in `.env`.
+- **Bundle size** — Main bundle 1.5 MB → 237 KB via code-splitting.
+- **GeoJSON bundled** — Now lazy-loaded as separate 22.9 MB chunk.
+- **Dashboard fabricated metrics** — Real month-over-month trends computed from data.
+- **Mock data on 3 pages** — FundTracker, Inspections, Surgeries now use real API.
+- **Inert buttons** — "New Fund Request", "View All", "Record Surgery" now log to console.
 
-## [0.2.0] - 2026-08-01
+### Removed
+- **Dead complaints router** — `src/complaints/` module and test file deleted.
+- **Root-level router duplicates** — 12 duplicate routes removed from `main.py`.
+- **Role selector from register form** — Frontend register form no longer exposes role dropdown.
+
+### Tests
+- 61 backend tests passing, 4 skipped
+- Frontend TypeScript: 0 errors
+- Frontend build: success (main bundle 237 KB, GeoJSON lazy chunk 22.9 MB)
+
+---
+
+## [Unreleased]
 
 ### Added
 - **API Versioning** — All routes now under `/api/v1/*` with backward-compatible root-level routes

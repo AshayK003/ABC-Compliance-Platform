@@ -80,7 +80,7 @@ class TestCreateSurgery:
             "weight": 15.5,
         }
 
-        resp = await client.post("/surgeries", json=payload)
+        resp = await client.post("/api/v1/surgeries", json=payload)
 
         assert resp.status_code == 201
         mock_session.add.assert_called_once()
@@ -88,7 +88,7 @@ class TestCreateSurgery:
 
     @pytest.mark.asyncio
     async def test_requires_surgery_type(self, client: AsyncClient):
-        resp = await client.post("/surgeries", json={"dog_id": "dog-1"})
+        resp = await client.post("/api/v1/surgeries", json={"dog_id": "dog-1"})
         assert resp.status_code == 422
 
 
@@ -99,7 +99,7 @@ class TestListSurgeries:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/surgeries")
+        resp = await client.get("/api/v1/surgeries")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -110,7 +110,7 @@ class TestListSurgeries:
         mock_result.scalars.return_value.all.return_value = [s1]
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/surgeries")
+        resp = await client.get("/api/v1/surgeries")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -122,7 +122,7 @@ class TestListSurgeries:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/surgeries?centre_id=centre-1")
+        resp = await client.get("/api/v1/surgeries?centre_id=centre-1")
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
@@ -131,7 +131,7 @@ class TestListSurgeries:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/surgeries?dog_id=dog-1")
+        resp = await client.get("/api/v1/surgeries?dog_id=dog-1")
         assert resp.status_code == 200
 
 
@@ -143,7 +143,7 @@ class TestGetSurgery:
         mock_result.scalar_one_or_none.return_value = s1
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/surgeries/surg-1")
+        resp = await client.get("/api/v1/surgeries/surg-1")
         assert resp.status_code == 200
         assert resp.json()["id"] == "surg-1"
 
@@ -153,5 +153,5 @@ class TestGetSurgery:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/surgeries/nonexistent")
+        resp = await client.get("/api/v1/surgeries/nonexistent")
         assert resp.status_code == 404

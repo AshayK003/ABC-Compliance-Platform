@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,8 +29,14 @@ async def create_dog(
 ):
     dog = Dog(**body.model_dump())
     db.add(dog)
-    await db.commit()
-    await db.refresh(dog)
+    try:
+        await db.commit()
+        await db.refresh(dog)
+    except Exception as e:
+        await db.rollback()
+        if "foreign" in str(e).lower() or "centre" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid centre_id")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dog creation failed")
     return dog
 
 

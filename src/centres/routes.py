@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -86,8 +86,14 @@ async def create_centre(
 ):
     centre = Centre(**body.model_dump())
     db.add(centre)
-    await db.commit()
-    await db.refresh(centre)
+    try:
+        await db.commit()
+        await db.refresh(centre)
+    except Exception as e:
+        await db.rollback()
+        if "code" in str(e).lower() or "unique" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Centre code already exists")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Centre creation failed")
     # Invalidate cache
     invalidate_pattern("centres:")
     return centre

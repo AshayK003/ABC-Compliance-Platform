@@ -16,7 +16,7 @@ import { setAuthToken as setAuthTokenInspections } from './inspections';
 import { setAuthToken as setAuthTokenFunds } from './funds';
 import { setAuthToken as setAuthTokenPublic } from './public';
 
-export function setAuthToken(token: string | null) {
+export function setAuthToken(token: string | null | undefined) {
   setAuthTokenAuth(token);
   setAuthTokenCentres(token);
   setAuthTokenSurgeries(token);

@@ -3,6 +3,7 @@ import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
 import { api } from '../services/api';
+import type { Centre } from '../types';
 
 type FundDisbursement = {
   date: string;
@@ -28,6 +29,8 @@ export function FundTracker() {
   const [allocations, setAllocations] = useState<FundDisbursement[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [fundStats, setFundStats] = useState({ total: 0, disbursed: 0, pending: 0, available: 0 });
+  const [monthlyDisbursements, setMonthlyDisbursements] = useState<Array<{ month: string; amount: number }>>([]);
+  const [categoryExpenses, setCategoryExpenses] = useState<Array<{ category: string; amount: number }>>([]);
 
   useEffect(() => {
     loadData();
@@ -41,7 +44,7 @@ export function FundTracker() {
         api.getExpenses().catch(() => [] as never[]),
         api.getCentres().catch(() => [] as never[]),
       ]);
-      const centreMap = new Map((centreData as Array<{ id: string; name: string }>).map(c => [c.id, c.name]));
+      const centreMap = new Map((centreData as Centre[]).map(c => [c.id, c.name]));
 
       const grants = grantData as Array<{ awbi_ref: string; amount: number; purpose: string; financial_year: string; status: string }>;
       const allocs = allocationData as Array<{ id: string; grant_id: string; centre_id: string; amount: number; allocated_at: string }>;
@@ -81,6 +84,27 @@ export function FundTracker() {
       const disbursed = grants.filter(g => g.status === 'approved' || g.status === 'disbursed').reduce((s, g) => s + g.amount, 0);
       const pending = grants.filter(g => g.status === 'pending').reduce((s, g) => s + g.amount, 0);
       setFundStats({ total, disbursed, pending, available: total - disbursed });
+
+      // Compute monthly disbursements from allocations
+      const monthMap = new Map<string, number>();
+      allocs.forEach(a => {
+        const month = (a.allocated_at ?? '').slice(0, 7); // YYYY-MM
+        if (month) {
+          monthMap.set(month, (monthMap.get(month) ?? 0) + a.amount);
+        }
+      });
+      const sortedMonths = Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b));
+      setMonthlyDisbursements(sortedMonths.map(([month, amount]) => ({ month, amount })));
+
+      // Compute category expenses
+      const catMap = new Map<string, number>();
+      exps.forEach(e => {
+        catMap.set(e.category, (catMap.get(e.category) ?? 0) + e.amount);
+      });
+      setCategoryExpenses(Array.from(catMap.entries())
+        .sort(([, a], [, b]) => b - a)
+        .map(([category, amount]) => ({ category, amount })));
+
     } catch (error) {
       console.error('Failed to load fund data:', error);
     } finally {
@@ -163,7 +187,11 @@ const formatCurrency = (amount: number) => {
               <h1 className="font-headline-md text-headline-md text-on-surface">Financial Monitoring Dashboard</h1>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">ABC Program Funds Allocation & Disbursement Tracking</p>
             </div>
-            <button type="button" className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors">
+            <button
+                          type="button"
+                          className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors"
+                          onClick={() => console.log('New Fund Request clicked - implement modal')}
+                        >
               <span className="material-symbols-outlined text-[18px]">add</span>
               New Fund Request
             </button>
@@ -204,7 +232,7 @@ const formatCurrency = (amount: number) => {
                 <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                   <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                     <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Disbursements</h2>
-                    <button type="button" className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
+                    <button type="button" className="text-primary font-label-bold text-label-bold hover:underline" onClick={() => console.log('View All clicked')}>View All</button>
                   </div>
                   <div className="overflow-x-auto flex-1">
                     <DataTable
@@ -240,30 +268,35 @@ const formatCurrency = (amount: number) => {
                     <ChartPlaceholder height="250px">
                       <div className="flex-1 min-h-[250px] relative w-full flex items-end justify-between gap-2 pt-8">
                         <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] text-on-surface-variant font-code-sm">
-                          <span>100M</span><span>75M</span><span>50M</span><span>25M</span><span>0</span>
+                          {(() => {
+                            const maxAmount = monthlyDisbursements.length > 0 
+                              ? Math.max(...monthlyDisbursements.map(m => m.amount)) 
+                              : 10000000;
+                            const steps = 5;
+                            return Array.from({ length: steps + 1 }, (_, i) => (
+                              <span key={i}>
+                                {Math.round(maxAmount * (1 - i / steps) / 100000) + 'L'}
+                              </span>
+                            ));
+                          })()}
                         </div>
                         <div className="ml-10 flex-1 flex items-end justify-between gap-1 h-full pb-6 relative border-b border-outline-variant">
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative chart-bar" style={{ '--target-h': '30%' } as React.CSSProperties}>
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹30M</span>
-                          </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[45%] rounded-t group relative chart-bar" style={{ '--target-h': '45%' } as React.CSSProperties}>
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹45M</span>
-                          </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[25%] rounded-t group relative chart-bar" style={{ '--target-h': '25%' } as React.CSSProperties}>
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹25M</span>
-                          </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[60%] rounded-t group relative chart-bar" style={{ '--target-h': '60%' } as React.CSSProperties}>
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹60M</span>
-                          </div>
-                          <div className="w-full bg-secondary-container hover:bg-primary transition-colors h-[80%] rounded-t group relative chart-bar" style={{ '--target-h': '80%' } as React.CSSProperties}>
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹80M</span>
-                          </div>
-                          <div className="w-full bg-primary h-[45%] rounded-t group relative chart-bar" style={{ '--target-h': '45%' } as React.CSSProperties}>
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹45M</span>
-                          </div>
+                          {monthlyDisbursements.length > 0 ? monthlyDisbursements.map((m, i) => {
+                            const maxAmount = Math.max(...monthlyDisbursements.map(d => d.amount), 1);
+                            const heightPct = Math.max((m.amount / maxAmount) * 100, 5);
+                            return (
+                              <div key={i} className="w-full bg-secondary-container hover:bg-primary transition-colors rounded-t group relative chart-bar" style={{ '--target-h': `${heightPct}%` } as React.CSSProperties}>
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹{(m.amount / 100000).toFixed(1)}L</span>
+                              </div>
+                            );
+                          }) : Array.from({ length: 6 }, (_, i) => (
+                            <div key={i} className="w-full bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative chart-bar" style={{ '--target-h': `${(i+1)*15}%` } as React.CSSProperties}>
+                              <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹{(i+1)*2}M</span>
+                            </div>
+                          ))}
                         </div>
                         <div className="absolute bottom-0 left-10 right-0 flex justify-between text-[10px] text-on-surface-variant font-code-sm pt-2">
-                          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                          {monthlyDisbursements.map(m => <span key={m.month}>{m.month.slice(5)}</span>)}
                         </div>
                       </div>
                     </ChartPlaceholder>
@@ -272,7 +305,7 @@ const formatCurrency = (amount: number) => {
                   <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Disbursements</h2>
-                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
+                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline" onClick={() => console.log('View All clicked')}>View All</button>
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
@@ -308,7 +341,15 @@ const formatCurrency = (amount: number) => {
                     <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Expense Categories</h2>
                     <ChartPlaceholder height="250px">
                       <div className="flex-1 flex items-end gap-2 pt-8">
-                        {['medicine', 'equipment', 'infrastructure', 'training', 'maintenance'].map((cat, i) => (
+                        {categoryExpenses.length > 0 ? categoryExpenses.slice(0, 5).map((c, i) => {
+                          const maxAmount = Math.max(...categoryExpenses.map(d => d.amount), 1);
+                          const heightPct = Math.max((c.amount / maxAmount) * 100, 5);
+                          return (
+                            <div key={i} className="flex-1 bg-secondary-container hover:bg-primary transition-colors rounded-t group relative chart-bar" style={{ '--target-h': `${heightPct}%` } as React.CSSProperties}>
+                              <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹{(c.amount / 100000).toFixed(1)}L</span>
+                            </div>
+                          );
+                        }) : ['medicine', 'equipment', 'infrastructure', 'training', 'maintenance'].map((cat, i) => (
                           <div key={cat} className="flex-1 bg-secondary-container hover:bg-primary transition-colors h-[30%] rounded-t group relative chart-bar" style={{ '--target-h': `${(i+1)*15}%` } as React.CSSProperties}>
                             <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-[10px] hidden group-hover:block z-10">₹{(i+1)*2}M</span>
                           </div>
@@ -320,7 +361,7 @@ const formatCurrency = (amount: number) => {
                   <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Expenses</h2>
-                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline">View All</button>
+                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline" onClick={() => console.log('View All clicked')}>View All</button>
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable

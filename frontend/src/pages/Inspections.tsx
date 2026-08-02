@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import type { Centre } from '../types';
 
 type InspectionRecord = {
   id: string;
@@ -9,6 +10,8 @@ type InspectionRecord = {
   priority: string;
   type: string;
   scheduledAt: string;
+  centreAddress?: string;
+  inspectorId?: string;
 };
 
 export function Inspections() {
@@ -26,18 +29,23 @@ export function Inspections() {
         api.getInspections(),
         api.getCentres().catch(() => [] as never[]),
       ]);
-      const centreMap = new Map((centreData as Array<{ id: string; name: string; code: string }>).map(c => [c.id, c]));
+      const centreMap = new Map((centreData as Centre[]).map(c => [c.id, c]));
       setRecords((inspectionData as Array<{
               id: string; centre_id: string; inspector_id: string; scheduled_at?: string; status: string;
-            }>).map(i => ({
-              id: i.id,
-              centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
-              centreCode: centreMap.get(i.centre_id)?.code ?? '—',
-              inspectorName: i.inspector_id,
-              priority: getPriorityLabel(i.status),
-              type: 'Compliance Inspection',
-              scheduledAt: i.scheduled_at ?? '',
-            })));
+            }>).map(i => {
+        const centre = centreMap.get(i.centre_id);
+        return {
+          id: i.id,
+          centreName: centre?.name ?? i.centre_id,
+          centreCode: centre?.code ?? '—',
+          centreAddress: centre ? `${centre.district}, ${centre.state}` : undefined,
+          inspectorName: i.inspector_id, // Would need staff lookup for real name
+          inspectorId: i.inspector_id,
+          priority: getPriorityLabel(i.status),
+          type: 'Compliance Inspection',
+          scheduledAt: i.scheduled_at ?? '',
+        };
+      }));
     } catch (error) {
       console.error('Failed to load inspections:', error);
     } finally {
@@ -196,7 +204,7 @@ export function Inspections() {
                     <div className="text-[11px] text-on-surface-variant mb-1">Address</div>
                     <div className="font-body-sm text-body-sm text-on-surface flex items-start gap-2">
                       <span className="material-symbols-outlined text-[16px] text-primary shrink-0 mt-0.5">location_on</span>
-                      <span>{selectedInspection?.centreCode || '42 Industrial Estate Road, Sector 5<br/>North District, 110042'}</span>
+                      <span>{selectedInspection?.centreAddress || 'Address not available'}</span>
                     </div>
                   </div>
                   <div className="h-px w-full bg-outline-variant/50"></div>
@@ -204,12 +212,12 @@ export function Inspections() {
                     <div>
                       <div className="text-[11px] text-on-surface-variant mb-1">Scheduled Date</div>
                       <div className="font-body-sm text-body-sm text-on-surface">
-                        {selectedInspection?.scheduledAt ? new Date(selectedInspection.scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' • ' + new Date(selectedInspection.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Oct 24, 2024 • 09:00 AM'}
+                        {selectedInspection?.scheduledAt ? new Date(selectedInspection.scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' • ' + new Date(selectedInspection.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Not scheduled'}
                       </div>
                     </div>
                     <div>
                       <div className="text-[11px] text-on-surface-variant mb-1">Assigned Officer</div>
-                      <div className="font-body-sm text-body-sm text-on-surface">{selectedInspection?.inspectorName || 'Inspector Dan'}</div>
+                      <div className="font-body-sm text-body-sm text-on-surface">{selectedInspection?.inspectorName || 'Not assigned'}</div>
                     </div>
                   </div>
                   <div className="h-px w-full bg-outline-variant/50"></div>
@@ -218,12 +226,12 @@ export function Inspections() {
                     <div className="bg-surface-container-lowest border border-outline-variant rounded p-3 grid grid-cols-2 gap-2">
                       <div>
                         <div className="text-[10px] text-on-surface-variant uppercase">Last Surgeries</div>
-                        <div className="font-headline-sm text-primary">142 <span className="text-[10px] text-on-surface-variant font-normal">/mo</span></div>
+                        <div className="font-headline-sm text-primary">{selectedInspection?.centreName ? 'Data from API' : '—'} <span className="text-[10px] text-on-surface-variant font-normal">/mo</span></div>
                       </div>
                       <div>
                         <div className="text-[10px] text-on-surface-variant uppercase">Previous Rating</div>
                         <div className="font-label-bold text-yellow-500 flex items-center gap-1 mt-1">
-                          <span className="material-symbols-outlined text-[14px]">warning</span> Needs Imp.
+                          <span className="material-symbols-outlined text-[14px]">warning</span> {selectedInspection ? 'From API' : '—'}
                         </div>
                       </div>
                     </div>

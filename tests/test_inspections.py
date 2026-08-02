@@ -66,7 +66,7 @@ class TestCreateInspection:
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 
-        resp = await client.post("/inspections", json={
+        resp = await client.post("/api/v1/inspections", json={
             "centre_id": "centre-1",
             "inspector_id": "staff-1",
             "scheduled_at": "2026-07-30T10:00:00",
@@ -77,7 +77,7 @@ class TestCreateInspection:
 
     @pytest.mark.asyncio
     async def test_requires_centre_and_inspector(self, client: AsyncClient):
-        resp = await client.post("/inspections", json={})
+        resp = await client.post("/api/v1/inspections", json={})
         assert resp.status_code == 422
 
 
@@ -88,7 +88,7 @@ class TestListInspections:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/inspections")
+        resp = await client.get("/api/v1/inspections")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -99,7 +99,7 @@ class TestListInspections:
         mr.scalars.return_value.all.return_value = [i1]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/inspections")
+        resp = await client.get("/api/v1/inspections")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -111,7 +111,7 @@ class TestListInspections:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/inspections?centre_id=centre-1")
+        resp = await client.get("/api/v1/inspections?centre_id=centre-1")
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
@@ -120,7 +120,7 @@ class TestListInspections:
         mr.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/inspections?status=scheduled")
+        resp = await client.get("/api/v1/inspections?status=scheduled")
         assert resp.status_code == 200
 
 
@@ -132,7 +132,7 @@ class TestGetInspection:
         mr.scalar_one_or_none.return_value = i1
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/inspections/insp-1")
+        resp = await client.get("/api/v1/inspections/insp-1")
         assert resp.status_code == 200
         assert resp.json()["id"] == "insp-1"
 
@@ -142,5 +142,5 @@ class TestGetInspection:
         mr.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/inspections/nonexistent")
+        resp = await client.get("/api/v1/inspections/nonexistent")
         assert resp.status_code == 404

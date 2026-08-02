@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,8 +31,14 @@ async def create_grant(
 ):
     grant = Grant(**body.model_dump())
     db.add(grant)
-    await db.commit()
-    await db.refresh(grant)
+    try:
+        await db.commit()
+        await db.refresh(grant)
+    except Exception as e:
+        await db.rollback()
+        if "unique" in str(e).lower() or "awbi_ref" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Grant reference already exists")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Grant creation failed")
     return grant
 
 
@@ -79,8 +85,14 @@ async def create_allocation(
         **body.model_dump(),
     )
     db.add(allocation)
-    await db.commit()
-    await db.refresh(allocation)
+    try:
+        await db.commit()
+        await db.refresh(allocation)
+    except Exception as e:
+        await db.rollback()
+        if "foreign" in str(e).lower() or "grant" in str(e).lower() or "centre" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid grant_id or centre_id")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Allocation creation failed")
     return allocation
 
 
@@ -171,8 +183,14 @@ async def create_expense(
             **body.model_dump(exclude_none=True),
         )
     db.add(expense)
-    await db.commit()
-    await db.refresh(expense)
+    try:
+        await db.commit()
+        await db.refresh(expense)
+    except Exception as e:
+        await db.rollback()
+        if "foreign" in str(e).lower() or "allocation" in str(e).lower() or "surgery" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid allocation_id or surgery_id")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Expense creation failed")
     return expense
 
 

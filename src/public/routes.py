@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
 from src.models.base import Centre, Complaint, Inspection, SyncQueue
+
+# Rate limiter for public endpoints
+public_limiter = Limiter(key_func=get_remote_address)
 
 # ─── Public Complaints Router ───
 public_router = APIRouter(prefix="/public", tags=["public"])
@@ -25,7 +30,9 @@ class ComplaintUpdate(BaseModel):
 
 
 @public_router.post("/complaints", status_code=status.HTTP_201_CREATED)
+@public_limiter.limit("10/hour")
 async def create_complaint(
+    request: Request,
     body: ComplaintCreate,
     db: AsyncSession = Depends(get_db),
 ):
@@ -304,14 +311,18 @@ async def mark_failed(
     return item
 
 
+class RetryFailedRequest(BaseModel):
+    max_retries: int = 3
+
+
 @sync_router.post("/retry-failed")
 async def retry_failed(
-    max_retries: int = 3,
+    body: RetryFailedRequest,
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(SyncQueue).where(SyncQueue.status == "failed", SyncQueue.retry_count < max_retries)
+        select(SyncQueue).where(SyncQueue.status == "failed", SyncQueue.retry_count < body.max_retries)
     )
     items = result.scalars().all()
     count = 0

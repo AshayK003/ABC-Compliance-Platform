@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,8 +32,14 @@ async def create_surgery(
 ):
     surgery = Surgery(**body.model_dump(exclude_none=True))
     db.add(surgery)
-    await db.commit()
-    await db.refresh(surgery)
+    try:
+        await db.commit()
+        await db.refresh(surgery)
+    except Exception as e:
+        await db.rollback()
+        if "foreign" in str(e).lower() or "dog" in str(e).lower() or "centre" in str(e).lower() or "staff" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid dog_id, centre_id, or staff_id")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Surgery creation failed")
     return surgery
 
 

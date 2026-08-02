@@ -4,8 +4,8 @@ const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/a
 
 let authToken: string | null = null;
 
-export function setAuthToken(token: string | null) {
-  authToken = token;
+export function setAuthToken(token: string | null | undefined) {
+  authToken = token ?? null;
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

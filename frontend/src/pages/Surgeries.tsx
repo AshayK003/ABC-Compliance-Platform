@@ -85,10 +85,10 @@ export function Surgeries() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-element-gap">
-          <StatCard label="Total Surgeries" value="0" trend="—" trendColor="primary" />
-          <StatCard label="Pre-op" value="0" trend="—" trendColor="primary" />
-          <StatCard label="Post-op / Recovering" value="0" trend="—" trendColor="secondary" />
-          <StatCard label="Complications" value="0" trend="—" trendColor="error" />
+          <StatCard label="Total Surgeries" value={summary.total.toLocaleString()} trend={summary.total > 0 ? '+12%' : '—'} trendColor="primary" />
+          <StatCard label="Pre-op" value={summary.preOp.toLocaleString()} trend={summary.preOp > 0 ? 'Active' : '—'} trendColor="primary" />
+          <StatCard label="Post-op / Recovering" value={summary.postOp.toLocaleString()} trend={summary.postOp > 0 ? 'Cleared' : '—'} trendColor="secondary" />
+          <StatCard label="Complications" value={summary.complications.toLocaleString()} trend={summary.complications > 0 ? 'Flagged' : '—'} trendColor="error" />
         </div>
         <div className="bg-surface-container-high border border-outline-variant rounded overflow-hidden flex-1 flex flex-col">
           <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
@@ -101,7 +101,7 @@ export function Surgeries() {
               <p className="font-body-md text-body-md text-on-surface-variant mb-6">Start by recording the first surgery at a compliant centre.</p>
               <button
                 type="button"
-                onClick={() => alert('Create surgery flow not yet implemented')}
+                onClick={() => console.log('Create surgery flow - implement modal')}
                 className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mx-auto"
               >
                 <span className="material-symbols-outlined" data-icon="add">add</span>
@@ -148,10 +148,10 @@ export function Surgeries() {
 
         {/* Summary Section (Bento Grid) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-element-gap">
-          <StatCard label="Total Surgeries" value={summary.total.toLocaleString()} trend="+12%" trendColor="primary" />
-          <StatCard label="Pre-op" value={summary.preOp.toLocaleString()} trend="Active" trendColor="primary" />
-          <StatCard label="Post-op / Recovering" value={summary.postOp.toLocaleString()} trend="Cleared" trendColor="secondary" />
-          <StatCard label="Complications" value={summary.complications.toLocaleString()} trend="Flagged" trendColor="error" />
+          <StatCard label="Total Surgeries" value={summary.total.toLocaleString()} trend={summary.total > 0 ? '+12%' : '—'} trendColor="primary" />
+          <StatCard label="Pre-op" value={summary.preOp.toLocaleString()} trend={summary.preOp > 0 ? 'Active' : '—'} trendColor="primary" />
+          <StatCard label="Post-op / Recovering" value={summary.postOp.toLocaleString()} trend={summary.postOp > 0 ? 'Cleared' : '—'} trendColor="secondary" />
+          <StatCard label="Complications" value={summary.complications.toLocaleString()} trend={summary.complications > 0 ? 'Flagged' : '—'} trendColor="error" />
         </div>
 
         {/* Detailed List/Table */}

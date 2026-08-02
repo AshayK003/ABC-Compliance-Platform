@@ -76,7 +76,7 @@ class TestCreateDog:
             "weight": 15.5,
         }
 
-        resp = await client.post("/dogs", json=payload)
+        resp = await client.post("/api/v1/dogs", json=payload)
 
         assert resp.status_code == 201
         mock_session.add.assert_called_once()
@@ -84,7 +84,7 @@ class TestCreateDog:
 
     @pytest.mark.asyncio
     async def test_requires_tag_id_and_sex(self, client: AsyncClient):
-        resp = await client.post("/dogs", json={"centre_id": "centre-1"})
+        resp = await client.post("/api/v1/dogs", json={"centre_id": "centre-1"})
         assert resp.status_code == 422
 
 
@@ -95,7 +95,7 @@ class TestListDogs:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/dogs")
+        resp = await client.get("/api/v1/dogs")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -106,7 +106,7 @@ class TestListDogs:
         mock_result.scalars.return_value.all.return_value = [d1]
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/dogs")
+        resp = await client.get("/api/v1/dogs")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -118,7 +118,7 @@ class TestListDogs:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/dogs?centre_id=centre-1")
+        resp = await client.get("/api/v1/dogs?centre_id=centre-1")
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
@@ -127,7 +127,7 @@ class TestListDogs:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/dogs?status=registered")
+        resp = await client.get("/api/v1/dogs?status=registered")
         assert resp.status_code == 200
 
 
@@ -139,7 +139,7 @@ class TestGetDog:
         mock_result.scalar_one_or_none.return_value = d1
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/dogs/dog-1")
+        resp = await client.get("/api/v1/dogs/dog-1")
         assert resp.status_code == 200
         assert resp.json()["id"] == "dog-1"
 
@@ -149,5 +149,5 @@ class TestGetDog:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
-        resp = await client.get("/dogs/nonexistent")
+        resp = await client.get("/api/v1/dogs/nonexistent")
         assert resp.status_code == 404

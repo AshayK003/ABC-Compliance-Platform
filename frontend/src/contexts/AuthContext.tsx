@@ -1,13 +1,13 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import type { TokenPayload } from '../types';
 import { setAuthToken } from '../services/api';
+import { authApi } from '../services/api/auth';
 
 interface AuthContextType {
   user: TokenPayload | null;
   login: (credentials: { phone: string; password: string }) => Promise<void>;
-  register: (data: { name: string; phone: string; password: string; role: string; centreId?: string }) => Promise<void>;
+  register: (data: { name: string; phone: string; password: string; centreId?: string }) => Promise<void>;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
@@ -15,116 +15,57 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-let accessToken: string | null = null;
-
-function setAccessToken(token: string | null) {
-  accessToken = token;
-  setAuthToken(token);
-}
-
-async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const headers = new Headers(options.headers);
-  headers.set('Content-Type', 'application/json');
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
-  }
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    credentials: 'include', // Include cookies for refresh token
-    headers,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-    throw new Error(error.detail || `HTTP ${response.status}`);
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json();
-}
-
 export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
   const [user, setUser] = useState<TokenPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check auth status on load
-    fetchWithAuth<TokenPayload>('/auth/me')
-      .then((userData) => {
-        setUser(userData);
-      })
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const fetchUser = useCallback(async () => {
+    try {
+      const userData = await authApi.getMe();
+      setUser(userData);
+    } catch {
+      setUser(null);
+    }
   }, []);
 
+  useEffect(() => {
+    // Check auth status on load
+    fetchUser().finally(() => {
+      setLoading(false);
+    });
+  }, [fetchUser]);
+
   const login = async (credentials: { phone: string; password: string }) => {
-    const data = await fetchWithAuth<{ access_token: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    setAccessToken(data.access_token);
-
-    // Fetch user after login
-    const userData = await fetchWithAuth<TokenPayload>('/auth/me');
-    setUser(userData);
+    const data = await authApi.login(credentials.phone, credentials.password);
+    setAuthToken(data.access_token);
+    await fetchUser();
   };
 
-  const register = async (data: { name: string; phone: string; password: string; role: string; centreId?: string }) => {
-    const res = await fetchWithAuth<{ access_token: string }>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: data.name,
-        phone: data.phone,
-        password: data.password,
-        role: data.role,
-        centre_id: data.centreId || null,
-      }),
+  const register = async (data: { name: string; phone: string; password: string; centreId?: string }) => {
+    const res = await authApi.register({
+      name: data.name,
+      phone: data.phone,
+      password: data.password,
+      centre_id: data.centreId,
     });
-    setAccessToken(res.access_token);
-
-    // Fetch user after registration
-    const userData = await fetchWithAuth<TokenPayload>('/auth/me');
-    setUser(userData);
-  };
-
-  const refresh = async () => {
-    const data = await fetchWithAuth<{ access_token: string }>('/auth/refresh', {
-      method: 'POST',
-    });
-    setAccessToken(data.access_token);
-
-    // Fetch user after refresh
-    const userData = await fetchWithAuth<TokenPayload>('/auth/me');
-    setUser(userData);
+    setAuthToken(res.access_token);
+    await fetchUser();
   };
 
   const logout = async () => {
     try {
-      await fetchWithAuth('/auth/logout', {
-        method: 'POST',
-      });
+      await authApi.logout();
     } finally {
-      setAccessToken(null);
+      setAuthToken(null);
       setUser(null);
     }
   };
 
   const deleteAccount = async () => {
     try {
-      await fetchWithAuth('/auth/me', {
-        method: 'DELETE',
-      });
+      await authApi.deleteAccount();
     } finally {
-      setAccessToken(null);
+      setAuthToken(null);
       setUser(null);
     }
   };
@@ -135,12 +76,11 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
       login,
       register,
       logout,
-      refresh,
       deleteAccount,
       loading,
       isAuthenticated: !!user,
     }),
-    [user, login, register, logout, refresh, deleteAccount, loading]
+    [user, login, register, logout, deleteAccount, loading]
   );
 
   return (

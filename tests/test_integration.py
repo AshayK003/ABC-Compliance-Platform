@@ -120,7 +120,7 @@ class TestSyncQueueIntegration:
     @pytest.mark.asyncio
     async def test_enqueue_and_list(self, client: AsyncClient):
         # Enqueue
-        resp = await client.post("/sync/enqueue", json={
+        resp = await client.post("/api/v1/sync/enqueue", json={
             "entity_type": "surgery",
             "entity_id": "surgery-123",
             "operation": "create",
@@ -133,7 +133,7 @@ class TestSyncQueueIntegration:
         sync_id = data["id"]
 
         # List pending
-        resp = await client.get("/sync/pending")
+        resp = await client.get("/api/v1/sync/pending")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1

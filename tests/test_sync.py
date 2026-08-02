@@ -70,7 +70,7 @@ class TestSyncQueue:
         mr.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mr
 
-        resp = await client.post("/sync/enqueue", json={
+        resp = await client.post("/api/v1/sync/enqueue", json={
             "entity_type": "surgery",
             "entity_id": "surg-1",
             "operation": "create",
@@ -94,7 +94,7 @@ class TestSyncQueue:
         mr.scalar_one_or_none.return_value = _make_sync_queue(idempotency_key="idem-dup")
         mock_session.execute.return_value = mr
 
-        resp = await client.post("/sync/enqueue", json={
+        resp = await client.post("/api/v1/sync/enqueue", json={
             "entity_type": "surgery",
             "entity_id": "surg-1",
             "operation": "create",
@@ -113,7 +113,7 @@ class TestSyncQueue:
         ]
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/sync/pending")
+        resp = await client.get("/api/v1/sync/pending")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 2
@@ -125,7 +125,7 @@ class TestSyncQueue:
         mock_session.execute.return_value = mr
         mock_session.commit = AsyncMock()
 
-        resp = await client.post("/sync/mark-synced/sync-1")
+        resp = await client.post("/api/v1/sync/mark-synced/sync-1")
         assert resp.status_code == 200
         mock_session.commit.assert_awaited_once()
 
@@ -136,7 +136,7 @@ class TestSyncQueue:
         mock_session.execute.return_value = mr
         mock_session.commit = AsyncMock()
 
-        resp = await client.post("/sync/mark-failed/sync-fail", json={"error": "timeout"})
+        resp = await client.post("/api/v1/sync/mark-failed/sync-fail", json={"error": "timeout"})
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
@@ -148,7 +148,7 @@ class TestSyncQueue:
         mock_session.execute.return_value = mr
         mock_session.commit = AsyncMock()
 
-        resp = await client.post("/sync/retry-failed", json={"max_retries": 3})
+        resp = await client.post("/api/v1/sync/retry-failed", json={"max_retries": 3})
         assert resp.status_code == 200
         assert "retried" in resp.json()
 
@@ -158,6 +158,6 @@ class TestSyncQueue:
         mr.scalar_one_or_none.return_value = _make_sync_queue(idempotency_key="idem-lookup")
         mock_session.execute.return_value = mr
 
-        resp = await client.get("/sync/status/idem-lookup")
+        resp = await client.get("/api/v1/sync/status/idem-lookup")
         assert resp.status_code == 200
         assert resp.json()["idempotency_key"] == "idem-lookup"

@@ -132,7 +132,7 @@ export interface TokenPayload {
 }
 
 export interface User {
-  id: string;
+  user_id: string;
   name: string;
   role: string;
   centre_id?: string;

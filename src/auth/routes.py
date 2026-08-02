@@ -31,7 +31,6 @@ class RegisterRequest(BaseModel):
     name: str
     phone: str
     password: str
-    role: str = "vet"
     centre_id: str | None = None
 
 
@@ -73,13 +72,22 @@ async def register(
     staff = Staff(
         name=body.name,
         phone=body.phone,
-        role=body.role,
+        role="vet",
         centre_id=(body.centre_id or None),
         password_hash=hash_password(body.password),
     )
     db.add(staff)
-    await db.commit()
-    await db.refresh(staff)
+    try:
+        await db.commit()
+        await db.refresh(staff)
+    except Exception as e:
+        await db.rollback()
+        # Check for specific constraint violations
+        if "phone" in str(e).lower() or "unique" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already registered")
+        if "length" in str(e).lower() or "varchar" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Phone number too long (max 20 characters)")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Registration failed")
 
     access_token = create_access_token(user_id=staff.id, role=staff.role)
     refresh_token = create_refresh_token(user_id=staff.id)

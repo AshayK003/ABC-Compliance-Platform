@@ -33,6 +33,9 @@ export function Dashboard() {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [totalDisbursed, setTotalDisbursed] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [surgeryTrend, setSurgeryTrend] = useState(0);
+  const [fundTrend, setFundTrend] = useState(0);
+  const [centreTrend, setCentreTrend] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
@@ -106,6 +109,43 @@ export function Dashboard() {
             status: c.status === 'open' ? 'Critical' as const : 'Warning' as const,
           })),
       );
+
+      // Compute real trends from data
+      const prevMonthStart = new Date(monthStart);
+      prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+      const prevMonthSurgeries = new Map<string, number>();
+      for (const s of surgeryData as Array<{ centre_id: string; timestamp?: string }>) {
+        const ts = s.timestamp ? new Date(s.timestamp) : null;
+        if (ts && ts >= prevMonthStart && ts < monthStart) {
+          prevMonthSurgeries.set(s.centre_id, (prevMonthSurgeries.get(s.centre_id) ?? 0) + 1);
+        }
+      }
+      const currentMonthTotal = Array.from(surgeryCounts.values()).reduce((a, b) => a + b, 0);
+      const prevMonthTotal = Array.from(prevMonthSurgeries.values()).reduce((a, b) => a + b, 0);
+      const surgeryTrend = prevMonthTotal > 0 ? Math.round(((currentMonthTotal - prevMonthTotal) / prevMonthTotal) * 100) : (currentMonthTotal > 0 ? 100 : 0);
+      setSurgeryTrend(surgeryTrend);
+
+      // Fund trend
+      const prevMonthFunds = (allocationData as Array<{ amount: number; allocated_at: string }>)
+        .filter(a => {
+          const d = new Date(a.allocated_at);
+          return d >= prevMonthStart && d < monthStart;
+        })
+        .reduce((sum, a) => sum + (a.amount ?? 0), 0);
+      const fundTrend = prevMonthFunds > 0 ? Math.round(((totalDisbursed - prevMonthFunds) / prevMonthFunds) * 100) : (totalDisbursed > 0 ? 100 : 0);
+      setFundTrend(fundTrend);
+
+      // Centre trend (new centres this month vs last)
+      const currentMonthCentres = centreData.filter(c => {
+        const d = new Date(c.created_at);
+        return d >= monthStart;
+      }).length;
+      const prevMonthCentres = centreData.filter(c => {
+        const d = new Date(c.created_at);
+        return d >= prevMonthStart && d < monthStart;
+      }).length;
+      const centreTrend = prevMonthCentres > 0 ? Math.round(((currentMonthCentres - prevMonthCentres) / prevMonthCentres) * 100) : (currentMonthCentres > 0 ? 100 : 0);
+      setCentreTrend(centreTrend);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -166,28 +206,28 @@ const topCentres = centres
             <StatCard
               label="Total ABC Centres"
               value={String(centres.length)}
-              trend="+3%"
-              trendColor="primary"
+              trend={centreTrend >= 0 ? `+${centreTrend}%` : `${centreTrend}%`}
+              trendColor={centreTrend >= 0 ? 'primary' : 'error'}
             />
             <StatCard
               label="Surgeries This Month"
               value={String(centres.reduce((sum, c) => sum + c.surgeriesThisMonth, 0))}
-              trend="+12%"
-              trendColor="primary"
+              trend={surgeryTrend >= 0 ? `+${surgeryTrend}%` : `${surgeryTrend}%`}
+              trendColor={surgeryTrend >= 0 ? 'primary' : 'error'}
             />
             <StatCard
               label="Compliance >90%"
               value={`${centres.filter(c => c.complianceScore >= 90).length}/${centres.length}`}
-              trend="-2%"
-              trendColor="error"
+              trend="—"
+              trendColor="primary"
             />
             <StatCard
               label="Funds Disbursed"
               value={totalDisbursed >= 1_0000_0000
                 ? `₹${(totalDisbursed / 1_0000_0000).toFixed(1)} Cr`
                 : `₹${(totalDisbursed / 100000).toFixed(1)} L`}
-              trend="On Track"
-              trendColor="primary"
+              trend={fundTrend >= 0 ? `+${fundTrend}%` : `${fundTrend}%`}
+              trendColor={fundTrend >= 0 ? 'primary' : 'error'}
             />
           </section>
 
@@ -198,26 +238,32 @@ const topCentres = centres
               <h3 className="font-headline-sm text-headline-sm mb-4">Surgeries per Centre — Last 30 Days</h3>
               <ChartPlaceholder height="300px">
                 <div className="flex-1 bg-surface-container-lowest border border-outline-variant/50 rounded flex items-end p-4 gap-2 min-h-[300px] w-full">
-                  {topCentres.map((centre) => {
-                    const maxSurgeries = Math.max(...topCentres.map(c => c.surgeriesThisMonth));
-                    const heightPct = Math.max(10, (centre.surgeriesThisMonth / maxSurgeries) * 90);
-                    return (
-                      <div
-                        key={centre.id}
-                        className="flex-1 bg-primary/20 hover:bg-primary/40 transition-colors rounded-t border-t border-primary relative group chart-bar"
-                        style={{ '--target-h': `${heightPct}%` } as React.CSSProperties}
-                      >
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-variant text-on-surface text-label-md px-2 py-1 rounded pointer-events-none">
-                          {centre.surgeriesThisMonth}
+                  {topCentres.length > 0 ? (
+                    topCentres.map((centre) => {
+                      const maxSurgeries = Math.max(...topCentres.map(c => c.surgeriesThisMonth));
+                      const heightPct = Math.max(10, (centre.surgeriesThisMonth / maxSurgeries) * 90);
+                      return (
+                        <div
+                          key={centre.id}
+                          className="flex-1 bg-primary/20 hover:bg-primary/40 transition-colors rounded-t border-t border-primary relative group chart-bar"
+                          style={{ '--target-h': `${heightPct}%` } as React.CSSProperties}
+                        >
+                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-variant text-on-surface text-label-md px-2 py-1 rounded pointer-events-none">
+                            {centre.surgeriesThisMonth}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
+                      <span>No surgery data for this period</span>
+                    </div>
+                  )}
                 </div>
               </ChartPlaceholder>
               <div className="flex justify-between mt-2 text-label-md text-on-surface-variant">
                 <span>Top Performing Centres</span>
-                <span>Scale: 0 - {Math.max(...topCentres.map(c => c.surgeriesThisMonth))}</span>
+                <span>Scale: 0 - {topCentres.length > 0 ? Math.max(...topCentres.map(c => c.surgeriesThisMonth)) : 0}</span>
               </div>
             </div>
 
