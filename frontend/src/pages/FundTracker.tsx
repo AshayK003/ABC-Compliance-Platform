@@ -397,6 +397,14 @@ export function FundTracker() {
           </div>
         </div>
       </main>
+      <FundRequestModal
+        isOpen={fundRequestOpen}
+        onClose={() => setFundRequestOpen(false)}
+        onSubmit={async (data) => {
+          // TODO: implement actual fund request submission
+          console.log('Submitting fund request:', data);
+        }}
+      />
     </div>
   );
 }

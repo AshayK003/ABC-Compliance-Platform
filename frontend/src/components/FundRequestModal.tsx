@@ -16,12 +16,20 @@ interface FundRequestFormData {
   financialYear: string;
 }
 
+interface FundRequestFormErrors {
+  centreId?: string;
+  grantId?: string;
+  amount?: string;
+  purpose?: string;
+  financialYear?: string;
+}
+
 export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModalProps) {
   const [centres, setCentres] = useState<Centre[]>([]);
   const [grants, setGrants] = useState<Array<{ id: string; awbi_ref: string; amount: number }>>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<FundRequestFormData>>({});
+  const [errors, setErrors] = useState<FundRequestFormErrors>({});
 
   const [formData, setFormData] = useState<FundRequestFormData>({
     centreId: '',
@@ -70,10 +78,11 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FundRequestFormData> = {};
+    const newErrors: FundRequestFormErrors = {};
     if (!formData.centreId) newErrors.centreId = 'Centre is required';
     if (!formData.grantId) newErrors.grantId = 'Grant is required';
-    if (!formData.amount || formData.amount <= 0) newErrors.amount = 'Valid amount is required';
+    const amountValue = Number(formData.amount);
+    if (!amountValue || amountValue <= 0) newErrors.amount = 'Valid amount is required';
     if (!formData.purpose.trim()) newErrors.purpose = 'Purpose is required';
     if (!formData.financialYear.trim()) newErrors.financialYear = 'Financial year is required';
     
