@@ -8,7 +8,7 @@ packages = ["src/"]
 [project]
 name = "abc-dashboard"
 version = "0.1.0"
-description = "ABC Compliance Platform — Digital compliance infrastructure for Animal Birth Control centres"
+description = "ABC Compliance Platform — Digital compliance infrastructure for Animal Birth Control centres. Licensed under AGPLv3."
 requires-python = ">=3.11"
 license = "AGPL-3.0-only"
 dependencies = [

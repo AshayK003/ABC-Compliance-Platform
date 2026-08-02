@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "license": "AGPL-3.0-only",
+  "description": "ABC Compliance Platform Frontend — Licensed under AGPLv3",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
