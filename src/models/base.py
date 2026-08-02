@@ -256,3 +256,184 @@ class SyncQueue(Base):
         DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
     )
     error: Mapped[str | None] = mapped_column(Text, default=None)
+
+
+# ─── Notification ───────────────────────────────────────────────────────────────
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    message: Mapped[str] = mapped_column(Text)
+    type: Mapped[str] = mapped_column(
+        String(20), default="info"
+    )  # info, warning, error, success
+    read: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True
+    )
+
+
+# ─── Committee & Meetings ──────────────────────────────────────────────────────
+
+
+    class Committee(Base):
+        __tablename__ = "committees"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        name: Mapped[str] = mapped_column(String(255))
+        description: Mapped[str | None] = mapped_column(Text, default=None)
+        created_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+        updated_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+
+        meetings: Mapped[list["Meeting"]] = relationship(
+            back_populates="committee", cascade=CASCADE_ALL_DELETE_ORPHAN
+        )
+        documents: Mapped[list["CommitteeDocument"]] = relationship(
+            back_populates="committee", cascade=CASCADE_ALL_DELETE_ORPHAN
+        )
+        members: Mapped[list["CommitteeMember"]] = relationship(
+            back_populates="committee", cascade=CASCADE_ALL_DELETE_ORPHAN
+        )
+
+
+    class Meeting(Base):
+        __tablename__ = "meetings"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        committee_id: Mapped[str] = mapped_column(
+            ForeignKey("committees.id", ondelete="CASCADE"), index=True
+        )
+        title: Mapped[str] = mapped_column(String(255))
+        description: Mapped[str | None] = mapped_column(Text, default=None)
+        scheduled_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+        duration_minutes: Mapped[int] = mapped_column(default=60)
+        location: Mapped[str | None] = mapped_column(String(255), default=None)
+        meeting_type: Mapped[str] = mapped_column(
+            String(50), default="virtual"
+        )  # virtual, in-person, hybrid
+        status: Mapped[str] = mapped_column(
+            String(20), default="scheduled"
+        )  # scheduled, completed, cancelled
+        created_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+        updated_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+
+        committee: Mapped[Committee] = relationship(back_populates="meetings")
+        decisions: Mapped[list["Decision"]] = relationship(
+            back_populates="meeting", cascade=CASCADE_ALL_DELETE_ORPHAN
+        )
+        attendees: Mapped[list["MeetingAttendee"]] = relationship(
+            back_populates="meeting", cascade=CASCADE_ALL_DELETE_ORPHAN
+        )
+
+
+    class Decision(Base):
+        __tablename__ = "decisions"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        meeting_id: Mapped[str] = mapped_column(
+            ForeignKey("meetings.id", ondelete="CASCADE"), index=True
+        )
+        resolution_id: Mapped[str] = mapped_column(String(100), unique=True)
+        subject: Mapped[str] = mapped_column(String(255))
+        description: Mapped[str | None] = mapped_column(Text, default=None)
+        status: Mapped[str] = mapped_column(
+            String(20), default="pending"
+        )  # pending, passed, rejected, deferred
+        result: Mapped[str | None] = mapped_column(Text, default=None)  # vote result details
+        created_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+        decided_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+
+        meeting: Mapped[Meeting] = relationship(back_populates="decisions")
+        votes: Mapped[list["Vote"]] = relationship(
+            back_populates="decision", cascade=CASCADE_ALL_DELETE_ORPHAN
+        )
+
+
+    class Vote(Base):
+        __tablename__ = "votes"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        decision_id: Mapped[str] = mapped_column(
+            ForeignKey("decisions.id", ondelete="CASCADE"), index=True
+        )
+        member_id: Mapped[str] = mapped_column(String(36), index=True)
+        vote: Mapped[str] = mapped_column(
+            String(20)
+        )  # yes, no, abstain, absent
+        voted_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+
+        decision: Mapped[Decision] = relationship(back_populates="votes")
+
+
+    class CommitteeMember(Base):
+        __tablename__ = "committee_members"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        committee_id: Mapped[str] = mapped_column(
+            ForeignKey("committees.id", ondelete="CASCADE"), index=True
+        )
+        member_id: Mapped[str] = mapped_column(
+            ForeignKey("staff.id", ondelete="CASCADE"), index=True
+        )
+        role: Mapped[str] = mapped_column(
+            String(50), default="member"
+        )  # chair, vice_chair, member, secretary
+        joined_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+
+        committee: Mapped[Committee] = relationship(back_populates="members")
+        staff: Mapped[Staff] = relationship(foreign_keys=[member_id])
+
+
+    class MeetingAttendee(Base):
+        __tablename__ = "meeting_attendees"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        meeting_id: Mapped[str] = mapped_column(
+            ForeignKey("meetings.id", ondelete="CASCADE"), index=True
+        )
+        staff_id: Mapped[str] = mapped_column(
+            ForeignKey("staff.id", ondelete="CASCADE"), index=True
+        )
+        attended: Mapped[bool] = mapped_column(default=False)
+        role: Mapped[str] = mapped_column(
+            String(50), default="attendee"
+        )  # attendee, presenter, chair
+
+        meeting: Mapped[Meeting] = relationship(back_populates="attendees")
+        staff: Mapped[Staff] = relationship(foreign_keys=[staff_id])
+
+
+    class CommitteeDocument(Base):
+        __tablename__ = "committee_documents"
+
+        id: Mapped[str] = mapped_column(String(36), primary_key=True, default=pk_uuid)
+        committee_id: Mapped[str] = mapped_column(
+            ForeignKey("committees.id", ondelete="CASCADE"), index=True
+        )
+        title: Mapped[str] = mapped_column(String(255))
+        description: Mapped[str | None] = mapped_column(Text, default=None)
+        file_path: Mapped[str] = mapped_column(String(500))
+        file_type: Mapped[str] = mapped_column(String(50))
+        file_size: Mapped[int] = mapped_column(default=0)
+        uploaded_by: Mapped[str] = mapped_column(String(36))
+        uploaded_at: Mapped[datetime] = mapped_column(
+            DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+        )
+
+        committee: Mapped[Committee] = relationship(back_populates="documents")

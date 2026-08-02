@@ -4,6 +4,7 @@ export * from './surgeries';
 export * from './inspections';
 export * from './funds';
 export * from './public';
+export * from './notifications';
 
 // Re-export types
 export type { Centre, Dog, Surgery, Inspection, Grant, Allocation, Expense, Complaint, SyncQueueItem, User, LoginResponse, RegisterResponse, TokenPayload, AuthResponse } from '../../types';
@@ -32,6 +33,8 @@ import { surgeriesApi } from './surgeries';
 import { inspectionsApi } from './inspections';
 import { fundsApi } from './funds';
 import { publicApi } from './public';
+import { reportsApi } from './reports';
+import { notificationsApi } from './notifications';
 
 export const api = {
   // Auth
@@ -78,4 +81,19 @@ export const api = {
   markFailed: publicApi.markFailed,
   retryFailed: publicApi.retryFailed,
   getSyncStatus: publicApi.getSyncStatus,
+  // Reports
+  getReportTemplates: reportsApi.getTemplates,
+  getReportTemplate: reportsApi.getTemplate,
+  generateReport: reportsApi.generateReport,
+  getYoyAdherence: reportsApi.getYoyAdherence,
+  getMonthlyDisbursements: reportsApi.getMonthlyDisbursements,
+  getExpenseCategories: reportsApi.getExpenseCategories,
+  getMonthlySurgeries: reportsApi.getMonthlySurgeries,
+  // Notifications
+  getNotifications: notificationsApi.getNotifications,
+  getNotification: notificationsApi.getNotification,
+  createNotification: notificationsApi.createNotification,
+  updateNotification: notificationsApi.updateNotification,
+  markAllRead: notificationsApi.markAllRead,
+  getUnreadCount: notificationsApi.getUnreadCount,
 };

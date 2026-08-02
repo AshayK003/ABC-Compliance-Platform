@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
+import { useAuth } from '../contexts/AuthContext';
+import { notificationsApi } from '../services/api';
 
 interface Notification {
   id: string;
+  user_id: string;
   title: string;
   message: string;
   type: 'info' | 'warning' | 'error' | 'success';
@@ -10,66 +13,78 @@ interface Notification {
   created_at: string;
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    title: 'New Inspection Scheduled',
-    message: 'Surprise inspection scheduled for BBMP Centre 1 on Aug 5, 2026',
-    type: 'info',
-    read: false,
-    created_at: '2026-08-01T10:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Fund Disbursement Complete',
-    message: '₹1.5L disbursed to BBMP Centre 1 for Sterilization programme Q2',
-    type: 'success',
-    read: false,
-    created_at: '2026-07-30T14:20:00Z',
-  },
-  {
-    id: '3',
-    title: 'Compliance Alert',
-    message: 'BBMP Centre 2 compliance score dropped below 90%',
-    type: 'warning',
-    read: true,
-    created_at: '2026-07-28T09:15:00Z',
-  },
-  {
-    id: '4',
-    title: 'Surgery Log Submitted',
-    message: '4 surgeries recorded at Test Centre today',
-    type: 'info',
-    read: true,
-    created_at: '2026-07-27T16:45:00Z',
-  },
-];
-
 export function Notifications() {
-  const [notifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const { user } = useAuth();
 
-  const filtered = filter === 'unread' ? notifications.filter(n => !n.read) : notifications;
-  const unreadCount = notifications.filter(n => !n.read).length;
+  useEffect(() => {
+    loadNotifications();
+  }, [filter, user?.user_id]);
 
-  const handleMarkAllRead = () => {
-    // In real app, call API to mark all as read
-    notifications.forEach(n => n.read = true);
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      const data = await notificationsApi.getNotifications({
+        user_id: user?.user_id,
+        read: filter === 'unread' ? false : undefined,
+        limit: 50,
+        offset: 0,
+      });
+      setNotifications(data);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const typeColors = {
-    info: 'bg-primary/10 text-primary border-primary/20',
-    success: 'bg-secondary-container/20 text-secondary-container border-secondary-container/30',
-    warning: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    error: 'bg-error-container/20 text-error-container border-error-container/30',
-  };
+  const handleMarkAllRead = async () => {
+      try {
+        await notificationsApi.markAllRead(user?.user_id);
+        await loadNotifications();
+      } catch (error) {
+        console.error('Failed to mark all read:', error);
+      }
+    };
 
-  const typeIcons = {
-    info: 'info',
-    success: 'check_circle',
-    warning: 'warning',
-    error: 'error',
-  };
+    const handleToggleRead = async (notification: Notification) => {
+      try {
+        await notificationsApi.updateNotification(notification.id, {
+          read: !notification.read,
+        });
+        setNotifications(notifications.map(n =>
+          n.id === notification.id ? { ...n, read: !n.read } : n
+        ));
+      } catch (error) {
+        console.error('Failed to toggle read:', error);
+      }
+    };
+
+    const typeColors = {
+      info: 'bg-primary/10 text-primary border-primary/20',
+      success: 'bg-secondary-container/20 text-secondary-container border-secondary-container/30',
+      warning: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+      error: 'bg-error-container/20 text-error-container border-error-container/30',
+    };
+
+    const typeIcons = {
+      info: 'info',
+      success: 'check_circle',
+      warning: 'warning',
+      error: 'error',
+    };
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+      if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -93,27 +108,27 @@ export function Notifications() {
             <option value="unread">Unread Only</option>
           </select>
           {unreadCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleMarkAllRead}
-                        className="bg-primary text-on-primary font-label-bold text-label-sm px-3 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">done_all</span>
-                        Mark All Read
-                      </button>
-                    )}
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              className="bg-primary text-on-primary font-label-bold text-label-sm px-3 py-2 rounded transition-colors hover:bg-primary-container flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[16px]">done_all</span>
+              Mark All Read
+            </button>
+          )}
         </div>
       </header>
 
       <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
-        {filtered.length === 0 ? (
+        {notifications.length === 0 ? (
           <div className="flex-1 flex items-center justify-center bg-background">
             <div className="text-center p-8 fade-in">
               <span className="material-symbols-outlined text-6xl text-on-surface-variant mb-4 block">notifications_none</span>
               <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">
                 {filter === 'unread' ? 'No Unread Notifications' : 'No Notifications Yet'}
               </h3>
-              <p className="font-body-md text-body-md text-on-surface-variant">
+              <p className="font-body-md text-body-md text-on-surface-variant mb-6">
                 {filter === 'unread' ? 'All caught up!' : 'Notifications will appear here when you receive alerts, updates, or reminders.'}
               </p>
             </div>
@@ -122,7 +137,7 @@ export function Notifications() {
           <div className="bg-surface-container-high border border-outline-variant rounded overflow-hidden flex-1 flex flex-col">
             <div className="overflow-x-auto">
               <DataTable
-                data={filtered}
+                data={filter === 'unread' ? notifications.filter(n => !n.read) : notifications}
                 columns={[
                   {
                     key: 'type',
@@ -167,22 +182,23 @@ export function Notifications() {
                     ),
                   },
                   {
-                                      key: 'actions',
-                                      header: '',
-                                      width: '48px',
-                                      align: 'center',
-                                      render: (n: Notification) => (
-                                        <button
-                                          type="button"
-                                          className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors"
-                                          aria-label={n.read ? 'Mark as unread' : 'Mark as read'}
-                                        >
-                                          <span className="material-symbols-outlined text-[20px]">
-                                            {n.read ? 'mark_email_unread' : 'mark_email_read'}
-                                          </span>
-                                        </button>
-                                      ),
-                                    },
+                    key: 'actions',
+                    header: '',
+                    width: '48px',
+                    align: 'center',
+                    render: (n: Notification) => (
+                      <button
+                        type="button"
+                        className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors"
+                        aria-label={n.read ? 'Mark as unread' : 'Mark as read'}
+                        onClick={() => handleToggleRead(n)}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {n.read ? 'mark_email_unread' : 'mark_email_read'}
+                        </span>
+                      </button>
+                    ),
+                  },
                 ]}
               />
             </div>

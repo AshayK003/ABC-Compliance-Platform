@@ -39,10 +39,12 @@ from src.dogs.routes import router as dogs_router
 from src.funds.routes import alloc_router, exp_router
 from src.funds.routes import router as funds_router
 from src.inspections.routes import router as inspections_router
+from src.notifications.routes import router as notifications_router
 from src.public.routes import public_router, sync_router, public_limiter
+from src.reports.routes import router as reports_router
 from src.surgeries.routes import router as surgeries_router
+from src.audit.routes import router as audit_router
 
-# API v1 router
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth_router)
 api_v1_router.include_router(centres_router)
@@ -54,6 +56,9 @@ api_v1_router.include_router(inspections_router)
 api_v1_router.include_router(public_router)
 api_v1_router.include_router(sync_router)
 api_v1_router.include_router(surgeries_router)
+api_v1_router.include_router(reports_router)
+api_v1_router.include_router(notifications_router)
+api_v1_router.include_router(audit_router)
 
 
 logging.basicConfig(

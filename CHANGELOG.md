@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-08-03
+
+### Added
+- **Committee & Meetings API** — Full CRUD for committees, meetings, decisions, votes, members, attendees, and documents
+- **Notifications System** — Real-time notification API with user targeting, read/unread status, and type categorization
+- **Audit Trail** — `/audit` endpoints with filtering, stats, and event logging
+- **Reports API** — Template-based report generation with chart data endpoints (YoY adherence, monthly disbursements, expense categories, monthly surgeries)
+- **Frontend Testing** — Vitest + React Testing Library setup with 10 passing tests (DataTable, AuthContext, Login)
+- **Vitest Configuration** — Happy DOM environment with globals, coverage reporting
+
+### Changed
+- **Frontend Types** — Added `CentresResponse`, `Notification`, `ReportTemplate`, `ReportGenerateRequest`, `ReportPreviewResponse` interfaces
+- **Reports Page** — Real API integration with templates, chart data, and generation preview
+- **Notifications Page** — Full real API integration with filtering, mark-as-read, and pagination
+- **Dashboard** — Fixed centre trend calculation with proper type handling
+- **TypeScript Config** — Added `vitest/globals` for test globals support
+
+### Fixed
+- **Dashboard Centre Trend** — Proper handling of paginated vs array response for centres
+- **Notifications Page** — Removed duplicate `typeColors`/`typeIcons` declarations; fixed `filtered` variable usage
+- **Login Test** — Added missing `token_type` field to mock login response
+- **Test Setup** — Fixed `global` references using `globalThis` checks
+
+### Tests
+- **Backend** — 61 tests passing, 4 skipped
+- **Frontend** — TypeScript clean (0 errors), 10 Vitest tests passing
+- **Build** — Success (main bundle 237 KB, GeoJSON lazy chunk 22.9 MB)
+
+---
+
 ## [0.3.0] - 2026-08-02
 
 ### Security

@@ -3,6 +3,7 @@ import { StatCard } from '../components/StatCard';
 import { InspectionCard } from '../components/InspectionCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
 import { api } from '../services/api';
+import type { Centre, CentresResponse } from '../types';
 
 type CentreSummary = {
   id: string;
@@ -56,9 +57,9 @@ export function Dashboard() {
         setTotalDisbursed(totalDisbursed);
 
         // Handle both array and paginated response for centres
-        const centreResponse = centreData as any;
-        const centreArray = Array.isArray(centreResponse) ? centreResponse : (centreResponse.data ?? []);
-        const centreMap = new Map(centreArray.map((c: CentreSummary) => [c.id, c]));
+        const centreResponse = centreData as CentresResponse | Centre[];
+        const centreArray: Centre[] = Array.isArray(centreResponse) ? centreResponse : (centreResponse.data ?? []);
+        const centreMap = new Map(centreArray.map((c: Centre) => [c.id, c]));
 
         const monthStart = new Date();
         monthStart.setDate(1);
@@ -139,11 +140,12 @@ export function Dashboard() {
       setFundTrend(fundTrend);
 
       // Centre trend (new centres this month vs last)
-      const currentMonthCentres = centreData.filter(c => {
+      const centres = Array.isArray(centreData) ? centreData : (centreData.data ?? []);
+      const currentMonthCentres = centres.filter(c => {
         const d = new Date(c.created_at);
         return d >= monthStart;
       }).length;
-      const prevMonthCentres = centreData.filter(c => {
+      const prevMonthCentres = centres.filter(c => {
         const d = new Date(c.created_at);
         return d >= prevMonthStart && d < monthStart;
       }).length;
