@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Compliance Heatmap** — India choropleth on the Reports page showing compliance rate and risk level per state, based on real AWBI-recognised ABC centre data
+- **AWBI Centre Data** — Seed script (`scripts/seed_awbi_centres.py`) that loads 66 real AWBI-recognised centres from the official list into the database
+- **State-level aggregation endpoint** — `GET /api/v1/public/heatmap` returns centres, inspections, compliance rate and risk per state
+
+### Fixed
+- **Dashboard centre count** — now requests up to 100 centres so the total reflects all registered centres, not just the first 50
+
 ## [0.2.0] - 2026-08-01
 
 ### Added

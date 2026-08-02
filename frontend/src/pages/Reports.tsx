@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { MOCK_REPORT_TEMPLATES } from '../mocks';
+import { ComplianceHeatmap } from '../components/ComplianceHeatmap';
 
 export function Reports() {
   const [templates] = useState(MOCK_REPORT_TEMPLATES);
@@ -191,17 +192,8 @@ export function Reports() {
                 </div>
                 <span className="font-code-sm text-code-sm text-secondary bg-secondary/10 px-2 py-0.5 rounded">LIVE</span>
               </div>
-              <div className="flex-1 relative rounded bg-background border border-outline-variant overflow-hidden">
-                <img
-                  className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-screen"
-                  alt="A highly detailed, dark-mode data visualization map of India constructed from glowing cyan and teal geometric grids. Specific states pulse with red and green light to indicate data heatmaps."
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVsdOh8qQzzPCbs2px1JH1Nlm9uQTMB9OyNAvtnhTNO1JsT4thT5iEnD6tMgjI-LdOPLkAa-FRCv_pPtVu8PbTeFPbcNvE8hGQHHFtrXrVKg_MUFnV5dAoMdHL38rQsXRHC90qXu1Z8iIBFtNxjpZ3iSmJAULNoX3MnyEax7RdEE2qWcXxIwAwnFqhyK8gXs1i3YyvRCsnVg_KBOJsiAxs2bIkvFAwSKL-Ex2D133u9lATs3umY58"
-                />
-                <div className="absolute bottom-3 left-3 bg-surface/90 backdrop-blur-sm border border-outline-variant p-2 rounded text-xs space-y-1">
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-error rounded-full"></div><span className="text-on-surface-variant">Critical Risk</span></div>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-secondary rounded-full"></div><span className="text-on-surface-variant">Moderate</span></div>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-primary rounded-full"></div><span className="text-on-surface-variant">Compliant</span></div>
-                </div>
+              <div className="flex-1">
+                <ComplianceHeatmap height="100%" />
               </div>
             </div>
 

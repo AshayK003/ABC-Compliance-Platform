@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -175,3 +176,86 @@ class TestUpdateComplaint:
 
         resp = await client.patch("/public/complaints/nonexistent", json={"status": "resolved"})
         assert resp.status_code == 404
+
+
+class TestComplianceHeatmap:
+    @pytest.mark.asyncio
+    async def test_states_with_no_inspections_still_appear(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        # Two centres, no inspections at all
+        centres_mr = MagicMock()
+        centres_mr.all.return_value = [
+            SimpleNamespace(id="c1", state="Kerala"),
+            SimpleNamespace(id="c2", state="Delhi"),
+        ]
+        ins_mr = MagicMock()
+        ins_mr.all.return_value = []
+        mock_session.execute = AsyncMock(side_effect=[centres_mr, ins_mr])
+
+        resp = await client.get("/public/heatmap")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 2
+        states = {d["state"]: d for d in data}
+        assert states["Kerala"]["centres"] == 1
+        assert states["Kerala"]["inspections"] == 0
+        assert states["Kerala"]["compliance_rate"] == 0.0
+        assert states["Kerala"]["risk"] == "critical"
+
+    @pytest.mark.asyncio
+    async def test_compliance_rate_and_risk_aggregation(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        # One centre with 2 completed + 1 pending inspection -> 66.7% moderate
+        centres_mr = MagicMock()
+        centres_mr.all.return_value = [SimpleNamespace(id="c1", state="Kerala")]
+        ins_mr = MagicMock()
+        ins_mr.all.return_value = [
+            ("c1", "completed", 2),
+            ("c1", "pending", 1),
+        ]
+        mock_session.execute = AsyncMock(side_effect=[centres_mr, ins_mr])
+
+        resp = await client.get("/public/heatmap")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        entry = data[0]
+        assert entry["centres"] == 1
+        assert entry["inspections"] == 3
+        assert entry["compliance_rate"] == 66.7
+        assert entry["risk"] == "moderate"
+
+    @pytest.mark.asyncio
+    async def test_critical_first_sorting(self, client: AsyncClient, mock_session: AsyncMock):
+        # Two states: one compliant (80%+), one critical (0%) -> critical sorted first
+        centres_mr = MagicMock()
+        centres_mr.all.return_value = [
+            SimpleNamespace(id="c1", state="Kerala"),
+            SimpleNamespace(id="c2", state="Delhi"),
+        ]
+        ins_mr = MagicMock()
+        ins_mr.all.return_value = [
+            ("c2", "completed", 5),
+            ("c2", "pending", 1),  # 83.3% compliant
+        ]
+        mock_session.execute = AsyncMock(side_effect=[centres_mr, ins_mr])
+
+        resp = await client.get("/public/heatmap")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data[0]["state"] == "Kerala"
+        assert data[0]["risk"] == "critical"
+        assert data[1]["state"] == "Delhi"
+        assert data[1]["risk"] == "compliant"
+
+    @pytest.mark.asyncio
+    async def test_returns_empty_when_no_centres(self, client: AsyncClient, mock_session: AsyncMock):
+        centres_mr = MagicMock()
+        centres_mr.all.return_value = []
+        mock_session.execute = AsyncMock(return_value=centres_mr)
+
+        resp = await client.get("/public/heatmap")
+        assert resp.status_code == 200
+        assert resp.json() == []

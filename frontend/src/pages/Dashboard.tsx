@@ -41,7 +41,7 @@ export function Dashboard() {
   const loadDashboardData = async () => {
     try {
       const [centreData, inspectionData, complaintData, surgeryData, allocationData] = await Promise.all([
-        api.getCentres(),
+        api.getCentres({ limit: 100 }),
         api.getInspections(),
         api.getComplaints().catch(() => [] as never[]),
         api.getSurgeries().catch(() => [] as never[]),

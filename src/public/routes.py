@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
-from src.models.base import Complaint, SyncQueue
+from src.models.base import Centre, Complaint, Inspection, SyncQueue
 
 # ─── Public Complaints Router ───
 public_router = APIRouter(prefix="/public", tags=["public"])
+
 
 class ComplaintCreate(BaseModel):
     centre_id: str
@@ -89,6 +90,92 @@ async def update_complaint(
     await db.commit()
     await db.refresh(complaint)
     return complaint
+
+
+# ─── Compliance Heatmap ───
+class HeatmapState(BaseModel):
+    state: str
+    centres: int
+    inspections: int
+    compliance_rate: float
+    risk: str  # critical, moderate, compliant
+
+
+@public_router.get("/heatmap", response_model=list[HeatmapState])
+async def compliance_heatmap(
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+):
+    """
+    Aggregate compliance by state for the heatmap.
+    Compliance = inspections with status='completed' / total inspections per state.
+    """
+    # Get centres with their states
+    centres_stmt = select(Centre.id, Centre.state).where(Centre.state.isnot(None))
+    centres_result = await db.execute(centres_stmt)
+    centres = centres_result.all()
+
+    if not centres:
+        return []
+
+    centre_ids = [c.id for c in centres]
+    centre_state_map = {c.id: c.state for c in centres}
+
+    # Get inspection counts by centre
+    ins_stmt = (
+        select(Inspection.centre_id, Inspection.status, func.count(Inspection.id))
+        .where(Inspection.centre_id.in_(centre_ids))
+        .group_by(Inspection.centre_id, Inspection.status)
+    )
+    ins_result = await db.execute(ins_stmt)
+    ins_data = ins_result.all()
+
+    # Aggregate by state (start from ALL centres so states with no inspections still appear)
+    state_stats: dict[str, dict] = {}
+    for c in centres:
+        state = c.state
+        if not state:
+            continue
+        if state not in state_stats:
+            state_stats[state] = {"total": 0, "completed": 0, "centres": set()}
+        state_stats[state]["centres"].add(c.id)
+
+    for centre_id, status_val, count in ins_data:
+        state = centre_state_map.get(centre_id)
+        if not state or state not in state_stats:
+            continue
+        state_stats[state]["total"] = state_stats[state]["total"] + count
+        if status_val == "completed":
+            state_stats[state]["completed"] = state_stats[state]["completed"] + count
+
+    # Build response
+    result = []
+    for state, stats in state_stats.items():
+        centres_count = len(stats["centres"])
+        total_inspections = stats["total"]
+        completed = stats["completed"]
+        compliance_rate = (completed / total_inspections * 100) if total_inspections > 0 else 0
+
+        if compliance_rate < 50:
+            risk = "critical"
+        elif compliance_rate < 80:
+            risk = "moderate"
+        else:
+            risk = "compliant"
+
+        result.append(HeatmapState(
+            state=state,
+            centres=centres_count,
+            inspections=total_inspections,
+            compliance_rate=round(compliance_rate, 1),
+            risk=risk,
+        ))
+
+    # Sort by risk (critical first) then by state name
+    risk_order = {"critical": 0, "moderate": 1, "compliant": 2}
+    result.sort(key=lambda x: (risk_order.get(x.risk, 3), x.state))
+
+    return result
 
 
 # ─── Sync Queue Router ───
@@ -178,7 +265,7 @@ async def mark_synced(
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
     if not item:
-            raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
+        raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
 
     item.status = "synced"
     # synced_at is set by model default
@@ -196,7 +283,7 @@ async def mark_failed(
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
     if not item:
-            raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
+        raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
 
     item.status = "failed"
     item.error = body.error
@@ -236,5 +323,5 @@ async def sync_status(
     result = await db.execute(select(SyncQueue).where(SyncQueue.idempotency_key == idempotency_key))
     item = result.scalar_one_or_none()
     if not item:
-            raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
+        raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
     return item

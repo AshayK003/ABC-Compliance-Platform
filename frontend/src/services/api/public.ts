@@ -1,5 +1,13 @@
 import type { Complaint, SyncQueueItem } from '../../types';
 
+interface HeatmapState {
+  state: string;
+  centres: number;
+  inspections: number;
+  compliance_rate: number;
+  risk: 'critical' | 'moderate' | 'compliant';
+}
+
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v1';
 
 let authToken: string | null = null;
@@ -56,4 +64,7 @@ export const publicApi = {
   markFailed: (id: string, error: string) => request<SyncQueueItem>(`/sync/mark-failed/${id}`, { method: 'POST', body: JSON.stringify({ error }) }),
   retryFailed: (max_retries?: number) => request<{ retried: number }>('/sync/retry-failed', { method: 'POST', body: JSON.stringify({ max_retries }) }),
   getSyncStatus: (idempotency_key: string) => request<SyncQueueItem>(`/sync/status/${idempotency_key}`),
+
+  // Heatmap
+  getHeatmap: () => request<HeatmapState[]>('/public/heatmap'),
 };

@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://www.postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7%2B-DC382D?logo=redis)](https://redis.io)
-[![Tests](https://img.shields.io/badge/tests-71%20passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-75%20passed-brightgreen)]()
 [![Coverage](https://img.shields.io/badge/coverage-82%25-yellow)]()
 [![Status](https://img.shields.io/badge/status-active%20development-brightgreen)]()
 
@@ -28,7 +28,7 @@
 | **Surgeries** | Monthly surgery logs per centre with outcome tracking (recovered, complications) |
 | **Inspections** | Surprise inspection scheduling, execution, and findings with sign-off |
 | **Fund Tracker** | Program fund allocation, grants, and expense monitoring with budget vs actuals |
-| **Reports** | Compliance reporting and export (templates ready for Excel/PDF) |
+| **Reports** | Compliance reporting and export (templates ready for Excel/PDF), including a state-level compliance heatmap |
 | **Committee Portal** | Governance oversight views for AWBI/state board officials |
 | **Sync Queue** | Offline-first mutation queue with idempotency keys for unreliable connectivity |
 
