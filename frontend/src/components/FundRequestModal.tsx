@@ -145,7 +145,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
                   id="centreId"
                   value={formData.centreId}
                   onChange={(e) => handleChange('centreId', e.target.value)}
-                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all ${errors.centreId ? 'border-error' : 'border-outline-variant'}`}
+                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors ${errors.centreId ? 'border-error' : 'border-outline-variant'}`}
                   disabled={loading}
                   required
                 >
@@ -165,7 +165,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
                   id="grantId"
                   value={formData.grantId}
                   onChange={(e) => handleChange('grantId', e.target.value)}
-                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all ${errors.grantId ? 'border-error' : 'border-outline-variant'}`}
+                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors ${errors.grantId ? 'border-error' : 'border-outline-variant'}`}
                   disabled={loading}
                   required
                 >
@@ -186,7 +186,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
                   type="text"
                   value={formData.financialYear}
                   onChange={(e) => handleChange('financialYear', e.target.value)}
-                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all ${errors.financialYear ? 'border-error' : 'border-outline-variant'}`}
+                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors ${errors.financialYear ? 'border-error' : 'border-outline-variant'}`}
                   placeholder="e.g., 2024-25"
                   required
                 />
@@ -202,7 +202,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
                   type="number"
                   value={formData.amount}
                   onChange={(e) => handleChange('amount', parseFloat(e.target.value) || 0)}
-                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all ${errors.amount ? 'border-error' : 'border-outline-variant'}`}
+                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors ${errors.amount ? 'border-error' : 'border-outline-variant'}`}
                   min="1"
                   step="1000"
                   placeholder="Enter amount in rupees"
@@ -220,7 +220,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
                   value={formData.purpose}
                   onChange={(e) => handleChange('purpose', e.target.value)}
                   rows={3}
-                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none ${errors.purpose ? 'border-error' : 'border-outline-variant'}`}
+                  className={`w-full bg-background border rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none ${errors.purpose ? 'border-error' : 'border-outline-variant'}`}
                   placeholder="Brief description of the fund request purpose"
                   required
                 />

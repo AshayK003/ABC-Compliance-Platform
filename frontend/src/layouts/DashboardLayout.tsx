@@ -23,7 +23,7 @@ export function DashboardLayout() {
   return (
     <div className="bg-background text-on-surface font-body-md h-screen flex overflow-hidden">
       {/* Side Navigation */}
-      <nav className="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-high dark:bg-surface-container-high border-r border-outline-variant dark:border-outline-variant z-20 flex flex-col py-4 transition-all duration-200 ease-in-out">
+      <nav className="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-high dark:bg-surface-container-high border-r border-outline-variant dark:border-outline-variant z-20 flex flex-col py-4 transition-colors duration-200 ease-in-out">
         <div className="px-gutter mb-8 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm font-bold">
             A
@@ -57,14 +57,14 @@ export function DashboardLayout() {
         <div className="flex flex-col gap-1 px-3 mt-auto pt-4 border-t border-outline-variant/30">
           <NavLink
             to="/notifications"
-            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out cursor-pointer group"
+            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out cursor-pointer group"
           >
             <span className="material-symbols-outlined group-hover:text-primary transition-colors">notifications</span>
             <span className="font-label-md text-label-md">Notifications</span>
           </NavLink>
           <NavLink
             to="/settings"
-            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out cursor-pointer group"
+            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out cursor-pointer group"
           >
             <span className="material-symbols-outlined group-hover:text-primary transition-colors">settings</span>
             <span className="font-label-md text-label-md">Settings</span>
@@ -72,7 +72,7 @@ export function DashboardLayout() {
           <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out cursor-pointer group w-full text-left"
+                      className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-colors duration-200 ease-in-out cursor-pointer group w-full text-left"
                     >
             <span className="material-symbols-outlined group-hover:text-error transition-colors">logout</span>
             <span className="font-label-md text-label-md">Sign Out</span>

@@ -197,12 +197,13 @@
   }
 
   .chart-bar {
+    transform-origin: bottom;
     animation: growUp 1s ease-out forwards;
   }
 
   @keyframes growUp {
-    from { height: 0; }
-    to { height: var(--target-h); }
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
   }
 }
 

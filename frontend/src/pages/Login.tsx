@@ -62,7 +62,7 @@ export function Login() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
                 placeholder="Enter phone number"
                 required
               />
@@ -77,7 +77,7 @@ export function Login() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
                 placeholder="Enter password"
                 required
               />
@@ -141,7 +141,7 @@ export function Login() {
               type="text"
               value={registerData.name}
               onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="Enter centre name"
               required
             />
@@ -156,7 +156,7 @@ export function Login() {
               type="tel"
               value={registerData.phone}
               onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="Enter phone number"
               required
             />
@@ -171,7 +171,7 @@ export function Login() {
               type="password"
               value={registerData.password}
               onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="Enter password"
               required
             />
@@ -186,7 +186,7 @@ export function Login() {
               type="text"
               value={registerData.centreId}
               onChange={(e) => setRegisterData({ ...registerData, centreId: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="Enter centre ID if known"
             />
           </div>

@@ -65,7 +65,7 @@ export function Profile() {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-label-md text-label-md transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-label-md text-label-md transition-colors ${
                   activeTab === tab.id
                     ? 'bg-primary text-on-primary shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'

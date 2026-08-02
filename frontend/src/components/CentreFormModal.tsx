@@ -95,7 +95,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="Enter centre name"
               required
               disabled={submitting}
@@ -111,7 +111,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
               type="text"
               value={formData.code}
               onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="e.g., MNAH-001"
               required
               disabled={submitting}
@@ -128,7 +128,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
                 type="text"
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
                 placeholder="Enter district"
                 required
                 disabled={submitting}
@@ -144,7 +144,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
                 type="text"
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+                className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
                 placeholder="Enter state"
                 required
                 disabled={submitting}
@@ -161,7 +161,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
               type="number"
               value={formData.capacity}
               onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+              className="w-full bg-background border border-outline-variant rounded px-3 py-2.5 text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
               placeholder="Monthly surgery capacity"
               min="0"
               disabled={submitting}

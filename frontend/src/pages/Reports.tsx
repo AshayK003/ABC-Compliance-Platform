@@ -222,7 +222,7 @@ export function Reports() {
                       <button
                         type="button"
                         key={template.id}
-                        className="w-full flex items-center justify-between p-3 rounded bg-background border border-outline-variant hover:border-primary/50 hover:bg-surface-container-lowest transition-all group text-left"
+                        className="w-full flex items-center justify-between p-3 rounded bg-background border border-outline-variant hover:border-primary/50 hover:bg-surface-container-lowest transition-colors group text-left"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
@@ -276,31 +276,31 @@ export function Reports() {
                   </div>
                   {/* Bars */}
                   <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '40%' } as React.CSSProperties}>
+                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
                       <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                     </div>
                     <span className="font-code-sm text-code-sm text-on-surface-variant">Q1</span>
                   </div>
                   <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '55%' } as React.CSSProperties}>
+                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
                       <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                     </div>
                     <span className="font-code-sm text-code-sm text-on-surface-variant">Q2</span>
                   </div>
                   <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '48%' } as React.CSSProperties}>
+                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
                       <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                     </div>
                     <span className="font-code-sm text-code-sm text-on-surface-variant">Q3</span>
                   </div>
                   <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full bg-secondary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '70%' } as React.CSSProperties}>
+                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
                       <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
                     </div>
                     <span className="font-code-sm text-code-sm text-on-surface-variant">Q4</span>
                   </div>
                   <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full bg-primary-container rounded-t relative overflow-hidden chart-bar" style={{ '--target-h': '85%' } as React.CSSProperties}>
+                    <div className="w-full h-32 bg-primary-container rounded-t relative overflow-hidden chart-bar">
                       <div className="absolute inset-0 bg-gradient-to-t from-transparent to-primary/20"></div>
                     </div>
                     <span className="font-code-sm text-code-sm text-primary font-bold">Q1 '24</span>

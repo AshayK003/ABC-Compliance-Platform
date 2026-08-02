@@ -215,15 +215,18 @@ export function FundTracker() {
                   <button
                     type="button"
                     key={tab.id}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                    className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 rounded-none relative ${
                       activeTab === tab.id
-                        ? 'text-primary font-bold bg-secondary-container/10 border-primary'
+                        ? 'text-primary font-bold bg-secondary-container/10'
                         : 'text-on-surface-variant font-medium hover:bg-secondary-container/20'
                     }`}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   >
                     <span className="material-symbols-outlined">{tab.icon}</span>
                     {tab.label}
+                    {activeTab === tab.id && (
+                      <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary" />
+                    )}
                   </button>
                 ))}
               </nav>

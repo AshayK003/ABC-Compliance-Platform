@@ -55,21 +55,21 @@ export function CommitteePortal() {
         <div className="flex-1 flex flex-col gap-1 px-3">
           <NavLink
             to="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out font-label-bold text-label-bold"
           >
             <span className="material-symbols-outlined text-[20px]">dashboard</span>
             <span>Dashboard</span>
           </NavLink>
           <NavLink
             to="/inspections"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-primary font-bold bg-secondary-container/10 hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-primary font-bold bg-secondary-container/10 hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out font-label-bold text-label-bold"
           >
             <span className="material-symbols-outlined text-[20px] icon-fill">gavel</span>
             <span>Compliance Risk</span>
           </NavLink>
           <NavLink
             to="/reports"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out font-label-bold text-label-bold"
             end
           >
             <span className="material-symbols-outlined text-[20px]">history_edu</span>
@@ -77,14 +77,14 @@ export function CommitteePortal() {
           </NavLink>
           <NavLink
             to="/settings"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out font-label-bold text-label-bold"
           >
             <span className="material-symbols-outlined text-[20px]">security</span>
             <span>Entity Monitor</span>
           </NavLink>
           <NavLink
             to="/reports"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out font-label-bold text-label-bold"
           >
             <span className="material-symbols-outlined text-[20px]">analytics</span>
             <span>Reports</span>
@@ -93,7 +93,7 @@ export function CommitteePortal() {
         <div className="px-3 pt-4 border-t border-outline-variant/30 flex flex-col gap-1">
           <NavLink
             to="/settings"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-all duration-200 ease-in-out font-label-bold text-label-bold"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out font-label-bold text-label-bold"
           >
             <span className="material-symbols-outlined text-[20px]">settings</span>
             <span>Settings</span>
@@ -101,7 +101,7 @@ export function CommitteePortal() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out font-label-bold text-label-bold w-full text-left"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-colors duration-200 ease-in-out font-label-bold text-label-bold w-full text-left"
           >
             <span className="material-symbols-outlined">logout</span>
             <span>Sign Out</span>
@@ -117,7 +117,7 @@ export function CommitteePortal() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-              <input className="bg-background border border-outline-variant rounded-DEFAULT pl-9 pr-4 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-64 placeholder:text-on-surface-variant/50" placeholder="Search repository..." type="text" />
+              <input className="bg-background border border-outline-variant rounded-DEFAULT pl-9 pr-4 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors w-64 placeholder:text-on-surface-variant/50" placeholder="Search repository..." type="text" />
             </div>
             <NavLink
               to="/notifications"
