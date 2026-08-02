@@ -101,6 +101,62 @@ class HeatmapState(BaseModel):
     risk: str  # critical, moderate, compliant
 
 
+def _risk_for_rate(rate: float) -> str:
+    """Map a compliance rate (0-100) to a risk level."""
+    if rate < 50:
+        return "critical"
+    if rate < 80:
+        return "moderate"
+    return "compliant"
+
+
+def _seed_state_stats(centres) -> tuple[dict[str, dict], dict[str, str]]:
+    """Start state aggregates from ALL centres so states with no inspections still appear."""
+    state_stats: dict[str, dict] = {}
+    centre_state_map: dict[str, str] = {}
+    for c in centres:
+        if not c.state:
+            continue
+        centre_state_map[c.id] = c.state
+        if c.state not in state_stats:
+            state_stats[c.state] = {"total": 0, "completed": 0, "centres": set()}
+        state_stats[c.state]["centres"].add(c.id)
+    return state_stats, centre_state_map
+
+
+def _overlay_inspections(
+    state_stats: dict[str, dict],
+    centre_state_map: dict[str, str],
+    ins_data,
+) -> None:
+    """Add inspection counts onto the per-state aggregates."""
+    for centre_id, status_val, count in ins_data:
+        state = centre_state_map.get(centre_id)
+        if not state or state not in state_stats:
+            continue
+        state_stats[state]["total"] += count
+        if status_val == "completed":
+            state_stats[state]["completed"] += count
+
+
+def _build_heatmap_result(state_stats: dict[str, dict]) -> list[HeatmapState]:
+    """Convert per-state aggregates into the response model, sorted critical-first."""
+    result = []
+    for state, stats in state_stats.items():
+        total_inspections = stats["total"]
+        compliance_rate = (stats["completed"] / total_inspections * 100) if total_inspections > 0 else 0
+        result.append(HeatmapState(
+            state=state,
+            centres=len(stats["centres"]),
+            inspections=total_inspections,
+            compliance_rate=round(compliance_rate, 1),
+            risk=_risk_for_rate(compliance_rate),
+        ))
+    risk_order = {"critical": 0, "moderate": 1, "compliant": 2}
+    result.sort(key=lambda x: (risk_order.get(x.risk, 3), x.state))
+    return result
+
+
 @public_router.get("/heatmap", response_model=list[HeatmapState])
 async def compliance_heatmap(
     db: AsyncSession = Depends(get_db),
@@ -118,64 +174,20 @@ async def compliance_heatmap(
     if not centres:
         return []
 
-    centre_ids = [c.id for c in centres]
-    centre_state_map = {c.id: c.state for c in centres}
+    state_stats, centre_state_map = _seed_state_stats(centres)
 
     # Get inspection counts by centre
     ins_stmt = (
         select(Inspection.centre_id, Inspection.status, func.count(Inspection.id))
-        .where(Inspection.centre_id.in_(centre_ids))
+        .where(Inspection.centre_id.in_(centre_state_map.keys()))
         .group_by(Inspection.centre_id, Inspection.status)
     )
     ins_result = await db.execute(ins_stmt)
     ins_data = ins_result.all()
 
-    # Aggregate by state (start from ALL centres so states with no inspections still appear)
-    state_stats: dict[str, dict] = {}
-    for c in centres:
-        state = c.state
-        if not state:
-            continue
-        if state not in state_stats:
-            state_stats[state] = {"total": 0, "completed": 0, "centres": set()}
-        state_stats[state]["centres"].add(c.id)
+    _overlay_inspections(state_stats, centre_state_map, ins_data)
 
-    for centre_id, status_val, count in ins_data:
-        state = centre_state_map.get(centre_id)
-        if not state or state not in state_stats:
-            continue
-        state_stats[state]["total"] = state_stats[state]["total"] + count
-        if status_val == "completed":
-            state_stats[state]["completed"] = state_stats[state]["completed"] + count
-
-    # Build response
-    result = []
-    for state, stats in state_stats.items():
-        centres_count = len(stats["centres"])
-        total_inspections = stats["total"]
-        completed = stats["completed"]
-        compliance_rate = (completed / total_inspections * 100) if total_inspections > 0 else 0
-
-        if compliance_rate < 50:
-            risk = "critical"
-        elif compliance_rate < 80:
-            risk = "moderate"
-        else:
-            risk = "compliant"
-
-        result.append(HeatmapState(
-            state=state,
-            centres=centres_count,
-            inspections=total_inspections,
-            compliance_rate=round(compliance_rate, 1),
-            risk=risk,
-        ))
-
-    # Sort by risk (critical first) then by state name
-    risk_order = {"critical": 0, "moderate": 1, "compliant": 2}
-    result.sort(key=lambda x: (risk_order.get(x.risk, 3), x.state))
-
-    return result
+    return _build_heatmap_result(state_stats)
 
 
 # ─── Sync Queue Router ───
