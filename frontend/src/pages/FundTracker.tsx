@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
+import { FundRequestModal } from '../components/FundRequestModal';
 import { api } from '../services/api';
 import type { Centre } from '../types';
 
@@ -25,6 +26,7 @@ type ExpenseRecord = {
 export function FundTracker() {
   const [activeTab, setActiveTab] = useState<'grants' | 'allocations' | 'expenses'>('grants');
   const [loading, setLoading] = useState(true);
+  const [fundRequestOpen, setFundRequestOpen] = useState(false);
   const [disbursements, setDisbursements] = useState<FundDisbursement[]>([]);
   const [allocations, setAllocations] = useState<FundDisbursement[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
@@ -113,27 +115,27 @@ export function FundTracker() {
   };
 
   function getDisbursementStatusStyle(status: FundDisbursement['status']): { bg: string; icon?: string } {
-  if (status === 'Approved') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
-  if (status === 'Processing') return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
-  return { bg: 'bg-error/20 text-error', icon: 'error' };
-}
+    if (status === 'Approved') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
+    if (status === 'Processing') return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
+    return { bg: 'bg-error/20 text-error', icon: 'error' };
+  }
 
-function getAllocationStatusStyle(status: FundDisbursement['status']): { bg: string; icon?: string } {
-  return getDisbursementStatusStyle(status);
-}
+  function getAllocationStatusStyle(status: FundDisbursement['status']): { bg: string; icon?: string } {
+    return getDisbursementStatusStyle(status);
+  }
 
-function getExpenseStatusStyle(status: ExpenseRecord['status']): { bg: string; icon?: string } {
-  if (status === 'Paid') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
-  return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
-}
+  function getExpenseStatusStyle(status: ExpenseRecord['status']): { bg: string; icon?: string } {
+    if (status === 'Paid') return { bg: 'bg-primary-container/20 text-primary', icon: undefined };
+    return { bg: 'bg-secondary-container/50 text-secondary', icon: 'sync' };
+  }
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount).replace('₹', '₹');
-};
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount).replace('₹', '₹');
+  };
 
   const tabs = [
     { id: 'grants', label: 'Grants', icon: 'account_balance' },
@@ -159,7 +161,7 @@ const formatCurrency = (amount: number) => {
         <div className="flex-1 max-w-md mx-4 hidden sm:block">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-            <input className="w-full bg-surface-container-highest border border-outline-variant rounded px-10 py-1.5 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary transition-colors" placeholder="Search funds, entities..." type="text" />
+            <input className="w-full bg-surface-container-highest border border-outline-variant rounded px-10 py-1.5 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant/50" placeholder="Search funds, entities..." type="text" />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -188,10 +190,10 @@ const formatCurrency = (amount: number) => {
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">ABC Program Funds Allocation & Disbursement Tracking</p>
             </div>
             <button
-                          type="button"
-                          className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors"
-                          onClick={() => console.log('New Fund Request clicked - implement modal')}
-                        >
+              type="button"
+              className="bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors"
+              onClick={() => setFundRequestOpen(true)}
+            >
               <span className="material-symbols-outlined text-[18px]">add</span>
               New Fund Request
             </button>
@@ -269,8 +271,8 @@ const formatCurrency = (amount: number) => {
                       <div className="flex-1 min-h-[250px] relative w-full flex items-end justify-between gap-2 pt-8">
                         <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] text-on-surface-variant font-code-sm">
                           {(() => {
-                            const maxAmount = monthlyDisbursements.length > 0 
-                              ? Math.max(...monthlyDisbursements.map(m => m.amount)) 
+                            const maxAmount = monthlyDisbursements.length > 0
+                              ? Math.max(...monthlyDisbursements.map(m => m.amount))
                               : 10000000;
                             const steps = 5;
                             return Array.from({ length: steps + 1 }, (_, i) => (

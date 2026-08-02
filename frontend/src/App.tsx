@@ -4,6 +4,7 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { NotFound } from './pages/NotFound';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Centres = lazy(() => import('./pages/Centres').then(m => ({ default: m.Centres })));
@@ -33,19 +34,19 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
         <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/centres" element={<Centres />} />
-          <Route path="/surgeries" element={<Surgeries />} />
-          <Route path="/inspections" element={<Inspections />} />
-          <Route path="/funds" element={<FundTracker />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/committee" element={<CommitteePortal />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/profile" element={<Profile />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/centres" element={<Centres />} />
+                  <Route path="/surgeries" element={<Surgeries />} />
+                  <Route path="/inspections" element={<Inspections />} />
+                  <Route path="/funds" element={<FundTracker />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/committee" element={<CommitteePortal />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/profile" element={<Profile />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
     </Suspense>
   );
 }

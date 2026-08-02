@@ -49,10 +49,20 @@ jobs:
           cd frontend
           npm ci --ignore-scripts
 
-      - name: Run lint
+      - name: Run lint (ESLint)
         run: |
           cd frontend
           npm run lint
+
+      - name: Run oxlint
+        run: |
+          cd frontend
+          npx oxlint src/
+
+      - name: Run impeccable
+        run: |
+          cd frontend
+          npx impeccable detect src/ --json
 
       - name: Type check
         run: |
@@ -63,6 +73,17 @@ jobs:
         run: |
           cd frontend
           npm run build
+
+      - name: Run Vitest
+        run: |
+          cd frontend
+          npx vitest run
+
+      - name: Run Playwright tests
+        run: |
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test
 
       - name: Run npm audit
         run: |
