@@ -74,13 +74,22 @@ def _make_staff(**kwargs) -> Staff:
 class TestListCentres:
     @pytest.mark.asyncio
     async def test_returns_empty_list(self, client: AsyncClient, mock_session: AsyncMock):
-        mr = MagicMock()
-        mr.scalars.return_value.all.return_value = []
-        mock_session.execute.return_value = mr
+        # Mock for count query (returns total=0)
+        count_mr = MagicMock()
+        count_mr.scalar.return_value = 0
+        
+        # Mock for main query (returns empty list)
+        data_mr = MagicMock()
+        data_mr.scalars.return_value.all.return_value = []
+        
+        # Use side_effect to return different mocks for each call
+        mock_session.execute.side_effect = [count_mr, data_mr]
 
         resp = await client.get("/api/v1/centres")
         assert resp.status_code == 200
-        assert resp.json() == []
+        data = resp.json()
+        assert data["data"] == []
+        assert data["total"] == 0
 
     @pytest.mark.asyncio
     async def test_returns_centres_with_staff_count(
@@ -95,9 +104,9 @@ class TestListCentres:
         resp = await client.get("/api/v1/centres")
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data) == 1
-        assert data[0]["code"] == "LKO-01"
-        assert data[0]["staff_count"] == 2
+        assert len(data["data"]) == 1
+        assert data["data"][0]["code"] == "LKO-01"
+        assert data["data"][0]["staff_count"] == 2
 
 
 class TestCreateCentre:

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { DataTable } from '../components/DataTable';
 import { CentreFormModal } from '../components/CentreFormModal';
 import type { Centre } from '../types';
@@ -11,20 +11,48 @@ export function Centres() {
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    loadCentres();
-  }, []);
-
-  const loadCentres = async () => {
+  const loadCentres = useCallback(async () => {
     try {
-      const data = await api.getCentres();
-      setCentres(data);
+      const response = await api.getCentres({
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+        search: search || undefined,
+        district: districtFilter || undefined,
+        status: statusFilter || undefined,
+      });
+      // Handle both array and paginated response
+      if (Array.isArray(response)) {
+        setCentres(response);
+        setTotal(response.length);
+      } else {
+        setCentres(response.data);
+        setTotal(response.total);
+      }
     } catch (error) {
       console.error('Failed to load centres:', error);
     } finally {
       setLoading(false);
     }
+  }, [page, pageSize, search, districtFilter, statusFilter]);
+
+  useEffect(() => {
+    loadCentres();
+  }, [loadCentres]);
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setPage(1);
+    }, 300);
   };
 
   const handleCreateCentre = async (data: { name: string; code: string; district: string; state: string; capacity?: number }) => {
@@ -51,14 +79,7 @@ export function Centres() {
     );
   };
 
-  const filteredCentres = centres.filter(centre => {
-    const matchesSearch = centre.name.toLowerCase().includes(search.toLowerCase()) ||
-      centre.code.toLowerCase().includes(search.toLowerCase()) ||
-      centre.district.toLowerCase().includes(search.toLowerCase());
-    const matchesDistrict = !districtFilter || centre.district === districtFilter;
-    const matchesStatus = !statusFilter || centre.status === statusFilter;
-    return matchesSearch && matchesDistrict && matchesStatus;
-  });
+  const filteredCentres = centres; // Server-side filtering now
 
   const districts = [...new Set(centres.map(c => c.district))].sort((a, b) => a.localeCompare(b));
   const statuses = ['active', 'inactive', 'suspended'];
@@ -93,7 +114,7 @@ export function Centres() {
                 id="search-facility"
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full bg-background border border-outline-variant rounded pl-10 pr-3 py-2 text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
                 placeholder="Centre name, ID, or location..."
               />
@@ -189,17 +210,41 @@ export function Centres() {
 
           {/* Pagination */}
           <div className="bg-surface-container-highest border-t border-outline-variant px-4 py-3 flex items-center justify-between">
-            <div className="font-body-sm text-body-sm text-on-surface-variant">Showing <span className="font-medium text-on-surface">1</span> to <span className="font-medium text-on-surface">{filteredCentres.length}</span> of <span className="font-medium text-on-surface">{centres.length}</span> entries</div>
+            <div className="font-body-sm text-body-sm text-on-surface-variant">Showing <span className="font-medium text-on-surface">{(page - 1) * pageSize + 1}</span> to <span className="font-medium text-on-surface">{Math.min(page * pageSize, total)}</span> of <span className="font-medium text-on-surface">{total}</span> entries</div>
             <div className="flex items-center gap-1">
-              <button type="button" className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+              <button
+                type="button"
+                className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+              >
                 <span className="material-symbols-outlined text-[20px]">chevron_left</span>
               </button>
-              <button type="button" className="w-8 h-8 rounded bg-primary/20 text-primary font-label-md text-label-md flex items-center justify-center border border-primary/30">1</button>
-              <button type="button" className="w-8 h-8 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center justify-center transition-colors">2</button>
-              <button type="button" className="w-8 h-8 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center justify-center transition-colors">3</button>
+              {Array.from({ length: Math.min(5, Math.ceil(total / pageSize)) }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={`w-8 h-8 rounded ${p === page ? 'bg-primary/20 text-primary font-label-md text-label-md flex items-center justify-center border border-primary/30' : 'hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center justify-center transition-colors'}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </button>
+              ))}
               <span className="w-8 h-8 flex items-center justify-center text-on-surface-variant">...</span>
-              <button type="button" className="w-8 h-8 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center justify-center transition-colors">12</button>
-              <button type="button" className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+              <button
+                type="button"
+                className={`w-8 h-8 rounded ${Math.ceil(total / pageSize) === page ? 'bg-primary/20 text-primary font-label-md text-label-md flex items-center justify-center border border-primary/30' : 'hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center justify-center transition-colors'}`}
+                onClick={() => setPage(Math.ceil(total / pageSize))}
+                disabled={page >= Math.ceil(total / pageSize)}
+              >
+                {Math.ceil(total / pageSize)}
+              </button>
+              <button
+                type="button"
+                className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={page >= Math.ceil(total / pageSize)}
+                onClick={() => setPage(page + 1)}
+              >
                 <span className="material-symbols-outlined text-[20px]">chevron_right</span>
               </button>
             </div>

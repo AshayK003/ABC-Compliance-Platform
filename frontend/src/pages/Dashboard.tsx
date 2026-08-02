@@ -42,40 +42,43 @@ export function Dashboard() {
   }, []);
 
   const loadDashboardData = async () => {
-    try {
-      const [centreData, inspectionData, complaintData, surgeryData, allocationData] = await Promise.all([
-        api.getCentres({ limit: 100 }),
-        api.getInspections(),
-        api.getComplaints().catch(() => [] as never[]),
-        api.getSurgeries().catch(() => [] as never[]),
-        api.getAllocations().catch(() => [] as never[]),
-      ]);
+      try {
+        const [centreData, inspectionData, complaintData, surgeryData, allocationData] = await Promise.all([
+          api.getCentres({ limit: 100 }),
+          api.getInspections(),
+          api.getComplaints().catch(() => [] as never[]),
+          api.getSurgeries().catch(() => [] as never[]),
+          api.getAllocations().catch(() => [] as never[]),
+        ]);
 
-      const totalDisbursed = (allocationData as Array<{ amount: number }>)
-        .reduce((sum, a) => sum + (a.amount ?? 0), 0);
-      setTotalDisbursed(totalDisbursed);
+        const totalDisbursed = (allocationData as Array<{ amount: number }>)
+          .reduce((sum, a) => sum + (a.amount ?? 0), 0);
+        setTotalDisbursed(totalDisbursed);
 
-      const centreMap = new Map(centreData.map(c => [c.id, c]));
+        // Handle both array and paginated response for centres
+        const centreResponse = centreData as any;
+        const centreArray = Array.isArray(centreResponse) ? centreResponse : (centreResponse.data ?? []);
+        const centreMap = new Map(centreArray.map((c: CentreSummary) => [c.id, c]));
 
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
 
-      const surgeryCounts = new Map<string, number>();
-      for (const s of surgeryData as Array<{ centre_id: string; timestamp?: string }>) {
-        const ts = s.timestamp ? new Date(s.timestamp) : null;
-        if (ts && ts >= monthStart) {
-          surgeryCounts.set(s.centre_id, (surgeryCounts.get(s.centre_id) ?? 0) + 1);
+        const surgeryCounts = new Map<string, number>();
+        for (const s of surgeryData as Array<{ centre_id: string; timestamp?: string }>) {
+          const ts = s.timestamp ? new Date(s.timestamp) : null;
+          if (ts && ts >= monthStart) {
+            surgeryCounts.set(s.centre_id, (surgeryCounts.get(s.centre_id) ?? 0) + 1);
+          }
         }
-      }
 
-      const completedInspections = new Set(
-        (inspectionData as Array<{ centre_id: string; status: string }>)
-          .filter(i => i.status === 'completed')
-          .map(i => i.centre_id),
-      );
+        const completedInspections = new Set(
+          (inspectionData as Array<{ centre_id: string; status: string }>)
+            .filter(i => i.status === 'completed')
+            .map(i => i.centre_id),
+        );
 
-      const summaries: CentreSummary[] = centreData.map(c => ({
+        const summaries: CentreSummary[] = centreArray.map((c) => ({
         id: c.id,
         name: c.name,
         code: c.code,
@@ -87,28 +90,28 @@ export function Dashboard() {
         surgeriesThisMonth: surgeryCounts.get(c.id) ?? 0,
       }));
 
-      setCentres(summaries);
-      setUpcomingInspections(
-        inspectionData
-          .filter(i => i.status === 'scheduled')
-          .slice(0, 5)
-          .map(i => ({
-            centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
-            scheduledAt: i.scheduled_at ?? 'Not scheduled',
-            status: 'Scheduled' as const,
-          })),
-      );
-      setAlerts(
-        (complaintData as Array<{ centre_id: string; description: string; status: string }>)
-          .filter(c => c.status === 'open' || c.status === 'in_progress')
-          .slice(0, 5)
-          .map(c => ({
-            centre: centreMap.get(c.centre_id)?.name ?? c.centre_id,
-            district: centreMap.get(c.centre_id)?.district ?? '—',
-            issue: c.description,
-            status: c.status === 'open' ? 'Critical' as const : 'Warning' as const,
-          })),
-      );
+        setCentres(summaries);
+        setUpcomingInspections(
+          inspectionData
+            .filter(i => i.status === 'scheduled')
+            .slice(0, 5)
+            .map(i => ({
+              centreName: centreMap.get(i.centre_id)?.name ?? i.centre_id,
+              scheduledAt: i.scheduled_at ?? 'Not scheduled',
+              status: 'Scheduled' as const,
+            })),
+        );
+        setAlerts(
+          (complaintData as Array<{ centre_id: string; description: string; status: string }>)
+            .filter(c => c.status === 'open' || c.status === 'in_progress')
+            .slice(0, 5)
+            .map(c => ({
+              centre: centreMap.get(c.centre_id)?.name ?? c.centre_id,
+              district: centreMap.get(c.centre_id)?.district ?? '—',
+              issue: c.description,
+              status: c.status === 'open' ? 'Critical' as const : 'Warning' as const,
+            })),
+        );
 
       // Compute real trends from data
       const prevMonthStart = new Date(monthStart);

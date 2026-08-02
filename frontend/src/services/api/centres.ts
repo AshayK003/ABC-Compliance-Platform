@@ -31,13 +31,23 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return response.json();
 }
 
+export interface CentresResponse {
+  data: Centre[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export const centresApi = {
-  getCentres: (params?: { limit?: number; offset?: number }) => {
+  getCentres: (params?: { limit?: number; offset?: number; search?: string; district?: string; status?: string }) => {
     const search = new URLSearchParams();
     if (params?.limit) search.set('limit', String(params.limit));
     if (params?.offset) search.set('offset', String(params.offset));
+    if (params?.search) search.set('search', params.search);
+    if (params?.district) search.set('district', params.district);
+    if (params?.status) search.set('status', params.status);
     const query = search.toString() ? `?${search}` : '';
-    return request<Centre[]>(`/centres${query}`);
+    return request<Centre[] | CentresResponse>(`/centres${query}`);
   },
   getCentre: (id: string) => request<Centre>(`/centres/${id}`),
   createCentre: (data: { name: string; code: string; district: string; state: string; capacity?: number }) =>

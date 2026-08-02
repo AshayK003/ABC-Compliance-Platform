@@ -38,14 +38,17 @@ async def list_centres(
     _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    search: str | None = Query(None),
+    district: str | None = Query(None),
+    status: str | None = Query(None),
 ):
-    # Cache key includes pagination params
-    cache_k = cache_key("centres", "list", f"limit={limit}", f"offset={offset}")
+    # Cache key includes pagination and filter params
+    cache_k = cache_key("centres", "list", f"limit={limit}", f"offset={offset}", f"search={search or ''}", f"district={district or ''}", f"status={status or ''}")
     cached_data = cache.get(cache_k)
     if cached_data is not None:
         return cached_data
 
-    # Subquery for staff count per centre to avoid N+1
+    # Base query with staff count subquery
     staff_count_subq = (
         select(Staff.centre_id, func.count(Staff.id).label("staff_count"))
         .where(Staff.centre_id.is_not(None))
@@ -53,9 +56,33 @@ async def list_centres(
         .subquery()
     )
 
-    result = await db.execute(
+    # Base query
+    base_query = (
         select(Centre, staff_count_subq.c.staff_count)
         .outerjoin(staff_count_subq, Centre.id == staff_count_subq.c.centre_id)
+    )
+
+    # Apply filters
+    if search:
+        base_query = base_query.where(
+            Centre.name.ilike(f"%{search}%") |
+            Centre.code.ilike(f"%{search}%") |
+            Centre.district.ilike(f"%{search}%") |
+            Centre.state.ilike(f"%{search}%")
+        )
+    if district:
+        base_query = base_query.where(Centre.district == district)
+    if status:
+        base_query = base_query.where(Centre.status == status)
+
+    # Get total count
+    count_query = select(func.count()).select_from(base_query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Apply pagination and ordering
+    result = await db.execute(
+        base_query
         .order_by(Centre.name)
         .limit(limit)
         .offset(offset)
@@ -74,8 +101,15 @@ async def list_centres(
         }
         for c, staff_count in rows
     ]
-    cache.set(cache_k, data)
-    return data
+
+    response = {
+        "data": data,
+        "total": total,
+        "page": (offset // limit) + 1,
+        "pageSize": limit,
+    }
+    cache.set(cache_k, response)
+    return response
 
 
 @router.post("", status_code=201)

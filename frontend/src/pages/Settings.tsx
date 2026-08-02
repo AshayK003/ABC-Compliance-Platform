@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -23,12 +24,17 @@ const DEFAULT_SETTINGS: UserSettings = {
 
 export function Settings() {
   const { user } = useAuth();
+    const { setTheme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [saved, setSaved] = useState(false);
 
+  // Sync theme from context to settings
   const handleChange = (key: keyof UserSettings, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     setSaved(false);
+    if (key === 'theme') {
+      setTheme(value as 'light' | 'dark' | 'system');
+    }
   };
 
   const handleSave = async () => {
@@ -148,10 +154,10 @@ export function Settings() {
                             <input
                               id="sms-notifications"
                               type="checkbox"
-                              checked={settings.smsNotifications}
-                              onChange={(e) => handleChange('smsNotifications', e.target.checked)}
-                              className="w-5 h-5 accent-primary"
-                            />
+                                                            checked={settings.smsNotifications}
+                                                            onChange={(e) => handleChange('smsNotifications', e.target.checked)}
+                                                            className="w-5 h-5 accent-primary"
+                                                          />
                           </label>
                           <label className="flex items-center justify-between cursor-pointer">
                             <div className="flex items-center gap-3">
@@ -164,10 +170,10 @@ export function Settings() {
                             <input
                               id="push-notifications"
                               type="checkbox"
-                              checked={settings.pushNotifications}
-                              onChange={(e) => handleChange('pushNotifications', e.target.checked)}
-                              className="w-5 h-5 accent-primary"
-                            />
+                                                            checked={settings.pushNotifications}
+                                                            onChange={(e) => handleChange('pushNotifications', e.target.checked)}
+                                                            className="w-5 h-5 accent-primary"
+                                                          />
                           </label>
                         </div>
           </section>
@@ -192,7 +198,7 @@ export function Settings() {
                         type="radio"
                         name="theme"
                         value={theme}
-                        checked={settings.theme === theme}
+                        checked={theme === settings.theme}
                         onChange={(e) => handleChange('theme', e.target.value as 'light' | 'dark' | 'system')}
                         className="sr-only"
                       />
@@ -201,7 +207,7 @@ export function Settings() {
                       </span>
                       <span className="font-label-bold text-label-bold text-on-surface capitalize">{theme}</span>
                     </label>
-                  ))}
+                  ))})
                 </div>
               </div>
               <div>

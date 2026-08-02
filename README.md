@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://www.postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7%2B-DC382D?logo=redis)](https://redis.io)
-[![Tests](https://img.shields.io/badge/tests-75%20passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-61%20passed%2C%204%20skipped-brightgreen)]()
 [![Coverage](https://img.shields.io/badge/coverage-82%25-yellow)]()
 [![Status](https://img.shields.io/badge/status-active%20development-brightgreen)]()
 
