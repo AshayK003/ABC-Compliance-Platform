@@ -220,7 +220,7 @@ class MarkFailedRequest(BaseModel):
 async def enqueue_sync(
     body: SyncEnqueue,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    _: TokenPayload = Depends(require_role("admin")),
 ):
     # Check idempotency
     result = await db.execute(
@@ -279,7 +279,7 @@ async def list_pending_sync(
 async def mark_synced(
     sync_id: str,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    _: TokenPayload = Depends(require_role("admin")),
 ):
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
@@ -297,7 +297,7 @@ async def mark_failed(
     sync_id: str,
     body: MarkFailedRequest,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    _: TokenPayload = Depends(require_role("admin")),
 ):
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
@@ -319,7 +319,7 @@ class RetryFailedRequest(BaseModel):
 async def retry_failed(
     body: RetryFailedRequest,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    _: TokenPayload = Depends(require_role("admin")),
 ):
     result = await db.execute(
         select(SyncQueue).where(SyncQueue.status == "failed", SyncQueue.retry_count < body.max_retries)

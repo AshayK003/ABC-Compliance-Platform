@@ -102,6 +102,31 @@ class TestRegister:
         mock_session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
+    async def test_register_cannot_self_assign_admin(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        """Privilege escalation attempt: role=admin in body must be ignored."""
+        _setup_mock_execute(mock_session, None)
+        mock_session.commit = AsyncMock()
+        async def mock_refresh(obj):
+            if hasattr(obj, "id") and obj.id is None:
+                obj.id = "staff-new-id"
+        mock_session.refresh = AsyncMock(side_effect=mock_refresh)
+
+        resp = await client.post("/api/v1/auth/register", json={
+            "name": "Dr. Escalate",
+            "phone": "9876543211",
+            "password": "secret123",
+            "role": "admin",
+        })
+        assert resp.status_code == 201
+        # The created staff object must be a vet, never admin.
+        added = mock_session.add.call_args[0][0]
+        assert added.role == "vet"
+        body = resp.json()
+        assert body["role"] == "vet"
+
+    @pytest.mark.asyncio
     async def test_rejects_duplicate_phone(self, client: AsyncClient, mock_session: AsyncMock):
         _setup_mock_execute(mock_session, _make_staff())
 
@@ -155,6 +180,19 @@ class TestLogin:
             "password": "whatever",
         })
         assert resp.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_login_inactive_account_forbidden(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        _setup_mock_execute(mock_session, _make_staff(active=False))
+
+        resp = await client.post("/api/v1/auth/login", json={
+            "phone": "9876543210",
+            "password": "secret123",
+        })
+        assert resp.status_code == 403
+        assert "inactive" in resp.json()["detail"].lower()
 
 
 class TestMe:

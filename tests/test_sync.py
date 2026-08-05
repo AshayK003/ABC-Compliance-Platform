@@ -161,3 +161,54 @@ class TestSyncQueue:
         resp = await client.get("/api/v1/sync/status/idem-lookup")
         assert resp.status_code == 200
         assert resp.json()["idempotency_key"] == "idem-lookup"
+
+
+class TestSyncAdminOnly:
+    """Non-admin callers must not be able to mutate sync state."""
+
+    @pytest.fixture
+    def auth_override(self):
+        def _override():
+            return TokenPayload(user_id="vet-1", role="vet")
+        return _override
+
+    @pytest.mark.asyncio
+    async def test_enqueue_requires_admin(self, client: AsyncClient):
+        resp = await client.post("/api/v1/sync/enqueue", json={
+            "entity_type": "surgery",
+            "entity_id": "surg-1",
+            "operation": "create",
+            "payload": {"surgery_type": "spay"},
+            "idempotency_key": "idem-vet",
+        })
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_mark_synced_requires_admin(self, client: AsyncClient):
+        resp = await client.post("/api/v1/sync/mark-synced/sync-1")
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_mark_failed_requires_admin(self, client: AsyncClient):
+        resp = await client.post(
+            "/api/v1/sync/mark-failed/sync-fail", json={"error": "timeout"}
+        )
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_retry_failed_requires_admin(self, client: AsyncClient):
+        resp = await client.post(
+            "/api/v1/sync/retry-failed", json={"max_retries": 3}
+        )
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_reads_allowed_for_staff(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        mr = MagicMock()
+        mr.scalars.return_value.all.return_value = [_make_sync_queue()]
+        mock_session.execute.return_value = mr
+
+        resp = await client.get("/api/v1/sync/pending")
+        assert resp.status_code == 200

@@ -110,6 +110,8 @@ async def login(
     staff = result.scalar_one_or_none()
     if not staff or not verify_password(body.password, staff.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    if not staff.active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
 
     access_token = create_access_token(user_id=staff.id, role=staff.role)
     refresh_token = create_refresh_token(user_id=staff.id)
