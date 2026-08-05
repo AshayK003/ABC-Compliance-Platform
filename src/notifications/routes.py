@@ -14,6 +14,13 @@ from src.models.base import Notification
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
+def _resolve_user_id(current: TokenPayload, user_id: Optional[str]) -> str:
+    """Admins may query another user; everyone else is scoped to themselves."""
+    if user_id and current.role == "admin":
+        return user_id
+    return current.user_id
+
+
 class NotificationCreate(BaseModel):
     user_id: str
     title: str
@@ -59,15 +66,20 @@ async def list_notifications(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(Notification).order_by(Notification.created_at.desc()).limit(limit).offset(offset)
-    
-    if user_id:
-        stmt = stmt.where(Notification.user_id == user_id)
+    effective_user_id = _resolve_user_id(current, user_id)
+    stmt = (
+        select(Notification)
+        .where(Notification.user_id == effective_user_id)
+        .order_by(Notification.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+
     if read is not None:
         stmt = stmt.where(Notification.read == read)
-    
+
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -76,11 +88,14 @@ async def list_notifications(
 async def get_unread_count(
     user_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
-    stmt = select(func.count(Notification.id)).where(Notification.read == False)
-    if user_id:
-        stmt = stmt.where(Notification.user_id == user_id)
+    effective_user_id = _resolve_user_id(current, user_id)
+    stmt = (
+        select(func.count(Notification.id))
+        .where(Notification.read == False)  # noqa: E712
+        .where(Notification.user_id == effective_user_id)
+    )
     result = await db.execute(stmt)
     return {"count": result.scalar() or 0}
 
@@ -89,11 +104,15 @@ async def get_unread_count(
 async def get_notification(
     notification_id: str,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
-    result = await db.execute(select(Notification).where(Notification.id == notification_id))
+    result = await db.execute(
+        select(Notification).where(Notification.id == notification_id)
+    )
     notification = result.scalar_one_or_none()
     if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification.user_id != current.user_id and current.role != "admin":
         raise HTTPException(status_code=404, detail="Notification not found")
     return notification
 
@@ -103,11 +122,15 @@ async def update_notification(
     notification_id: str,
     body: NotificationUpdate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
-    result = await db.execute(select(Notification).where(Notification.id == notification_id))
+    result = await db.execute(
+        select(Notification).where(Notification.id == notification_id)
+    )
     notification = result.scalar_one_or_none()
     if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification.user_id != current.user_id and current.role != "admin":
         raise HTTPException(status_code=404, detail="Notification not found")
     
     update_data = body.model_dump(exclude_unset=True)
@@ -123,13 +146,16 @@ async def update_notification(
 async def mark_all_read(
     user_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
     from src.models.base import Notification
-    
-    stmt = select(Notification).where(Notification.read == False)
-    if user_id:
-        stmt = stmt.where(Notification.user_id == user_id)
+
+    effective_user_id = _resolve_user_id(current, user_id)
+    stmt = (
+        select(Notification)
+        .where(Notification.read == False)  # noqa: E712
+        .where(Notification.user_id == effective_user_id)
+    )
     
     result = await db.execute(stmt)
     notifications = result.scalars().all()
