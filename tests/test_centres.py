@@ -177,6 +177,19 @@ class TestListCentreStaff:
         assert data[0]["role"] == "vet"
 
     @pytest.mark.asyncio
+    async def test_does_not_leak_password_hash(
+        self, client: AsyncClient, mock_session: AsyncMock
+    ):
+        mr = MagicMock()
+        mr.scalars.return_value.all.return_value = [_make_staff()]
+        mock_session.execute.return_value = mr
+
+        resp = await client.get("/api/v1/centres/centre-1/staff")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "password_hash" not in data[0]
+
+    @pytest.mark.asyncio
     async def test_returns_empty_staff(self, client: AsyncClient, mock_session: AsyncMock):
         mr = MagicMock()
         mr.scalars.return_value.all.return_value = []

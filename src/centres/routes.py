@@ -32,6 +32,15 @@ class CentreOut(BaseModel):
     staff_count: int = 0
 
 
+class StaffOut(BaseModel):
+    id: str
+    centre_id: str | None
+    name: str
+    role: str
+    phone: str
+    active: bool
+
+
 @router.get("")
 async def list_centres(
     db: AsyncSession = Depends(get_db),
@@ -147,7 +156,7 @@ async def get_centre(
     return centre
 
 
-@router.get("/{centre_id}/staff")
+@router.get("/{centre_id}/staff", response_model=list[StaffOut])
 async def list_centre_staff(
     centre_id: str,
     db: AsyncSession = Depends(get_db),
