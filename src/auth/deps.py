@@ -46,10 +46,11 @@ def create_access_token(
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
 
-def create_refresh_token(user_id: str) -> str:
+def create_refresh_token(user_id: str, token_version: int = 0) -> str:
     payload = {
         "sub": user_id,
         "type": "refresh",
+        "tv": token_version,
         "iat": datetime.now(UTC),
         "exp": datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days),
         "jti": str(uuid4()),
@@ -98,12 +99,20 @@ async def verify_refresh_token(refresh_token: str, db: AsyncSession) -> TokenPay
     if payload.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
     user_id = payload["sub"]
+    token_version = payload.get("tv", 0)
     result = await db.execute(select(Staff).where(Staff.id == user_id))
     staff = result.scalar_one_or_none()
     if not staff or not staff.active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
+        )
+    # Revoked: the user logged out (or changed password), invalidating all
+    # previously issued refresh tokens. Access tokens still expire on their own.
+    if staff.token_version != token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session revoked — please log in again",
         )
     return TokenPayload(
         user_id=staff.id,
