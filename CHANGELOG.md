@@ -16,8 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dead code:** removed unused `cached()`/`invalidate_cache()` from `src/cache.py` and unused `redis_url` setting from `src/config.py`.
 - **Frontend:** removed no-op `api.getDogs`/`getDog`/`createDog` stubs (backend `src/dogs/routes.py` exists; wire a real Dogs page when needed).
 
+### Security
+- **Refresh token revocation (P0-2):** added `token_version` to `Staff` model; refresh tokens now carry this version; logout increments it, invalidating all prior refresh tokens. Closes session-fixation hole.
+
 ### Audit
-- Full-stack AEOS M23 audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), refresh-token revocation (#33), audit-trail wiring (#34), expense race (#35).
+- Full-stack AEOS M23 audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), audit-trail wiring (#34), expense race (#35).
 
 ### Added
 - **Committee & Meetings API** — Full CRUD for committees, meetings, decisions, votes, members, attendees, and documents
