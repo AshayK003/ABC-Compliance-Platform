@@ -49,33 +49,6 @@ def cache_key(*parts: str) -> str:
     return ":".join(parts)
 
 
-def cached(ttl: int | None = None):
-    """Decorator for caching function results."""
-    def decorator(func):
-        async def wrapper(*args, **kwargs):
-            # Generate cache key from function name and args
-            key_parts = [
-                func.__name__,
-            ] + [str(arg) for arg in args] + [f"{k}={v}" for k, v in sorted(kwargs.items())]
-            key = cache_key(*key_parts)
-
-            cached_value = cache.get(key)
-            if cached_value is not None:
-                return cached_value
-
-            result = await func(*args, **kwargs)
-            cache.set(key, result, ttl)
-            return result
-        return wrapper
-    return decorator
-
-
-def invalidate_cache(*key_parts: str) -> None:
-    """Invalidate a cache key."""
-    key = cache_key(*key_parts)
-    cache.delete(key)
-
-
 def invalidate_pattern(pattern: str) -> None:
     """Invalidate all keys matching a pattern (simple prefix match)."""
     keys_to_delete = [k for k in cache._store if k.startswith(pattern)]

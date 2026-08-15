@@ -48,10 +48,6 @@ export const api = {
   getCentres: centresApi.getCentres,
   getCentre: centresApi.getCentre,
   createCentre: centresApi.createCentre,
-  // Dogs (placeholder - not split yet)
-  getDogs: () => Promise.resolve([]),
-  getDog: () => Promise.resolve(null),
-  createDog: () => Promise.resolve(null),
   // Surgeries
   getSurgeries: surgeriesApi.getSurgeries,
   getSurgery: surgeriesApi.getSurgery,

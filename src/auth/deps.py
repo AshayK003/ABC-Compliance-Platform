@@ -25,10 +25,19 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def create_access_token(user_id: str, role: str) -> str:
+def create_access_token(
+    user_id: str,
+    role: str,
+    name: str | None = None,
+    phone: str | None = None,
+    centre_id: str | None = None,
+) -> str:
     payload = {
         "sub": user_id,
         "role": role,
+        "name": name,
+        "phone": phone,
+        "centre_id": centre_id,
         "type": "access",
         "iat": datetime.now(UTC),
         "exp": datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes),
@@ -64,6 +73,9 @@ def decode_token(token: str) -> dict:
 class TokenPayload(BaseModel):
     user_id: str
     role: str
+    name: str | None = None
+    phone: str | None = None
+    centre_id: str | None = None
 
 
 def get_current_user(
@@ -72,7 +84,13 @@ def get_current_user(
     payload = decode_token(credentials.credentials)
     if payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
-    return TokenPayload(user_id=payload["sub"], role=payload["role"])
+    return TokenPayload(
+        user_id=payload["sub"],
+        role=payload["role"],
+        name=payload.get("name"),
+        phone=payload.get("phone"),
+        centre_id=payload.get("centre_id"),
+    )
 
 
 async def verify_refresh_token(refresh_token: str, db: AsyncSession) -> TokenPayload:
@@ -87,7 +105,13 @@ async def verify_refresh_token(refresh_token: str, db: AsyncSession) -> TokenPay
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
-    return TokenPayload(user_id=staff.id, role=staff.role)
+    return TokenPayload(
+        user_id=staff.id,
+        role=staff.role,
+        name=staff.name,
+        phone=staff.phone,
+        centre_id=staff.centre_id,
+    )
 
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:

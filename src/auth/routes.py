@@ -89,7 +89,13 @@ async def register(
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Phone number too long (max 20 characters)")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Registration failed")
 
-    access_token = create_access_token(user_id=staff.id, role=staff.role)
+    access_token = create_access_token(
+        user_id=staff.id,
+        role=staff.role,
+        name=staff.name,
+        phone=staff.phone,
+        centre_id=staff.centre_id,
+    )
     refresh_token = create_refresh_token(user_id=staff.id)
     set_auth_cookies(response, access_token, refresh_token)
 
@@ -113,7 +119,13 @@ async def login(
     if not staff.active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
 
-    access_token = create_access_token(user_id=staff.id, role=staff.role)
+    access_token = create_access_token(
+        user_id=staff.id,
+        role=staff.role,
+        name=staff.name,
+        phone=staff.phone,
+        centre_id=staff.centre_id,
+    )
     refresh_token = create_refresh_token(user_id=staff.id)
     set_auth_cookies(response, access_token, refresh_token)
 
@@ -128,7 +140,13 @@ async def refresh_token(request: Request, response: Response, db: AsyncSession =
 
     user = await verify_refresh_token(refresh_token, db)
 
-    access_token = create_access_token(user_id=user.user_id, role=user.role)
+    access_token = create_access_token(
+        user_id=user.user_id,
+        role=user.role,
+        name=user.name,
+        phone=user.phone,
+        centre_id=user.centre_id,
+    )
     new_refresh_token = create_refresh_token(user_id=user.user_id)
     set_auth_cookies(response, access_token, new_refresh_token)
 

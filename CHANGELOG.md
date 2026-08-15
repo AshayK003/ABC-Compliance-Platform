@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.4.0] - 2026-08-03
+## [0.4.1] - 2026-08-15
+
+### Fixed
+- **Auth profile contract (P0-5):** embedded `name`, `phone`, `centre_id` in the access token and `TokenPayload`, so `/auth/me` returns the full profile the frontend expects. Fixes empty Profile UI.
+- **Version strings:** `src/main.py` and `FastAPI(... version=...)` now report `0.4.0` (was hardcoded `0.1.0`), matching `CHANGELOG.md`.
+- **Health check:** removed hardcoded `redis: True` (no Redis is used; cache is in-memory).
+- **Dead code:** removed unused `cached()`/`invalidate_cache()` from `src/cache.py` and unused `redis_url` setting from `src/config.py`.
+- **Frontend:** removed no-op `api.getDogs`/`getDog`/`createDog` stubs (backend `src/dogs/routes.py` exists; wire a real Dogs page when needed).
+
+### Audit
+- Full-stack AEOS M23 audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), refresh-token revocation (#33), audit-trail wiring (#34), expense race (#35).
 
 ### Added
 - **Committee & Meetings API** — Full CRUD for committees, meetings, decisions, votes, members, attendees, and documents

@@ -200,7 +200,13 @@ class TestMe:
     async def test_returns_current_user(self, client: AsyncClient):
         resp = await client.get("/api/v1/auth/me")
         assert resp.status_code == 200
-        assert resp.json() == {"user_id": "test-user-id", "role": "admin"}
+        data = resp.json()
+        assert data["user_id"] == "test-user-id"
+        assert data["role"] == "admin"
+        # Profile fields are present (may be null for legacy tokens)
+        assert "name" in data
+        assert "phone" in data
+        assert "centre_id" in data
 
 
 class TestRefresh:
