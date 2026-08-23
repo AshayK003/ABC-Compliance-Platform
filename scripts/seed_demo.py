@@ -32,12 +32,18 @@ from src.database import async_session
 from src.models.base import (
     Allocation,
     Centre,
+    Committee,
+    CommitteeDocument,
+    CommitteeMember,
+    Decision,
     Dog,
     Expense,
     Grant,
     Inspection,
+    Meeting,
     Staff,
     Surgery,
+    Vote,
 )
 
 random.seed(42)  # deterministic demo data
@@ -249,8 +255,97 @@ async def seed() -> None:
         f"Seeded: {len(grants)} grants, {len(allocations)} allocations, {len(expenses)} expenses, "
         f"{len(dogs)} dogs, {len(surgeries)} surgeries, {len(inspections)} inspections"
     )
-    print("Demo staff: vet=9888888888/demo123, surgeon=9777777777/demo123")
 
+    # ─── Committee governance data (Committee Portal) ───
+    async with async_session() as db:
+        existing = (await db.execute(select(Committee))).scalars().first()
+        if existing:
+            print("Committee data already present — skipping committee seed")
+            return
+
+        committee = Committee(
+            name="State Animal Welfare Board — Governing Body",
+            description="Oversight committee for the state ABC programme",
+        )
+        db.add(committee)
+        await db.flush()
+
+        staff_all = list((await db.execute(select(Staff))).scalars())
+        member_roles = ["chair", "secretary", "member", "member", "member"]
+        members = []
+        for i, role in enumerate(member_roles):
+            staff = staff_all[i % len(staff_all)] if staff_all else None
+            member = CommitteeMember(
+                committee_id=committee.id,
+                member_id=staff.id if staff else str(i),
+                role=role,
+            )
+            db.add(member)
+            members.append(member)
+        await db.flush()
+
+        # Meetings: two past, three upcoming
+        now = datetime.now(UTC).replace(tzinfo=None)
+        meeting_specs = [
+            ("Quarterly Review Board", now - timedelta(days=45), "completed", "Board Hall, Jaipur"),
+            ("ABC Programme Mid-Year Review", now - timedelta(days=12), "completed", "Virtual"),
+            ("Quarterly Review Board", now + timedelta(days=10), "scheduled", "Board Hall, Jaipur"),
+            ("Policy Draft Committee", now + timedelta(days=21), "scheduled", "Virtual"),
+            ("Annual General Body", now + timedelta(days=48), "scheduled", "RC Convention Centre"),
+        ]
+        meetings = []
+        for title, when, status, location in meeting_specs:
+            m = Meeting(
+                committee_id=committee.id, title=title, scheduled_at=when,
+                duration_minutes=120 if "Review" in title else 60,
+                location=location,
+                meeting_type="virtual" if location == "Virtual" else "in-person",
+                status=status,
+            )
+            db.add(m)
+            meetings.append(m)
+        await db.flush()
+
+        # Decisions: passed / rejected / pending with realistic tallies
+        decision_specs = [
+            ("RES-2026-014", "Data Retention Policy Amendment", "passed", 9, 2, 1),
+            ("RES-2026-013", "Q3 Audit Framework Approval", "rejected", 4, 7, 1),
+            ("RES-2026-012", "Vendor Risk Assessment Guidelines", "pending", 0, 0, 0),
+            ("RES-2026-011", "Surgeon Empanelment Expansion", "passed", 11, 1, 0),
+        ]
+        for res_id, subject, status, yes, no, abstain in decision_specs:
+            d = Decision(
+                meeting_id=meetings[0].id if status != "pending" else meetings[2].id,
+                resolution_id=res_id,
+                subject=subject,
+                status=status,
+                decided_at=now - timedelta(days=40) if status != "pending" else None,
+            )
+            db.add(d)
+            await db.flush()
+            for k in range(yes):
+                db.add(Vote(decision_id=d.id, member_id=str(k), vote="yes", voted_at=d.decided_at))
+            for k in range(no):
+                db.add(Vote(decision_id=d.id, member_id=str(100 + k), vote="no", voted_at=d.decided_at))
+            for k in range(abstain):
+                db.add(Vote(decision_id=d.id, member_id=str(200 + k), vote="abstain", voted_at=d.decided_at))
+
+        docs = [
+            ("Draft_Policy_v4.pdf", "pdf", 842_133),
+            ("Q3_Minutes_Final.pdf", "pdf", 331_002),
+            ("Fund_Utilisation_Certificate_Q2.xlsx", "xlsx", 45_880),
+            ("AWBI_Grant_Sanction_Letter.pdf", "pdf", 1_204_551),
+        ]
+        for title, ftype, size in docs:
+            db.add(CommitteeDocument(
+                committee_id=committee.id, title=title, file_type=ftype,
+                file_size=size, file_path=f"/documents/{title}",
+                uploaded_by=staff_all[0].id if staff_all else "system",
+            ))
+
+        await db.commit()
+        print("Committee seeded: 1 committee, 5 members, 5 meetings, 4 decisions, 4 documents")
+    print("Demo staff: vet=9888888888/demo123, surgeon=9777777777/demo123")
 
 if __name__ == "__main__":
     asyncio.run(seed())

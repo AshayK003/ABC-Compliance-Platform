@@ -44,6 +44,7 @@ from src.public.routes import public_router, sync_router, public_limiter
 from src.reports.routes import router as reports_router
 from src.surgeries.routes import router as surgeries_router
 from src.audit.routes import router as audit_router
+from src.committee.routes import router as committee_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth_router)
@@ -59,6 +60,7 @@ api_v1_router.include_router(surgeries_router)
 api_v1_router.include_router(reports_router)
 api_v1_router.include_router(notifications_router)
 api_v1_router.include_router(audit_router)
+api_v1_router.include_router(committee_router)
 
 
 logging.basicConfig(

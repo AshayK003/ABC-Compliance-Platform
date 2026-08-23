@@ -43,4 +43,40 @@ export const publicApi = {
     completed_inspections: number;
     total_inspections: number;
   }>>('/public/compliance-scores'),
+
+  // Committee governance (Committee Portal)
+  getCommitteeDecisions: (limit = 10) =>
+    request<Array<{
+      id: string;
+      resolution_id: string;
+      subject: string;
+      status: string;
+      decided_at: string | null;
+      tally: { yes: number; no: number; abstain: number };
+    }>>(`/committee/decisions?limit=${limit}`),
+  getCommitteeMeetings: (limit = 5) =>
+    request<Array<{
+      id: string;
+      title: string;
+      scheduled_at: string;
+      location: string | null;
+      meeting_type: string;
+      status: string;
+    }>>(`/committee/meetings?limit=${limit}`),
+  getCommitteeDocuments: (limit = 8) =>
+    request<Array<{
+      id: string;
+      title: string;
+      file_type: string;
+      file_size: number;
+      uploaded_at: string;
+    }>>(`/committee/documents?limit=${limit}`),
+  getCommitteeMembers: () =>
+    request<Array<{
+      id: string;
+      name: string;
+      phone: string;
+      role: string;
+      joined_at: string;
+    }>>('/committee/members'),
 };

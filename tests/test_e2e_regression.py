@@ -17,6 +17,7 @@ mocked suite keeps passing on machines without Docker.
 from __future__ import annotations
 
 import os
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -345,6 +346,73 @@ class TestAuthLifecycle:
             # The vet's refresh cookie is now worthless (token_version bumped)
             refresh = await vet_client.post("/api/v1/auth/refresh")
             assert refresh.status_code == 401
+
+
+class TestCommitteePortal:
+    async def _seed_committee(self, maker):
+        from src.models.base import Committee, CommitteeDocument, Decision, Meeting
+        import asyncio
+
+        async with maker() as s:
+            committee = Committee(name="Governing Body", description="test")
+            s.add(committee)
+            await s.flush()
+            meeting = Meeting(
+                committee_id=committee.id, title="Q3 Review",
+                scheduled_at=datetime.now(UTC).replace(tzinfo=None) + timedelta(days=7),
+                status="scheduled", meeting_type="virtual", duration_minutes=60,
+            )
+            s.add(meeting)
+            await s.flush()
+            decision = Decision(
+                meeting_id=meeting.id, resolution_id="RES-2026-001",
+                subject="Test Resolution", status="passed",
+                decided_at=datetime.now(UTC).replace(tzinfo=None),
+            )
+            s.add(decision)
+            doc = CommitteeDocument(
+                committee_id=committee.id, title="Minutes.pdf", file_type="pdf",
+                file_size=1024, file_path="/documents/Minutes.pdf", uploaded_by="tester",
+            )
+            s.add(doc)
+            await s.commit()
+            return decision.id
+
+    async def test_decisions_meetings_documents(self, client, session_maker):
+        await self._seed_committee(maker=session_maker)
+
+        # Committee endpoints require authentication
+        phone = _phone()
+        centre_id = await _seed_centre(session_maker, code=f"C{uuid4().hex[:6].upper()}")
+        await _seed_staff(session_maker, phone=phone, centre_id=centre_id)
+        await _login(client, phone)
+
+        decisions = (await client.get("/api/v1/committee/decisions")).json()
+        assert len(decisions) == 1
+        assert decisions[0]["resolution_id"] == "RES-2026-001"
+        assert "tally" in decisions[0]
+
+        meetings = (await client.get("/api/v1/committee/meetings")).json()
+        assert any("Q3 Review" in m["title"] for m in meetings)
+
+        docs = (await client.get("/api/v1/committee/documents")).json()
+        assert any(d["title"] == "Minutes.pdf" for d in docs)
+
+    async def test_committee_requires_auth(self, session_maker):
+        from httpx import ASGITransport, AsyncClient as AC
+        from src.database import get_db as _get_db
+
+        async def _override():
+            async with session_maker() as session:
+                yield session
+
+        _app.dependency_overrides.clear()
+        _app.dependency_overrides[_get_db] = _override
+        transport = ASGITransport(app=_app)
+        async with AC(transport=transport, base_url="https://test") as anon:
+            resp = await anon.get("/api/v1/committee/decisions")
+            assert resp.status_code == 401
+        _app.dependency_overrides.clear()
 
 
 class TestHealthRealDB:
