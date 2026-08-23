@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
+from src.audit.routes import log_audit_event
 from src.database import get_db
 from src.models.base import Surgery
 
@@ -28,7 +29,8 @@ class SurgeryCreate(BaseModel):
 async def create_surgery(
     body: SurgeryCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+    _: TokenPayload = Depends(require_centre_access("centre_id")),
+    user: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
     surgery = Surgery(**body.model_dump(exclude_none=True))
     db.add(surgery)
@@ -40,6 +42,7 @@ async def create_surgery(
         if "foreign" in str(e).lower() or "dog" in str(e).lower() or "centre" in str(e).lower() or "staff" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid dog_id, centre_id, or staff_id")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Surgery creation failed")
+    await log_audit_event(db, "surgery", surgery.id, "create", actor_id=user.user_id)
     return surgery
 
 

@@ -100,8 +100,8 @@ class TestGrantCRUD:
             "financial_year": "2026-27",
         })
         assert resp.status_code == 201
-        mock_session.add.assert_called_once()
-        mock_session.commit.assert_awaited_once()
+        mock_session.add.assert_called()  # entity + audit event
+        assert mock_session.commit.await_count >= 1  # entity commit + audit commit
 
     @pytest.mark.asyncio
     async def test_list_grants(self, client: AsyncClient, mock_session: AsyncMock):

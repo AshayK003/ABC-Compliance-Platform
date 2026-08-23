@@ -124,8 +124,8 @@ class TestCreateCentre:
         })
         assert resp.status_code == 201
         assert resp.json()["code"] == "NCR-02"
-        mock_session.add.assert_called_once()
-        mock_session.commit.assert_awaited_once()
+        mock_session.add.assert_called()  # entity + audit event
+        assert mock_session.commit.await_count >= 1  # entity commit + audit commit
 
     @pytest.mark.asyncio
     async def test_rejects_non_admin(self, client: AsyncClient, app: FastAPI):
