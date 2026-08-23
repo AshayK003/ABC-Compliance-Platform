@@ -170,6 +170,14 @@ async def create_expense(
     if not allocation:
         raise HTTPException(status_code=404, detail="Allocation not found")
 
+    # Object-level authorization (anti-IDOR): non-admin staff may only bill
+    # against allocations belonging to their own centre.
+    if user.role != "admin" and allocation.centre_id != user.centre_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: allocation belongs to another centre",
+        )
+
     # Sum existing expenses for this allocation
     existing_expenses_result = await db.execute(
         select(func.sum(Expense.amount)).where(Expense.allocation_id == body.allocation_id)

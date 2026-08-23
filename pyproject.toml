@@ -50,3 +50,6 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "e2e: end-to-end tests against a real PostgreSQL database (deselect with '-m \"not e2e\"')",
+]

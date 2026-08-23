@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
 from src.models.base import Centre, Complaint, Inspection, SyncQueue
+from src.utils.fk import assert_fk_exists
 
 # Rate limiter for public endpoints
 public_limiter = Limiter(key_func=get_remote_address)
@@ -29,17 +30,29 @@ class ComplaintUpdate(BaseModel):
     resolution: str | None = None
 
 
-@public_router.post("/complaints", status_code=status.HTTP_201_CREATED)
+@public_router.post(
+    "/complaints",
+    status_code=status.HTTP_201_CREATED,
+    responses={400: {"description": "Invalid centre_id"}},
+)
 @public_limiter.limit("10/hour")
 async def create_complaint(
     request: Request,
     body: ComplaintCreate,
     db: AsyncSession = Depends(get_db),
 ):
+    await assert_fk_exists(db, Centre, body.centre_id, "centre")
     complaint = Complaint(**body.model_dump())
     db.add(complaint)
-    await db.commit()
-    await db.refresh(complaint)
+    try:
+        await db.commit()
+        await db.refresh(complaint)
+    except Exception:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid centre_id: no such centre",
+        )
     return complaint
 
 

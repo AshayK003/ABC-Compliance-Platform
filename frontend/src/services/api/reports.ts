@@ -56,24 +56,17 @@ function download(response: Response, fallbackName: string): Promise<void> {
   });
 }
 
-/** POST the report params and download the resulting PDF/Excel file. */
+/** POST the report params and download the resulting PDF/Excel file.
+ * Auth via the httpOnly access-token cookie (credentials: 'include'). */
 async function exportFile(
   suffix: 'pdf' | 'excel',
   data: ReportGenerateRequest,
 ): Promise<void> {
-  let authToken: string | null = null;
-  try {
-    const stored = localStorage.getItem('access_token');
-    authToken = stored;
-  } catch {
-    authToken = null;
-  }
   const response = await fetch(`${API_BASE}/reports/export/${suffix}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
     body: JSON.stringify(data),
   });
