@@ -5,13 +5,11 @@
 [![CI](https://github.com/AshayK003/ABC-Compliance-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/AshayK003/ABC-Compliance-Platform/actions/workflows/ci.yml)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18%2B-61DAFB?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?logo=typescript)](https://www.typescriptlang.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.133-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://www.postgresql.org)
-[![Redis](https://img.shields.io/badge/Redis-7%2B-DC382D?logo=redis)](https://redis.io)
-[![Tests](https://img.shields.io/badge/tests-97%20passing%20%2884%20API%20%2B%2013%20UI%29-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/coverage-82%25-yellow)]()
+[![Tests](https://img.shields.io/badge/tests-105%20backend%20%C2%B7%2018%20frontend-brightgreen)]()
 [![Status](https://img.shields.io/badge/status-active%20development-brightgreen)]()
 
 </div>
@@ -24,14 +22,15 @@
 
 | Module | Description |
 |--------|-------------|
-| **Centres** | Registered ABC centre directory with capacity, status, compliance score, and staff count |
-| **Surgeries** | Monthly surgery logs per centre with outcome tracking (recovered, complications) |
-| **Inspections** | Surprise inspection scheduling, execution, and findings with sign-off |
-| **Fund Tracker** | Program fund allocation, grants, and expense monitoring with budget vs actuals |
-| **Reports** | Compliance reporting with real PDF (themed) and Excel file exports, including a state-level compliance heatmap |
+| **Centres** | Registered ABC centre directory with capacity, status, and staff counts |
+| **Surgeries** | Monthly surgery logs per centre with outcome tracking |
+| **Inspections** | Surprise inspection scheduling, execution, and findings |
+| **Fund Tracker** | Grants, allocations, and expense monitoring with balance enforcement |
+| **Reports** | Filtered compliance reports with real PDF (themed) and Excel exports, state heatmap, YoY charts |
 | **Committee Portal** | Governance oversight views for AWBI/state board officials |
-| **Sync Queue** | Offline-first mutation queue with idempotency keys for unreliable connectivity |
-| **Dashboard** | Real-time compliance trends, surgery/fund/centre metrics computed from live data |
+| **Sync Queue** | Offline-first mutation queue with idempotency keys, usable by field staff |
+| **User Management** | Admin approval of registrations, role/centre assignment, session revocation |
+| **Dashboard** | Live compliance ratios, surgery trends, fund disbursement computed from real data |
 
 ---
 
@@ -39,55 +38,46 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (React 18 + TS)                  │
+│                        FRONTEND (React 19 + TS)                  │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │
 │  │ Centres  │ │Surgeries │ │Inspect.  │ │ Funds    │  ...       │
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘            │
 │       └────────────┼────────────┼────────────┘                   │
-│                    ▼            ▼                                 │
-│         ┌─────────────────────────────┐                           │
-│         │   api.ts (modular clients)  │                           │
-│         │  auth │ centres │ funds ... │                           │
-│         └──────────────┬──────────────┘                           │
-└───────────────────────┼──────────────────────────────────────────┘
-                        │ HTTPS /api/v1/*
-                        ▼
+│                    ▼            ▼                                │
+│         ┌─────────────────────────────┐                          │
+│         │   services/api (modular)    │                          │
+│         │  auth │ centres │ funds ... │                          │
+│         └──────────────┬──────────────┘                          │
+└────────────────────────┼─────────────────────────────────────────┘
+                         │ HTTPS /api/v1/*  (Bearer + httpOnly cookies)
+                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                        BACKEND (FastAPI)                         │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │
 │  │ /centres │ │/surgeries│ │/inspect. │ │ /funds   │  ...       │
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘            │
 │       └────────────┼────────────┼────────────┘                   │
-│                    ▼            ▼                                 │
-│         ┌─────────────────────────────┐                           │
-│         │   Correlation ID Middleware │                           │
-│         │   Rate Limiter (slowapi)    │                           │
-│         │   JWT Auth (httpOnly cookies)│                          │
-│         └──────────────┬──────────────┘                           │
-└───────────────────────┼──────────────────────────────────────────┘
-                        │ asyncpg
-                        ▼
+│                    ▼            ▼                                │
+│         ┌─────────────────────────────┐                          │
+│         │ Correlation ID Middleware   │                          │
+│         │ Rate Limiting (slowapi)     │                          │
+│         │ JWT Auth + RBAC + scoping   │                          │
+│         └──────────────┬──────────────┘                          │
+└────────────────────────┼─────────────────────────────────────────┘
+                         │ asyncpg
+                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      POSTGRESQL (Docker)                         │
-│  ┌─────────┐ ┌──────────┐ ┌───────────┐ ┌─────────┐            │
-│  │centres  │ │surgeries │ │inspections│ │ funds*  │  ...       │
-│  └─────────┘ └──────────┘ └───────────┘ └─────────┘            │
-└─────────────────────────────────────────────────────────────────┘
-                        ▲
-                        │ Redis (cache, rate limit, sync queue)
-                        ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        REDIS (Docker)                            │
+│                      POSTGRESQL 16                               │
+│   centres · surgeries · inspections · funds · sync · audit      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Stack:**
-- **Backend:** FastAPI 0.115+ (Python 3.11), SQLAlchemy 2.0 async, asyncpg, Pydantic v2, slowapi (rate limiting), JWT (HS256)
-- **Frontend:** React 18, TypeScript 5, Vite 5, React.lazy code-splitting, TanStack Table patterns (custom DataTable), CSS Modules
-- **Database:** PostgreSQL 16 (Docker), SQLAlchemy 2.0 ORM with async session
-- **Cache:** Redis 7 (Docker) — in-memory fallback when unavailable
-- **Auth:** JWT access (15 min) + refresh (7 days) tokens in `httpOnly` `SameSite=Strict` cookies with auto-refresh on 401
-- **Deployment:** Docker Compose (local), HF Spaces + Vercel (prod)
+- **Backend:** FastAPI 0.133 (Python 3.11), SQLAlchemy 2.0 async, asyncpg, Pydantic v2, slowapi, PyJWT, bcrypt
+- **Frontend:** React 19, TypeScript, Vite, ECharts, code-splitting, self-hosted icon font (offline-safe)
+- **Database:** PostgreSQL 16, Alembic migrations (4 revisions)
+- **Auth:** JWT access (15 min) + refresh (7 days) in `httpOnly` cookies with `SameSite` tuned per environment; Bearer fallback; server-side token revocation
+- **Deployment:** Docker Compose (single server), HF Spaces + Vercel + Neon (free-tier cloud)
 
 ---
 
@@ -103,7 +93,7 @@
 ```bash
 git clone https://github.com/AshayK003/ABC-Compliance-Platform.git
 cd ABC-Compliance-Platform
-cp .env.example .env   # edit DATABASE_URL if needed
+cp .env.example .env   # set a strong SECRET_KEY (min 32 bytes)
 ```
 
 ### 2. Start Infrastructure
@@ -130,15 +120,25 @@ cd frontend
 npm install
 npm run dev
 ```
-✅ UI at `http://localhost:5173` (proxies `/api` → `localhost:8000`)
+✅ UI at `http://localhost:5173`
 
 ### 5. Seed Demo Data (Optional)
 ```bash
 # From project root, with backend running
 DATABASE_URL="postgresql+asyncpg://abc:abc@localhost:5432/abc_dashboard" \
+  python scripts/seed_awbi_centres.py
+DATABASE_URL="postgresql+asyncpg://abc:abc@localhost:5432/abc_dashboard" \
   python scripts/seed_demo.py
 ```
-Populates 3 centres, 4 surgeries, 2 inspections, 2 grants, 3 allocations, 4 expenses.
+Seeds the official AWBI centre list plus demo-scale operations data
+(~10 grants, ~15 allocations, ~90 expenses, ~180 dogs with surgeries,
+~80 inspections) **and an admin account:**
+
+| Role | Phone | Password |
+|------|-------|----------|
+| Admin | `9999999999` | `demo123` |
+
+Demo data is for evaluation environments only.
 
 ---
 
@@ -147,13 +147,13 @@ Populates 3 centres, 4 surgeries, 2 inspections, 2 grants, 3 allocations, 4 expe
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | ✅ | — | Postgres async connection string |
-| `REDIS_URL` | ❌ | `redis://localhost:6379/0` | Redis connection string |
-| `SECRET_KEY` | ✅ | — | JWT signing key (min 32 chars) |
-| `DEBUG` | ❌ | `false` | Enable dev CSP, Swagger docs |
+| `REDIS_URL` | ❌ | `redis://localhost:6379/0` | Reserved for future workers |
+| `SECRET_KEY` | ✅ | — | JWT signing key (min 32 bytes; default value rejected) |
+| `DEBUG` | ❌ | `false` | Dev CSP, Swagger docs, relaxed cookie flags (localhost only) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | ❌ | `15` | Access token TTL |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | ❌ | `7` | Refresh token TTL |
-| `ALLOWED_ORIGINS` | ❌ | `["http://localhost:5173"]` | CORS origins |
-| `CACHE_ENABLED` | ❌ | `true` | Enable in-memory cache |
+| `ALLOWED_ORIGINS` | ❌ | `["http://localhost:5173"]` | CORS origins (JSON list format) |
+| `CACHE_ENABLED` | ❌ | `true` | In-memory response cache |
 | `CACHE_TTL_SECONDS` | ❌ | `30` | Cache TTL |
 
 ---
@@ -161,16 +161,25 @@ Populates 3 centres, 4 surgeries, 2 inspections, 2 grants, 3 allocations, 4 expe
 ## 🧪 Tests
 
 ```bash
-# Backend
-pytest -q                    # 71 passed, 4 skipped
-pytest --cov=src --cov-report=term-missing
+# Backend — 91 unit/API tests + 14 real-database e2e tests
+pytest -q -m "not e2e"          # mocked suite (no database needed)
+
+# e2e suite: requires Docker Postgres with an abc_test database
+docker exec <db-container> psql -U abc -d postgres \
+  -c "CREATE DATABASE abc_test OWNER abc;"
+DATABASE_URL=... E2E_DATABASE_URL='postgresql+asyncpg://abc:abc@localhost:5433/abc_test' pytest tests/test_e2e_regression.py -v
 
 # Frontend
 cd frontend
-npm run lint                 # ESLint + TypeScript
-npm run typecheck            # tsc --noEmit
-npm run build                # Production build
+npm run typecheck               # tsc
+npm test                        # vitest (18 tests)
+npm run build                   # production build
 ```
+
+The e2e regression suite exercises true HTTP flows against PostgreSQL:
+cookie-only auth, FK validation on the public complaint endpoint,
+cross-centre authorization (IDOR regressions), file-export bytes, and the
+full registration → approval → login lifecycle.
 
 ---
 
@@ -178,31 +187,32 @@ npm run build                # Production build
 
 ```
 ABC-Compliance-Platform/
-├── .github/workflows/ci.yml     # CI: lint → typecheck → test → build → audit
-├── alembic/                     # DB migrations (4 versions)
+├── .github/workflows/ci.yml    # CI: lint → typecheck → test → build → audit
+├── migrations/                 # Alembic migrations (4 revisions)
 ├── frontend/
 │   ├── src/
-│   │   ├── components/          # DataTable, StatCard, CentreFormModal, SurgeryFormModal, ChartPlaceholder
-│   │   ├── contexts/AuthContext.tsx
-│   │   ├── pages/               # Centres, Surgeries, Inspections, FundTracker, Dashboard, Reports
-│   │   ├── services/api/        # Modular API client (auth, centres, surgeries, inspections, funds, public)
-│   │   └── types/index.ts       # Shared TS interfaces
-│   └── package.json
+│   │   ├── components/         # DataTable, modals, ComplianceHeatmap, charts
+│   │   ├── contexts/           # AuthContext (token refresh), ThemeContext
+│   │   ├── pages/              # Dashboard, Centres, Surgeries, Inspections,
+│   │   │                       # FundTracker, Reports, CommitteePortal...
+│   │   ├── services/api/       # Modular API client with 401 auto-refresh
+│   │   └── types/index.ts      # Shared TS interfaces
+│   └── public/fonts/           # Self-hosted Material Symbols (offline-safe)
 ├── scripts/
-│   └── seed_demo.py             # Idempotent demo data seeder
+│   ├── seed_awbi_centres.py    # Official AWBI-recognised centre list
+│   ├── seed_demo.py            # Idempotent demo-data seeder (+ admin account)
+│   └── shrink_geojson.py       # Map-data size optimizer (one-off)
 ├── src/
-│   ├── auth/                    # JWT, bcrypt, httpOnly cookies, role-based deps
-│   ├── centres/                 # Centre CRUD + staff count subquery
-│   ├── surgeries/               # Surgery CRUD with filtering
-│   ├── inspections/             # Inspection CRUD + scheduling
-│   ├── funds/                   # Grants, Allocations, Expenses + balance validation
-│   ├── public/                  # Complaints (public), Sync Queue (offline)
-│   ├── models/base.py           # SQLAlchemy 2.0 models (FK cascades, indexes, relationships)
-│   ├── cache.py                 # In-memory TTL cache (30s) with invalidation
-│   ├── config.py                # Pydantic Settings (env-driven)
-│   ├── database.py              # Async engine + session
-│   └── main.py                  # FastAPI app, middleware, lifespan, v1 router
-├── tests/                       # 71 async tests (auth, centres, funds, health, sync)
+│   ├── auth/                   # JWT, bcrypt, cookies, RBAC deps, user mgmt
+│   ├── centres/                # Centre CRUD + staff count subquery
+│   ├── surgeries/ inspections/ # Operational CRUD with centre scoping
+│   ├── funds/                  # Grants → allocations → expenses (balance-checked)
+│   ├── public/                 # Complaints, heatmap, compliance scores, sync queue
+│   ├── reports/                # Filtered report generation + PDF/Excel exporters
+│   ├── notifications/          # Per-user notification inbox
+│   ├── models/base.py          # SQLAlchemy 2.0 models (FK cascades, indexes)
+│   └── main.py                 # App factory, middleware, security headers
+├── tests/                      # Mocked suite + real-DB e2e regressions
 ├── pyproject.toml
 └── README.md
 ```
@@ -211,15 +221,18 @@ ABC-Compliance-Platform/
 
 ## 🔐 Security
 
-- **Secrets:** All in environment variables, validated on startup
-- **Auth:** JWT in `httpOnly` `Secure` `SameSite=Strict` cookies; short-lived access + rotating refresh
-- **Authorization:** Role-based (`admin`, `vet`, `surgeon`) via `require_role()` dependency
-- **Rate Limiting:** 5/min login, 3/hr register, 60/min general (slowapi)
-- **CSP:** Strict in production (`script-src 'self'`), relaxed in dev
-- **Input Validation:** Pydantic v2 on every request body
-- **SQL Injection:** SQLAlchemy ORM only — no raw SQL
-- **CORS:** Whitelist only (`http://localhost:5173` dev, configured origins prod)
-- **Error Handling:** Generic 500 messages, structured logging with correlation IDs
+See [SECURITY.md](SECURITY.md) for the full policy and reporting process.
+
+- **Auth:** JWT in `httpOnly` cookies (`SameSite=Strict` locally, `None` cross-site in prod); short-lived access + revocable refresh tokens
+- **Registration:** pending admin approval — no instant access
+- **Authorization:** role-based checks plus object-level centre-scoping on entity writes (anti-IDOR)
+- **Account deletion:** deactivation preserving referenced history, not hard-delete
+- **Rate limiting:** 5/min login, 3/hr register, 10/hr public complaints
+- **CSP:** strict in production; HSTS, nosniff, frame-deny everywhere
+- **Input validation:** Pydantic v2 on every request body; FK existence checks return 400s, not 500s
+- **SQL injection:** SQLAlchemy ORM only — no raw SQL
+- **Secrets:** env-driven, validated at startup (32-byte minimum SECRET_KEY)
+- **CI audits:** `pip-audit` + `npm audit --audit-level=high` on every push
 
 ---
 
@@ -227,29 +240,24 @@ ABC-Compliance-Platform/
 
 ### Production (Free Tier)
 
-| Service | Platform | Config |
-|---------|----------|--------|
-| Backend | Hugging Face Spaces (Docker) | `Dockerfile`, `scripts/deploy_hf.py` |
-| Frontend | Vercel | `vercel.json` + `VITE_API_URL` |
-| Database | Neon Postgres | Serverless, auto-suspend |
-| Cache | Redis (if needed) | Upstash free tier |
+| Service | Platform | Notes |
+|---------|----------|-------|
+| Backend | Docker (HF Spaces or any container host) | `Dockerfile`, fail-fast migrations |
+| Frontend | Vercel | `frontend/vercel.json` SPA rewrite |
+| Database | Neon Postgres | pooled connection string, `ssl=require` |
 
-**Keep-alive:** UptimeRobot 5-min ping (HF Spaces suspends after 48h idle)
+**Keep-alive:** UptimeRobot 5-min ping on the backend `/health`.
 
 ### Docker Compose (Single Server)
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose up -d --build
 ```
 
 ---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development setup (pre-commit, virtual env, test runner)
-- Code style (black, isort, flake8, mypy, ESLint + Prettier)
-- PR workflow (branch naming, conventional commits, review checklist)
-- Testing requirements (auth, validation, error paths)
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -261,23 +269,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 ---
 
-## 🙏 Acknowledgements
-
-- **FastAPI** — modern, fast web framework
-- **SQLAlchemy 2.0** — async ORM with 20 years of battle-testing
-- **React + TypeScript + Vite** — frontend DX gold standard
-- **PostgreSQL** — the world's most advanced open-source database
-- **Redis** — in-memory data structure store
-- **slowapi** — FastAPI rate limiting
-- **Pydantic v2** — data validation using Python type hints
-
----
-
 ## 📞 Support
 
 - **Issues:** [GitHub Issues](https://github.com/AshayK003/ABC-Compliance-Platform/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/AshayK003/ABC-Compliance-Platform/discussions)
-- **Security:** See [SECURITY.md](SECURITY.md) for responsible disclosure
+- **Security:** [SECURITY.md](SECURITY.md) — private disclosure via GitHub Security Advisories
 
 ---
 

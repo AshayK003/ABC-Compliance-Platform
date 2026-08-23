@@ -85,13 +85,13 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting %s v%s", settings.app_name, "0.4.0")
+    logger.info("Starting %s v%s", settings.app_name, "0.5.0")
     yield
     # Shutdown
     logger.info("Shutting down %s", settings.app_name)
 
 
-app = FastAPI(title=settings.app_name, version="0.4.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.5.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.state.public_limiter = public_limiter
 app.add_middleware(CorrelationIDMiddleware)
