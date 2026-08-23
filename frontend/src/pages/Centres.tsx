@@ -281,7 +281,7 @@ export function Centres() {
       )}
 
       {viewCentre && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setViewCentre(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setViewCentre(null)} onKeyDown={(e) => { if (e.key === 'Escape') setViewCentre(null); }}>
           <div
             className="bg-surface-container-high border border-outline-variant rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}

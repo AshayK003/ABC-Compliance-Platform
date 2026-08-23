@@ -9,7 +9,7 @@ export interface YoyData {
 }
 
 /** Grouped bar chart: this year's vs last year's quarterly surgery volumes. */
-export function YoyAdherenceChart({ data, height = '100%' }: { readonly data: YoyData | null; height?: string }) {
+export function YoyAdherenceChart({ data, height = '100%' }: Readonly<{ data: YoyData | null; height?: string }>) {
   const isDark = useThemeDark();
 
   const option = useMemo<EChartsOption>(() => {
