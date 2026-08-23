@@ -200,6 +200,8 @@ export function Surgeries() {
                 },
                 { key: 'actions', header: 'Actions', align: 'right', render: () => <button type="button" className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button> },
               ]}
+              enableExport
+              exportFilename="surgery_records"
             />
           </div>
           <div className="p-4 border-t border-outline-variant flex justify-between items-center bg-surface-container text-on-surface-variant font-label-md text-label-md">

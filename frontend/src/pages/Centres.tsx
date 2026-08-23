@@ -225,6 +225,8 @@ export function Centres() {
                   ),
                 },
               ]}
+              enableExport
+              exportFilename="abc_centres"
             />
           </div>
 
