@@ -70,14 +70,14 @@ export function DashboardLayout() {
 
       {/* Side Navigation — fixed rail on lg+, slide-in drawer below lg */}
       <nav
-        className={`fixed left-0 top-0 h-screen w-[260px] max-w-[85vw] bg-surface-container-high dark:bg-surface-container-high border-r border-outline-variant dark:border-outline-variant z-40 flex flex-col py-4 transition-transform duration-200 ease-out
+        className={`fixed left-0 top-0 h-screen w-[216px] max-w-[80vw] bg-surface-container-high dark:bg-surface-container-high border-r border-outline-variant dark:border-outline-variant z-40 flex flex-col py-4 transition-transform duration-200 ease-out
           lg:translate-x-0 lg:z-20
           ${drawerOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}
         aria-label="Primary"
       >
-        <div className="px-gutter mb-8 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <img src="/logo.svg" alt="ABC Compliance logo" className="w-10 h-10 rounded-xl shrink-0" />
+        <div className="px-3 mb-8 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <img src="/logo.svg" alt="ABC Compliance logo" className="w-9 h-9 rounded-lg shrink-0" />
             <div className="min-w-0">
               <h1 className="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary truncate">ABC Digital</h1>
               <p className="font-label-md text-label-md text-on-surface-variant truncate">Compliance Platform</p>
@@ -93,7 +93,7 @@ export function DashboardLayout() {
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <ul className="flex flex-col gap-1 px-2 flex-grow overflow-y-auto">
+        <ul className="flex flex-col gap-1 px-1.5 flex-grow overflow-y-auto">
           {navigation.map((item) => (
             <li key={item.path}>
               <NavLink to={item.path} className={navLinkClass}>
@@ -105,7 +105,7 @@ export function DashboardLayout() {
             </li>
           ))}
         </ul>
-        <div className="flex flex-col gap-1 px-3 mt-auto pt-4 border-t border-outline-variant/30">
+        <div className="flex flex-col gap-1 px-2 mt-auto pt-4 border-t border-outline-variant/30">
           <NavLink
             to="/notifications"
             className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-secondary-container/20 transition-colors duration-200 ease-in-out cursor-pointer group"
@@ -132,7 +132,7 @@ export function DashboardLayout() {
       </nav>
 
       {/* Main Content Wrapper — full width under lg (mobile top bar), offset by rail on lg+ */}
-      <div className="flex flex-col flex-1 w-full lg:ml-[240px] lg:w-[calc(100%-240px)] h-screen overflow-hidden pt-14 lg:pt-0">
+      <div className="flex flex-col flex-1 w-full lg:ml-[216px] lg:w-[calc(100%-216px)] h-screen overflow-hidden pt-14 lg:pt-0">
         {/* Top App Bar (desktop only — mobile uses the fixed top bar above) */}
         <header className="hidden lg:flex justify-between items-center h-16 px-gutter bg-surface-container dark:bg-surface-container border-b border-outline-variant dark:border-outline-variant z-10 shrink-0">
           <div className="flex items-center gap-4 min-w-0">
