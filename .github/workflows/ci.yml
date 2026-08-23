@@ -20,6 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
+          pip install --no-deps .
           pip install --only-binary :all: --require-hashes -r requirements.lock
 
       - name: Run pytest
