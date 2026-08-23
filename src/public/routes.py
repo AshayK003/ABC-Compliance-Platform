@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from slowapi import Limiter
@@ -210,6 +212,44 @@ async def compliance_heatmap(
     return _build_heatmap_result(state_stats)
 
 
+@public_router.get("/compliance-scores")
+async def compliance_scores(
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+):
+    """Real compliance score per centre: completed inspections / total inspections.
+
+    This is the number the dashboard's 'Compliance >90%' card reports on —
+    it must be the genuine ratio, not a binary has-any-completed-inspection flag.
+    """
+    centres_result = await db.execute(select(Centre))
+    centres = centres_result.scalars().all()
+
+    ins_stmt = (
+        select(Inspection.centre_id, Inspection.status, func.count(Inspection.id))
+        .group_by(Inspection.centre_id, Inspection.status)
+    )
+    ins_rows = (await db.execute(ins_stmt)).all()
+    completed: dict[str, int] = {}
+    totals: dict[str, int] = {}
+    for centre_id, status_val, count in ins_rows:
+        totals[centre_id] = totals.get(centre_id, 0) + count
+        if status_val == "completed":
+            completed[centre_id] = count
+
+    scores = []
+    for centre in centres:
+        total = totals.get(centre.id, 0)
+        comp = round((completed.get(centre.id, 0) / total * 100) if total > 0 else 0.0, 1)
+        scores.append({
+            "centre_id": centre.id,
+            "compliance_score": comp,
+            "completed_inspections": completed.get(centre.id, 0),
+            "total_inspections": total,
+        })
+    return scores
+
+
 # ─── Sync Queue Router ───
 sync_router = APIRouter(prefix="/sync", tags=["sync"])
 
@@ -233,7 +273,7 @@ class MarkFailedRequest(BaseModel):
 async def enqueue_sync(
     body: SyncEnqueue,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    _: TokenPayload = Depends(get_current_user),
 ):
     # Check idempotency
     result = await db.execute(
@@ -292,7 +332,7 @@ async def list_pending_sync(
 async def mark_synced(
     sync_id: str,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    _: TokenPayload = Depends(get_current_user),
 ):
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
@@ -300,7 +340,7 @@ async def mark_synced(
         raise HTTPException(status_code=404, detail=SYNC_NOT_FOUND)
 
     item.status = "synced"
-    # synced_at is set by model default
+    item.synced_at = datetime.now(UTC).replace(tzinfo=None)
     await db.commit()
     return item
 
@@ -310,7 +350,7 @@ async def mark_failed(
     sync_id: str,
     body: MarkFailedRequest,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    _: TokenPayload = Depends(get_current_user),
 ):
     result = await db.execute(select(SyncQueue).where(SyncQueue.id == sync_id))
     item = result.scalar_one_or_none()
@@ -332,7 +372,7 @@ class RetryFailedRequest(BaseModel):
 async def retry_failed(
     body: RetryFailedRequest,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    _: TokenPayload = Depends(get_current_user),
 ):
     result = await db.execute(
         select(SyncQueue).where(SyncQueue.status == "failed", SyncQueue.retry_count < body.max_retries)

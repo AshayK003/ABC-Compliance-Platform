@@ -35,6 +35,12 @@ export const publicApi = {
   retryFailed: (max_retries?: number) => request<{ retried: number }>('/sync/retry-failed', { method: 'POST', body: JSON.stringify({ max_retries }) }),
   getSyncStatus: (idempotency_key: string) => request<SyncQueueItem>(`/sync/status/${idempotency_key}`),
 
-  // Heatmap
+  // Heatmap + real per-centre compliance scores
   getHeatmap: () => request<HeatmapState[]>('/public/heatmap'),
+  getComplianceScores: () => request<Array<{
+    centre_id: string;
+    compliance_score: number;
+    completed_inspections: number;
+    total_inspections: number;
+  }>>('/public/compliance-scores'),
 };

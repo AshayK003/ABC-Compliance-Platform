@@ -59,6 +59,8 @@ export const api = {
   getComplaints: publicApi.getComplaints,
   createComplaint: publicApi.createComplaint,
   updateComplaint: publicApi.updateComplaint,
+  getHeatmap: publicApi.getHeatmap,
+  getComplianceScores: publicApi.getComplianceScores,
   // Sync Queue
   enqueueSync: publicApi.enqueueSync,
   getPendingSync: publicApi.getPendingSync,
