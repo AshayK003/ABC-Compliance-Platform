@@ -1,4 +1,5 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const navigation = [
@@ -14,38 +15,90 @@ const navigation = [
 export function DashboardLayout() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close the mobile drawer whenever the route changes
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-3 py-2 rounded ${
+      isActive
+        ? 'text-primary font-bold bg-surface-container-highest dark:bg-surface-container-highest hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors'
+        : 'text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors'
+    }`;
+
   return (
     <div className="bg-background text-on-surface font-body-md h-screen flex overflow-hidden">
-      {/* Side Navigation */}
-      <nav className="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-high dark:bg-surface-container-high border-r border-outline-variant dark:border-outline-variant z-20 flex flex-col py-4 transition-colors duration-200 ease-in-out">
-        <div className="px-gutter mb-8 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm font-bold">
-            A
+      {/* Mobile top bar with menu button (hidden on lg+) */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 z-30 flex items-center justify-between px-4 bg-surface-container dark:bg-surface-container border-b border-outline-variant dark:border-outline-variant">
+        <button
+          type="button"
+          aria-label="Open navigation menu"
+          onClick={() => setDrawerOpen(true)}
+          className="p-2 -ml-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+        >
+          <span className="material-symbols-outlined">menu</span>
+        </button>
+        <h2 className="text-headline-sm font-headline-sm font-bold text-on-surface dark:text-on-surface truncate">
+          AWBI ABC Compliance
+        </h2>
+        <NavLink
+          to="/profile"
+          aria-label="Profile"
+          className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center hover:bg-primary-container/80 transition-colors shrink-0"
+        >
+          <span className="material-symbols-outlined text-on-primary-container">person</span>
+        </NavLink>
+      </header>
+
+      {/* Scrim for the mobile drawer */}
+      {drawerOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-black/50"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Side Navigation — fixed rail on lg+, slide-in drawer below lg */}
+      <nav
+        className={`fixed left-0 top-0 h-screen w-[260px] max-w-[85vw] bg-surface-container-high dark:bg-surface-container-high border-r border-outline-variant dark:border-outline-variant z-40 flex flex-col py-4 transition-transform duration-200 ease-out
+          lg:translate-x-0 lg:z-20
+          ${drawerOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}
+        aria-label="Primary"
+      >
+        <div className="px-gutter mb-8 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm font-bold shrink-0">
+              A
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary truncate">ABC Digital</h1>
+              <p className="font-label-md text-label-md text-on-surface-variant truncate">Compliance Platform</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary">ABC Digital</h1>
-            <p className="font-label-md text-label-md text-on-surface-variant">Compliance Platform</p>
-          </div>
+          {/* Close button inside drawer (mobile only) */}
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setDrawerOpen(false)}
+            className="lg:hidden p-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
         </div>
-        <ul className="flex flex-col gap-1 px-2 flex-grow">
+        <ul className="flex flex-col gap-1 px-2 flex-grow overflow-y-auto">
           {navigation.map((item) => (
             <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2 rounded ${
-                    isActive
-                      ? 'text-primary font-bold bg-surface-container-highest dark:bg-surface-container-highest hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors'
-                      : 'text-on-surface-variant dark:text-on-surface-variant hover:bg-secondary-container dark:hover:bg-secondary-container transition-colors'
-                  }`
-                }
-              >
+              <NavLink to={item.path} className={navLinkClass}>
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
                   {item.icon}
                 </span>
@@ -70,39 +123,43 @@ export function DashboardLayout() {
             <span className="font-label-md text-label-md">Settings</span>
           </NavLink>
           <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-colors duration-200 ease-in-out cursor-pointer group w-full text-left"
-                    >
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant font-medium hover:bg-error/10 hover:text-error transition-colors duration-200 ease-in-out cursor-pointer group w-full text-left"
+          >
             <span className="material-symbols-outlined group-hover:text-error transition-colors">logout</span>
             <span className="font-label-md text-label-md">Sign Out</span>
           </button>
         </div>
       </nav>
 
-      {/* Main Content Wrapper */}
-      <div className="flex flex-col flex-1 ml-[240px] w-[calc(100%-240px)] h-screen overflow-hidden">
-        {/* Top App Bar */}
-        <header className="flex justify-between items-center h-16 px-gutter bg-surface-container dark:bg-surface-container border-b border-outline-variant dark:border-outline-variant z-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <h2 className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface">AWBI ABC Compliance</h2>
+      {/* Main Content Wrapper — full width under lg (mobile top bar), offset by rail on lg+ */}
+      <div className="flex flex-col flex-1 w-full lg:ml-[240px] lg:w-[calc(100%-240px)] h-screen overflow-hidden pt-14 lg:pt-0">
+        {/* Top App Bar (desktop only — mobile uses the fixed top bar above) */}
+        <header className="hidden lg:flex justify-between items-center h-16 px-gutter bg-surface-container dark:bg-surface-container border-b border-outline-variant dark:border-outline-variant z-10 shrink-0">
+          <div className="flex items-center gap-4 min-w-0">
+            <h2 className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface truncate">
+              AWBI ABC Compliance
+            </h2>
           </div>
-          <div className="flex items-center gap-4 text-on-surface-variant">
+          <div className="flex items-center gap-4 text-on-surface-variant shrink-0">
             <NavLink
               to="/notifications"
+              aria-label="Notifications"
               className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant relative"
             >
               <span className="material-symbols-outlined">notifications</span>
-              {/* Unread badge would go here */}
             </NavLink>
             <NavLink
               to="/settings"
+              aria-label="Settings"
               className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant"
             >
               <span className="material-symbols-outlined">settings</span>
             </NavLink>
             <NavLink
               to="/profile"
+              aria-label="Profile"
               className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center hover:bg-primary-container/80 transition-colors"
             >
               <span className="material-symbols-outlined text-on-primary-container">person</span>

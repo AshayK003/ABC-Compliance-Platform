@@ -27,19 +27,6 @@ export function CommitteePortal() {
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background font-body-md text-body-md">
       {/* Mobile Top App Bar */}
-      <header className="md:hidden w-full sticky top-0 z-40 bg-surface-container border-b border-outline-variant flex justify-between items-center h-16 px-gutter">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-on-primary-container icon-fill text-lg">gavel</span>
-          </div>
-          <span className="font-headline-md text-headline-md font-bold text-primary">ABC Digital</span>
-        </div>
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity">search</span>
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity">notifications</span>
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80 transition-opacity text-[24px]">person</span>
-        </div>
-      </header>
 
       {/* Side Navigation Bar */}
       <nav className="hidden md:flex w-[240px] h-screen sticky left-0 top-0 bg-surface-container-low border-r border-outline-variant flex-col py-4 z-40 shrink-0">
