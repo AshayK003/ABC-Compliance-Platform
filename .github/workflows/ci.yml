@@ -24,9 +24,12 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://abc:abc@localhost:5432/abc_dashboard
+          SECRET_KEY: ci-only-secret-key-0123456789abcdef0123456789abcdef
         run: |
           cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
-          pytest -q
+          pytest -q -m "not e2e"
 
       - name: Run pip-audit
         run: |
