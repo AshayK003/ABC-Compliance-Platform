@@ -81,7 +81,7 @@ async def create_audit_event(
     return audit_event
 
 
-@router.get("", response_model=list)
+@router.get("", response_model=list[AuditEventOut])
 async def list_audit_events(
     entity_type: str | None = None,
     entity_id: str | None = None,

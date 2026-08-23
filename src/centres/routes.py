@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.audit.routes import log_audit_event
 from src.cache import cache, cache_key, invalidate_pattern
 from src.database import get_db
 from src.models.base import Centre, Staff
@@ -125,7 +126,7 @@ async def list_centres(
 async def create_centre(
     body: CentreCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    user: TokenPayload = Depends(require_role("admin")),
 ):
     centre = Centre(**body.model_dump())
     db.add(centre)
@@ -139,6 +140,7 @@ async def create_centre(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Centre creation failed")
     # Invalidate cache
     invalidate_pattern("centres:")
+    await log_audit_event(db, "centre", centre.id, "create", actor_id=user.user_id)
     return centre
 
 

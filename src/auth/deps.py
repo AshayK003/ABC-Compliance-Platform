@@ -147,6 +147,34 @@ def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie("refresh_token", secure=not settings.debug, samesite="strict")
 
 
+def require_centre_access(centre_id_param: str):
+    """Object-level authorization for entity routers (anti-IDOR).
+
+    Returns a dependency factory: admins pass; everyone else may only touch
+    entities whose centre_id matches their own staff.centre_id. Staff without
+    a centre assignment are read-blocked from all centres.
+
+    Usage on a route with a `centre_id` path/query/body param:
+        _: TokenPayload = Depends(require_centre_access("centre_id"))
+    """
+
+    async def _check(
+        centre_id: str | None = None,
+        current: TokenPayload = Depends(get_current_user),  # noqa: B008
+    ) -> TokenPayload:
+        if current.role == "admin":
+            return current
+        if not centre_id or centre_id != current.centre_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: resource belongs to another centre",
+            )
+        return current
+
+    _check.__name__ = f"require_centre_access[{centre_id_param}]"
+    return _check
+
+
 def require_role(*roles: str):
     def checker(user: TokenPayload = Depends(get_current_user)) -> TokenPayload:  # noqa: B008
         if user.role not in roles:

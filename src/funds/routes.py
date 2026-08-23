@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.audit.routes import log_audit_event
 from src.database import get_db
 from src.models.base import Allocation, Expense, Grant
 
@@ -27,7 +28,7 @@ class GrantCreate(BaseModel):
 async def create_grant(
     body: GrantCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    user: TokenPayload = Depends(require_role("admin")),
 ):
     grant = Grant(**body.model_dump())
     db.add(grant)
@@ -39,6 +40,7 @@ async def create_grant(
         if "unique" in str(e).lower() or "awbi_ref" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Grant reference already exists")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Grant creation failed")
+    await log_audit_event(db, "grant", grant.id, "create", actor_id=user.user_id)
     return grant
 
 
@@ -79,7 +81,7 @@ class AllocationCreate(BaseModel):
 async def create_allocation(
     body: AllocationCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin")),
+    user: TokenPayload = Depends(require_role("admin")),
 ):
     allocation = Allocation(
         **body.model_dump(),
@@ -93,6 +95,7 @@ async def create_allocation(
         if "foreign" in str(e).lower() or "grant" in str(e).lower() or "centre" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid grant_id or centre_id")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Allocation creation failed")
+    await log_audit_event(db, "allocation", allocation.id, "create", actor_id=user.user_id)
     return allocation
 
 
@@ -153,11 +156,12 @@ class ExpenseCreate(BaseModel):
 async def create_expense(
     body: ExpenseCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin", "vet")),
+    user: TokenPayload = Depends(require_role("admin", "vet")),
 ):
-    # Validate allocation exists and has sufficient balance
+    # Lock the allocation row for the duration of the transaction so two
+    # concurrent expenses cannot both pass the balance check (TOCTOU race).
     allocation_result = await db.execute(
-        select(Allocation).where(Allocation.id == body.allocation_id)
+        select(Allocation).where(Allocation.id == body.allocation_id).with_for_update()
     )
     allocation = allocation_result.scalar_one_or_none()
     if not allocation:
@@ -191,6 +195,7 @@ async def create_expense(
         if "foreign" in str(e).lower() or "allocation" in str(e).lower() or "surgery" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid allocation_id or surgery_id")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Expense creation failed")
+    await log_audit_event(db, "expense", expense.id, "create", actor_id=user.user_id)
     return expense
 
 

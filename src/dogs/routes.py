@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
+from src.audit.routes import log_audit_event
 from src.database import get_db
 from src.models.base import Dog
 
@@ -25,7 +26,8 @@ class DogCreate(BaseModel):
 async def create_dog(
     body: DogCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+    _: TokenPayload = Depends(require_centre_access("centre_id")),
+    user: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
     dog = Dog(**body.model_dump())
     db.add(dog)
@@ -37,6 +39,7 @@ async def create_dog(
         if "foreign" in str(e).lower() or "centre" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid centre_id")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dog creation failed")
+    await log_audit_event(db, "dog", dog.id, "create", actor_id=user.user_id)
     return dog
 
 
@@ -45,7 +48,7 @@ async def list_dogs(
     centre_id: str | None = Query(None),
     status: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    _: TokenPayload = Depends(require_centre_access("centre_id")),
 ):
     stmt = select(Dog).order_by(Dog.tag_id)
     if centre_id:

@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
+from src.audit.routes import log_audit_event
 from src.database import get_db
 from src.models.base import Inspection
 
@@ -25,7 +26,8 @@ class InspectionCreate(BaseModel):
 async def create_inspection(
     body: InspectionCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin", "vet")),
+    _: TokenPayload = Depends(require_centre_access("centre_id")),
+    user: TokenPayload = Depends(require_role("admin", "vet")),
 ):
     inspection = Inspection(**body.model_dump())
     db.add(inspection)
@@ -37,6 +39,7 @@ async def create_inspection(
         if "foreign" in str(e).lower() or "centre" in str(e).lower() or "inspector" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid centre_id or inspector_id")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Inspection creation failed")
+    await log_audit_event(db, "inspection", inspection.id, "create", actor_id=user.user_id)
     return inspection
 
 
