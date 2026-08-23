@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.4] - 2026-08-23
+
+### Added
+- **FK existence validation (#22):** create endpoints verify referenced entities and return a clear 400 instead of an opaque FK-violation 500 (dogs→centre; surgeries→dog/centre/staff; inspections→centre/inspector; allocations→grant/centre).
+- **Dogs pagination (#23):** `GET /dogs` supports `limit`/`offset` (default 100, max 500).
+- **Connection pool sizing (#15):** pool_size=20, max_overflow=10, pool_pre_ping for ~100 concurrent admin sessions; NullPool in debug. `.env.example` documents Neon pooled-URL requirements.
+- **Fund request submission (#39, part of #41):** the New Fund Request modal creates an allocation via the API, surfaces real errors in-form, and refreshes data; no-op console.log "View All" buttons removed.
+
+### Verified
+- Backend: 91 passed / 4 skipped. Frontend: 18 passed. Live E2E: bad FK refs → clear 400s; valid surgery → 201; dogs pagination honored.
+
+---
+
 ## [0.4.3] - 2026-08-23
 
 ### Added
