@@ -8,6 +8,8 @@ export function Centres() {
   const [centres, setCentres] = useState<Centre[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewCentre, setViewCentre] = useState<Centre | null>(null);
+  const [viewStaff, setViewStaff] = useState<Array<{ id: string; name: string; role: string; phone: string }> | null>(null);
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -43,6 +45,19 @@ export function Centres() {
   useEffect(() => {
     loadCentres();
   }, [loadCentres]);
+
+  // Fetch staff when viewing a centre
+  useEffect(() => {
+    if (!viewCentre) {
+      setViewStaff(null);
+      return;
+    }
+    let cancelled = false;
+    api.getCentreStaff(viewCentre.id)
+      .then((staff) => { if (!cancelled) setViewStaff(staff); })
+      .catch(() => { if (!cancelled) setViewStaff([]); });
+    return () => { cancelled = true; };
+  }, [viewCentre]);
 
   // Debounced search
   const handleSearchChange = (value: string) => {
@@ -198,8 +213,13 @@ export function Centres() {
                   key: 'actions',
                   header: 'Actions',
                   align: 'right',
-                  render: () => (
-                    <button type="button" className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors">
+                  render: (c: Centre) => (
+                    <button
+                      type="button"
+                      aria-label={`View ${c.name}`}
+                      onClick={() => setViewCentre(c)}
+                      className="text-on-surface-variant hover:text-primary p-1 rounded transition-colors"
+                    >
                       <span className="material-symbols-outlined text-[20px]">visibility</span>
                     </button>
                   ),
@@ -258,6 +278,59 @@ export function Centres() {
           onClose={() => setModalOpen(false)}
           onSubmit={handleCreateCentre}
         />
+      )}
+
+      {viewCentre && (
+        <dialog
+          open
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 w-full h-full max-w-none max-h-none border-0 bg-transparent"
+          onCancel={(e) => { e.preventDefault(); setViewCentre(null); }}
+        >
+          <div
+            className="bg-surface-container-high border border-outline-variant rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            aria-labelledby="centre-view-title"
+          >
+            <div className="flex justify-between items-center p-4 border-b border-outline-variant">
+              <h2 id="centre-view-title" className="font-headline-sm text-headline-sm font-semibold text-on-surface">{viewCentre.name}</h2>
+              <button type="button" onClick={() => setViewCentre(null)} aria-label="Close" className="text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <dt className="font-label-md text-label-md text-on-surface-variant">Code</dt>
+                <dd className="font-body-md text-body-md text-on-surface">{viewCentre.code}</dd>
+                <dt className="font-label-md text-label-md text-on-surface-variant">District</dt>
+                <dd className="font-body-md text-body-md text-on-surface">{viewCentre.district}</dd>
+                <dt className="font-label-md text-label-md text-on-surface-variant">State</dt>
+                <dd className="font-body-md text-body-md text-on-surface">{viewCentre.state}</dd>
+                <dt className="font-label-md text-label-md text-on-surface-variant">Capacity</dt>
+                <dd className="font-body-md text-body-md text-on-surface">{viewCentre.capacity}/month</dd>
+                <dt className="font-label-md text-label-md text-on-surface-variant">Status</dt>
+                <dd>{getStatusBadge(viewCentre.status)}</dd>
+              </dl>
+              <div>
+                <h3 className="font-label-bold text-label-bold text-on-surface mt-2 mb-1">Staff ({viewStaff?.length ?? '…'})</h3>
+                {viewStaff === null && (
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">Loading…</p>
+                )}
+                {viewStaff !== null && viewStaff.length === 0 && (
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">No staff assigned.</p>
+                )}
+                {viewStaff !== null && viewStaff.length > 0 && (
+                  <ul className="space-y-1">
+                    {viewStaff.map((s) => (
+                      <li key={s.id} className="flex justify-between font-body-sm text-body-sm">
+                        <span className="text-on-surface">{s.name} <span className="text-on-surface-variant">({s.role})</span></span>
+                        <span className="text-on-surface-variant">{s.phone}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </dialog>
       )}
     </div>
   );

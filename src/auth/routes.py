@@ -96,7 +96,7 @@ async def register(
         phone=staff.phone,
         centre_id=staff.centre_id,
     )
-    refresh_token = create_refresh_token(user_id=staff.id)
+    refresh_token = create_refresh_token(user_id=staff.id, token_version=staff.token_version)
     set_auth_cookies(response, access_token, refresh_token)
 
     return RegisterResponse(
@@ -126,7 +126,7 @@ async def login(
         phone=staff.phone,
         centre_id=staff.centre_id,
     )
-    refresh_token = create_refresh_token(user_id=staff.id)
+    refresh_token = create_refresh_token(user_id=staff.id, token_version=staff.token_version)
     set_auth_cookies(response, access_token, refresh_token)
 
     return TokenResponse(access_token=access_token, user_id=staff.id, role=staff.role)
@@ -147,14 +147,27 @@ async def refresh_token(request: Request, response: Response, db: AsyncSession =
         phone=user.phone,
         centre_id=user.centre_id,
     )
-    new_refresh_token = create_refresh_token(user_id=user.user_id)
+    # Issue new refresh token with current token_version
+    result = await db.execute(select(Staff).where(Staff.id == user.user_id))
+    staff = result.scalar_one_or_none()
+    new_refresh_token = create_refresh_token(user_id=user.user_id, token_version=staff.token_version if staff else 0)
     set_auth_cookies(response, access_token, new_refresh_token)
 
     return TokenResponse(access_token=access_token, user_id=user.user_id, role=user.role)
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(
+    response: Response,
+    user: TokenPayload = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # Invalidate all existing refresh tokens by bumping token_version
+    result = await db.execute(select(Staff).where(Staff.id == user.user_id))
+    staff = result.scalar_one_or_none()
+    if staff:
+        staff.token_version += 1
+        await db.commit()
     clear_auth_cookies(response)
     return {"message": "Logged out"}
 

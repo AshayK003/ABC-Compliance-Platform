@@ -64,6 +64,7 @@ def _make_staff(**kwargs) -> Staff:
         "phone": "9876543210",
         "password_hash": hash_password("secret123"),
         "active": True,
+        "token_version": 0,
     }
     data.update(kwargs)
     return Staff(**data)
@@ -216,9 +217,13 @@ class TestRefresh:
             return TokenPayload(user_id="staff-1", role="vet")
         app.dependency_overrides[get_current_user] = vet_override
 
-        _setup_mock_execute(mock_session, _make_staff())
+        # Mock staff with token_version=0 (default)
+        staff = _make_staff()
+        staff.token_version = 0
+        _setup_mock_execute(mock_session, staff)
 
-        client.cookies.set("refresh_token", create_refresh_token("staff-1"))
+        # Create refresh token with tv=0 to match staff.token_version
+        client.cookies.set("refresh_token", create_refresh_token("staff-1", token_version=0))
 
         resp = await client.post("/api/v1/auth/refresh")
         assert resp.status_code == 200
@@ -232,7 +237,14 @@ class TestRefresh:
 
 class TestLogout:
     @pytest.mark.asyncio
-    async def test_logout_clears_cookies(self, client: AsyncClient):
+    async def test_logout_clears_cookies(self, client: AsyncClient, mock_session: AsyncMock, app: FastAPI):
+        def vet_override():
+            return TokenPayload(user_id="staff-1", role="vet")
+        app.dependency_overrides[get_current_user] = vet_override
+
+        # Mock staff for logout
+        _setup_mock_execute(mock_session, _make_staff())
+
         resp = await client.post("/api/v1/auth/logout")
         assert resp.status_code == 200
         assert resp.json() == {"message": "Logged out"}

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { publicApi } from '../services/api/public';
+import { useThemeDark } from './YoyAdherenceChart';
 
 interface HeatmapState {
   state: string;
@@ -22,6 +23,7 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
   const [mapReady, setMapReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const chartRef = useRef<ReactECharts>(null);
+  const isDark = useThemeDark();
 
   useEffect(() => {
     const fetchHeatmap = async () => {
@@ -99,28 +101,29 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
     risk: d.risk,
   }));
 
-  const option = {
+  const option = useMemo(() => ({
     tooltip: {
       trigger: 'item',
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      borderColor: 'rgba(148, 163, 184, 0.2)',
+      backgroundColor: isDark ? 'rgba(18, 33, 49, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+      borderColor: isDark ? 'rgba(148, 163, 184, 0.2)' : '#e5e5e5',
       borderWidth: 1,
       padding: 12,
-      textStyle: { color: '#f8fafc' },
+      textStyle: { color: isDark ? '#d4e4fa' : '#1c1c1c' },
       formatter: (params: any) => {
         const item = params.data;
         const riskColors = { critical: '#ef4444', moderate: '#f59e0b', compliant: '#22c55e' };
         const riskLabel = item.risk?.charAt(0).toUpperCase() + item.risk?.slice(1) || 'Unknown';
+        const muted = isDark ? '#94a3b8' : '#666666';
         return `
-          <div style="font-weight: 600; margin-bottom: 8px;">${item.name}</div>
+          <div style="font-weight: 600; margin-bottom: 8px; color: ${isDark ? '#f8fafc' : '#111'};">${item.name}</div>
           <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px;">
-            <span style="color: #94a3b8;">Compliance:</span>
+            <span style="color: ${muted};">Compliance:</span>
             <span style="color: ${riskColors[item.risk as keyof typeof riskColors] || '#64748b'}; font-weight: 500;">${item.value}%</span>
-            <span style="color: #94a3b8;">Risk:</span>
+            <span style="color: ${muted};">Risk:</span>
             <span style="color: ${riskColors[item.risk as keyof typeof riskColors] || '#64748b'}; font-weight: 500;">${riskLabel}</span>
-            <span style="color: #94a3b8;">Centres:</span>
+            <span style="color: ${muted};">Centres:</span>
             <span>${item.centres}</span>
-            <span style="color: #94a3b8;">Inspections:</span>
+            <span style="color: ${muted};">Inspections:</span>
             <span>${item.inspections}</span>
           </div>
         `;
@@ -138,9 +141,7 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
         color: ['#ef4444', '#f59e0b', '#22c55e'],
       },
       text: ['Critical', 'Compliant'],
-      textStyle: { color: '#94a3b8', fontSize: 11 },
-      itemWidth: 20,
-      itemHeight: 180,
+      textStyle: { color: isDark ? '#94a3b8' : '#666666', fontSize: 11 },
     },
     geo: {
       map: 'india',
@@ -149,18 +150,18 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
       center: [78.96, 20.59],
       label: {
         show: true,
-        color: '#94a3b8',
+        color: isDark ? '#94a3b8' : '#666666',
         fontSize: 10,
         fontWeight: 400,
       },
       itemStyle: {
-        areaColor: 'rgba(30, 41, 59, 0.8)',
-        borderColor: '#334155',
+        areaColor: isDark ? 'rgba(30, 41, 59, 0.8)' : '#f2f2f2',
+        borderColor: isDark ? '#334155' : '#dddddd',
         borderWidth: 1,
       },
       emphasis: {
-        label: { color: '#f8fafc', fontSize: 11, fontWeight: 500 },
-        itemStyle: { areaColor: 'rgba(51, 65, 85, 0.9)', borderWidth: 2 },
+        label: { color: isDark ? '#f8fafc' : '#111111', fontSize: 11, fontWeight: 500 },
+        itemStyle: { areaColor: isDark ? 'rgba(51, 65, 85, 0.9)' : '#e4e4e4', borderWidth: 2 },
       },
     },
     series: [
@@ -173,7 +174,7 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
         emphasis: { label: { show: true } },
       },
     ],
-  };
+  }), [data, isDark]);
 
   const legendItems = [
     { color: 'bg-error', label: 'Critical (< 50%)' },
@@ -186,6 +187,7 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
       <ReactECharts
         ref={chartRef}
         option={option}
+        notMerge
         style={{ width: '100%', height: '100%' }}
         opts={{ renderer: 'canvas' }}
       />

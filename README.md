@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://www.postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7%2B-DC382D?logo=redis)](https://redis.io)
-[![Tests](https://img.shields.io/badge/tests-61%20passed%2C%204%20skipped-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-97%20passing%20%2884%20API%20%2B%2013%20UI%29-brightgreen)]()
 [![Coverage](https://img.shields.io/badge/coverage-82%25-yellow)]()
 [![Status](https://img.shields.io/badge/status-active%20development-brightgreen)]()
 
@@ -179,10 +179,10 @@ npm run build                # Production build
 ```
 ABC-Compliance-Platform/
 ├── .github/workflows/ci.yml     # CI: lint → typecheck → test → build → audit
-├── alembic/                     # DB migrations (2 versions)
+├── alembic/                     # DB migrations (4 versions)
 ├── frontend/
 │   ├── src/
-│   │   ├── components/          # DataTable, StatCard, CentreFormModal, ChartPlaceholder
+│   │   ├── components/          # DataTable, StatCard, CentreFormModal, SurgeryFormModal, ChartPlaceholder
 │   │   ├── contexts/AuthContext.tsx
 │   │   ├── pages/               # Centres, Surgeries, Inspections, FundTracker, Dashboard, Reports
 │   │   ├── services/api/        # Modular API client (auth, centres, surgeries, inspections, funds, public)

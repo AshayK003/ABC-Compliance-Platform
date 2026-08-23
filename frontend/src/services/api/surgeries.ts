@@ -1,4 +1,4 @@
-import type { Surgery } from '../../types';
+import type { Dog, Surgery } from '../../types';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v1';
 
@@ -40,4 +40,9 @@ export const surgeriesApi = {
   getSurgery: (id: string) => request<Surgery>(`/surgeries/${id}`),
   createSurgery: (data: { dog_id: string; centre_id: string; staff_id: string; surgery_type: string; weight?: number; complications?: string; timestamp?: string }) =>
     request<Surgery>('/surgeries', { method: 'POST', body: JSON.stringify(data) }),
+  getDogs: (params?: { centre_id?: string }) => {
+    const search = new URLSearchParams(params as Record<string, string>);
+    const query = search.toString() ? `?${search}` : '';
+    return request<Dog[]>(`/dogs${query}`);
+  },
 };

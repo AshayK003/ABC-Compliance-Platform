@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.2] - 2026-08-22
+
+### Fixed
+- **Missing migrations (critical):** `notifications` and all committee tables (`committees`, `meetings`, `decisions`, `votes`, `committee_members`, `meeting_attendees`, `committee_documents`) existed as models but had no Alembic migration — every notifications request 500'd with `UndefinedTableError` on deployed instances. Added migration `004_notifications_and_committee_tables`.
+- **Dark mode not applying:** the stylesheet defined light palette values unconditionally at `:root` and never scoped a dark palette to the `.dark` class, so the theme toggle had no visual effect and dark surfaces rendered with unreadable text. Light/dark palettes are now properly split between `:root` and `.dark`; toggle, persistence, and system-follow all work.
+- **Surgeries page stuck on "0 records":** `loadData()` assumed `/centres` returned a bare array; the paginated `{data, total}` response made the mapping throw and get silently swallowed. Now handles both response shapes.
+- **Dead buttons wired up:** "Record Surgery" (was a console.log placeholder) now opens a working modal — dog picker auto-fills the centre, surgery type/weight/complications, submits via `POST /surgeries` and refreshes the table. Per-row "view" action on Centres opens a detail dialog (centre fields + staff list from `/centres/{id}/staff`). Added `getDogs`/`getCentreStaff` API bindings.
+
+### Changed
+- Rebuilt container image picks up previously-merged fixes (report-generation UTC import) that the stale image predated.
+- **Reports charts use live data:** the "YoY by Quarter" chart is now a real ECharts grouped bar chart fed from `/reports/charts/yoy-adherence` (was five hardcoded decorative bars with a fabricated "+12.4%" badge). The compliance heatmap and chart colors now follow the active theme instead of hardcoded dark-only styling.
+- **StatCard trend colors fixed:** trend indicators referenced dynamically-constructed Tailwind classes (`text-${color}`), which never compile — trends now render in their intended color.
+
+### Verified
+- Backend: 84 passed / 4 skipped (pytest), frontend: 13 passed (Vitest), TypeScript clean (`tsc --noEmit`).
+- Live blackbox pass across auth, centres, dogs, grants → allocations → expenses (balance guard), surgeries, inspections, complaints, sync idempotency, notifications, audit RBAC, reports, heatmap.
+- New regression suite `tests/test_audit_regressions.py` locks in the audit findings: migration-004 completeness, notification model/migration parity, expense balance boundary math, sync enqueue idempotency (duplicate key must not insert a second row), and notification IDOR masking (non-admin gets 404, admin gets 200).
+
+---
+
 ## [0.4.1] - 2026-08-15
 
 ### Fixed
@@ -16,8 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dead code:** removed unused `cached()`/`invalidate_cache()` from `src/cache.py` and unused `redis_url` setting from `src/config.py`.
 - **Frontend:** removed no-op `api.getDogs`/`getDog`/`createDog` stubs (backend `src/dogs/routes.py` exists; wire a real Dogs page when needed).
 
+### Security
+- **Refresh token revocation (P0-2):** added `token_version` to `Staff` model; refresh tokens now carry this version; logout increments it, invalidating all prior refresh tokens. Closes session-fixation hole.
+
 ### Audit
-- Full-stack AEOS M23 audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), refresh-token revocation (#33), audit-trail wiring (#34), expense race (#35).
+- Full-stack AEOS M23 audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), audit-trail wiring (#34), expense race (#35).
 
 ### Added
 - **Committee & Meetings API** — Full CRUD for committees, meetings, decisions, votes, members, attendees, and documents

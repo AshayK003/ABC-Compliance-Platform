@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DataTable } from '../components/DataTable';
 import { StatCard } from '../components/StatCard';
+import { SurgeryFormModal } from '../components/SurgeryFormModal';
 import { api } from '../services/api';
 
 type SurgeryRecord = {
@@ -25,6 +26,7 @@ export function Surgeries() {
   const [records, setRecords] = useState<SurgeryRecord[]>([]);
   const [summary, setSummary] = useState<SurgerySummary>(emptySummary);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -32,7 +34,10 @@ export function Surgeries() {
         api.getSurgeries(),
         api.getCentres().catch(() => [] as never[]),
       ]);
-      const centreMap = new Map((centreData as Array<{ id: string; name: string; code: string }>).map(c => [c.id, c]));
+      const centreList = Array.isArray(centreData)
+        ? (centreData as Array<{ id: string; name: string; code: string }>)
+        : (centreData as { data?: Array<{ id: string; name: string; code: string }> }).data ?? [];
+      const centreMap = new Map(centreList.map(c => [c.id, c]));
       const mapped = (surgeryData as Array<{
         id: string; dog_id: string; centre_id: string; surgery_type: string; timestamp: string; complications?: string;
       }>).map(s => ({
@@ -60,6 +65,12 @@ export function Surgeries() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleCreateSurgery = async (data: { dog_id: string; centre_id: string; staff_id: string; surgery_type: string; weight?: number; complications?: string }) => {
+    await api.createSurgery(data);
+    setModalOpen(false);
+    await loadData();
+  };
 
   if (loading) {
     return (
@@ -101,7 +112,7 @@ export function Surgeries() {
               <p className="font-body-md text-body-md text-on-surface-variant mb-6">Start by recording the first surgery at a compliant centre.</p>
               <button
                 type="button"
-                onClick={() => console.log('Create surgery flow - implement modal')}
+                onClick={() => setModalOpen(true)}
                 className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mx-auto"
               >
                 <span className="material-symbols-outlined" data-icon="add">add</span>
@@ -111,6 +122,13 @@ export function Surgeries() {
           </div>
         </div>
       </main>
+
+      {modalOpen && (
+        <SurgeryFormModal
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleCreateSurgery}
+        />
+      )}
     </div>
   );
 
@@ -224,6 +242,13 @@ export function Surgeries() {
           </div>
         </div>
       </main>
+
+      {modalOpen && (
+        <SurgeryFormModal
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleCreateSurgery}
+        />
+      )}
     </div>
   );
 }

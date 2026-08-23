@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ComplianceHeatmap } from '../components/ComplianceHeatmap';
+import { YoyAdherenceChart, type YoyData } from '../components/YoyAdherenceChart';
 import { reportsApi } from '../services/api/reports';
 
 interface ReportTemplate {
@@ -14,6 +15,7 @@ interface ReportTemplate {
 export function Reports() {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [yoyData, setYoyData] = useState<YoyData | null>(null);
   const [dateRange, setDateRange] = useState('Last 30 Days');
   const [region, setRegion] = useState('All India');
   const [metric, setMetric] = useState('Overall Compliance %');
@@ -28,8 +30,12 @@ export function Reports() {
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const data = await reportsApi.getTemplates();
+      const [data, yoy] = await Promise.all([
+        reportsApi.getTemplates(),
+        reportsApi.getYoyAdherence().catch(() => null),
+      ]);
       setTemplates(data);
+      setYoyData(yoy);
     } catch (error) {
       console.error('Failed to load templates:', error);
     } finally {
@@ -259,53 +265,26 @@ export function Reports() {
 
               {/* Chart Preview */}
               <div className="xl:col-span-6 bg-surface border border-outline-variant rounded-lg p-5 flex flex-col h-[400px]">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-on-surface-variant text-[20px]">bar_chart</span>
-                    <h3 className="font-label-md text-label-md text-on-surface uppercase tracking-wider">Year-on-Year Adherence</h3>
+                    <h3 className="font-label-md text-label-md text-on-surface uppercase tracking-wider">Surgeries — YoY by Quarter</h3>
                   </div>
-                  <div className="font-headline-sm text-headline-sm text-primary">+12.4% <span className="material-symbols-outlined align-middle text-[18px]">arrow_upward</span></div>
+                  {(() => {
+                    const quarters = yoyData?.quarters ?? [];
+                    const cur = quarters.reduce((s, q) => s + (yoyData?.current_year?.[q] ?? 0), 0);
+                    const prev = quarters.reduce((s, q) => s + (yoyData?.previous_year?.[q] ?? 0), 0);
+                    if (prev === 0 || cur === 0) return null;
+                    const delta = Math.round(((cur - prev) / prev) * 100 * 10) / 10;
+                    return (
+                      <div className={`font-headline-sm text-headline-sm ${delta >= 0 ? 'text-primary' : 'text-error'}`}>
+                        {delta >= 0 ? '+' : ''}{delta}%
+                        <span className="material-symbols-outlined align-middle text-[18px]">{delta >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
-                <div className="flex-1 flex items-end gap-2 pt-8 relative">
-                  {/* Y-axis lines */}
-                  <div className="absolute inset-0 flex flex-col justify-between pb-8 pointer-events-none">
-                    <div className="w-full h-px bg-outline-variant/30"></div>
-                    <div className="w-full h-px bg-outline-variant/30"></div>
-                    <div className="w-full h-px bg-outline-variant/30"></div>
-                    <div className="w-full h-px bg-outline-variant/30"></div>
-                  </div>
-                  {/* Bars */}
-                  <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
-                      <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
-                    </div>
-                    <span className="font-code-sm text-code-sm text-on-surface-variant">Q1</span>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
-                      <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
-                    </div>
-                    <span className="font-code-sm text-code-sm text-on-surface-variant">Q2</span>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
-                      <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
-                    </div>
-                    <span className="font-code-sm text-code-sm text-on-surface-variant">Q3</span>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full h-32 bg-secondary-container rounded-t relative overflow-hidden chart-bar">
-                      <div className="absolute bottom-0 w-full h-full bg-secondary/20"></div>
-                    </div>
-                    <span className="font-code-sm text-code-sm text-on-surface-variant">Q4</span>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center gap-2 z-10 group">
-                    <div className="w-full h-32 bg-primary-container rounded-t relative overflow-hidden chart-bar">
-                      <div className="absolute inset-0 bg-gradient-to-t from-transparent to-primary/20"></div>
-                    </div>
-                    <span className="font-code-sm text-code-sm text-primary font-bold">Q1 '24</span>
-                  </div>
-                </div>
+                <YoyAdherenceChart data={yoyData} height="100%" />
               </div>
             </div>
           </div>
