@@ -294,13 +294,13 @@ class Committee(Base):
         DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None)
     )
 
-    meetings: Mapped[list["Meeting"]] = relationship(
+    meetings: Mapped[list[Meeting]] = relationship(
         back_populates="committee", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
-    documents: Mapped[list["CommitteeDocument"]] = relationship(
+    documents: Mapped[list[CommitteeDocument]] = relationship(
         back_populates="committee", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
-    members: Mapped[list["CommitteeMember"]] = relationship(
+    members: Mapped[list[CommitteeMember]] = relationship(
         back_populates="committee", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
 
@@ -331,10 +331,10 @@ class Meeting(Base):
     )
 
     committee: Mapped[Committee] = relationship(back_populates="meetings")
-    decisions: Mapped[list["Decision"]] = relationship(
+    decisions: Mapped[list[Decision]] = relationship(
         back_populates="meeting", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
-    attendees: Mapped[list["MeetingAttendee"]] = relationship(
+    attendees: Mapped[list[MeetingAttendee]] = relationship(
         back_populates="meeting", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
 
@@ -359,7 +359,7 @@ class Decision(Base):
     decided_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 
     meeting: Mapped[Meeting] = relationship(back_populates="decisions")
-    votes: Mapped[list["Vote"]] = relationship(
+    votes: Mapped[list[Vote]] = relationship(
         back_populates="decision", cascade=CASCADE_ALL_DELETE_ORPHAN
     )
 

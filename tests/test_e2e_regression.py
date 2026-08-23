@@ -327,13 +327,14 @@ class TestAuthLifecycle:
 
     async def test_deactivate_revokes_refresh(self, client, session_maker):
         """Deactivated user's existing refresh token must stop working."""
-        from httpx import ASGITransport, AsyncClient as AC
+        from httpx import ASGITransport
+        from httpx import AsyncClient as TestClient
 
         phone = _phone()
         staff_id = await _seed_staff(session_maker, phone=phone)
         # Vet logs in on their own client so their cookie jar is independent
         vet_transport = ASGITransport(app=_app)
-        async with AC(transport=vet_transport, base_url="https://test") as vet_client:
+        async with TestClient(transport=vet_transport, base_url="https://test") as vet_client:
             await _login(vet_client, phone)
 
             # Admin (on the shared client) deactivates the vet
@@ -350,8 +351,8 @@ class TestAuthLifecycle:
 
 class TestCommitteePortal:
     async def _seed_committee(self, maker):
+
         from src.models.base import Committee, CommitteeDocument, Decision, Meeting
-        import asyncio
 
         async with maker() as s:
             committee = Committee(name="Governing Body", description="test")
@@ -399,7 +400,9 @@ class TestCommitteePortal:
         assert any(d["title"] == "Minutes.pdf" for d in docs)
 
     async def test_committee_requires_auth(self, session_maker):
-        from httpx import ASGITransport, AsyncClient as AC
+        from httpx import ASGITransport
+        from httpx import AsyncClient as TestClient
+
         from src.database import get_db as _get_db
 
         async def _override():
@@ -409,7 +412,7 @@ class TestCommitteePortal:
         _app.dependency_overrides.clear()
         _app.dependency_overrides[_get_db] = _override
         transport = ASGITransport(app=_app)
-        async with AC(transport=transport, base_url="https://test") as anon:
+        async with TestClient(transport=transport, base_url="https://test") as anon:
             resp = await anon.get("/api/v1/committee/decisions")
             assert resp.status_code == 401
         _app.dependency_overrides.clear()

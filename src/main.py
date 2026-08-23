@@ -31,8 +31,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.audit.routes import router as audit_router
 from src.auth.routes import router as auth_router
 from src.centres.routes import router as centres_router
+from src.committee.routes import router as committee_router
 from src.config import settings
 from src.database import get_db
 from src.dogs.routes import router as dogs_router
@@ -40,11 +42,9 @@ from src.funds.routes import alloc_router, exp_router
 from src.funds.routes import router as funds_router
 from src.inspections.routes import router as inspections_router
 from src.notifications.routes import router as notifications_router
-from src.public.routes import public_router, sync_router, public_limiter
+from src.public.routes import public_limiter, public_router, sync_router
 from src.reports.routes import router as reports_router
 from src.surgeries.routes import router as surgeries_router
-from src.audit.routes import router as audit_router
-from src.committee.routes import router as committee_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth_router)

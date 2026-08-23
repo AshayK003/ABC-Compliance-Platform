@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
@@ -14,7 +14,7 @@ from src.models.base import Notification
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-def _resolve_user_id(current: TokenPayload, user_id: Optional[str]) -> str:
+def _resolve_user_id(current: TokenPayload, user_id: str | None) -> str:
     """Admins may query another user; everyone else is scoped to themselves."""
     if user_id and current.role == "admin":
         return user_id
@@ -30,10 +30,10 @@ class NotificationCreate(BaseModel):
 
 
 class NotificationUpdate(BaseModel):
-    read: Optional[bool] = None
-    title: Optional[str] = None
-    message: Optional[str] = None
-    type: Optional[str] = None
+    read: bool | None = None
+    title: str | None = None
+    message: str | None = None
+    type: str | None = None
 
 
 class NotificationOut(BaseModel):
@@ -71,8 +71,8 @@ async def create_notification(
 
 @router.get("")
 async def list_notifications(
-    user_id: Optional[str] = None,
-    read: Optional[bool] = None,
+    user_id: str | None = None,
+    read: bool | None = None,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -96,7 +96,7 @@ async def list_notifications(
 
 @router.get("/unread-count")
 async def get_unread_count(
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current: TokenPayload = Depends(get_current_user),
 ):
@@ -142,11 +142,11 @@ async def update_notification(
         raise HTTPException(status_code=404, detail="Notification not found")
     if notification.user_id != current.user_id and current.role != "admin":
         raise HTTPException(status_code=404, detail="Notification not found")
-    
+
     update_data = body.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(notification, key, value)
-    
+
     await db.commit()
     await db.refresh(notification)
     return notification
@@ -154,7 +154,7 @@ async def update_notification(
 
 @router.post("/mark-all-read")
 async def mark_all_read(
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current: TokenPayload = Depends(get_current_user),
 ):
@@ -166,14 +166,14 @@ async def mark_all_read(
         .where(Notification.read == False)  # noqa: E712
         .where(Notification.user_id == effective_user_id)
     )
-    
+
     result = await db.execute(stmt)
     notifications = result.scalars().all()
-    
+
     count = 0
     for notification in notifications:
         notification.read = True
         count += 1
-    
+
     await db.commit()
     return {"updated": count}

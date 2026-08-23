@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any
 
 import matplotlib
+
 matplotlib.use("Agg")  # headless servers
 
 from src.models.base import Centre

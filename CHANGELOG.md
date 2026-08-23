@@ -31,6 +31,8 @@ Investor-readiness release: closes security gaps, makes reported numbers genuine
 - **Health check** logs real correlation IDs.
 
 ### Changed
+- **Committee Portal is live:** governance decisions (with vote tallies), meetings, documents, and member directory now served from the database; static demo rows removed. Seeded with realistic committee data.
+- **Lint-clean codebase:** 62 auto-fixed issues, remaining accepted classes documented in lint policy.
 - **Map data 35x smaller:** India states GeoJSON simplified (vertex decimation + rounding) — heatmap chunk drops from 5.5 MB to 158 KB gzipped; all 35 states retained (`scripts/shrink_geojson.py`).
 - **Offline-safe icons:** Material Symbols font self-hosted; no Google Fonts CDN request at runtime.
 - **Fail-fast migrations:** Docker container exits if Alembic fails instead of booting on a broken schema.

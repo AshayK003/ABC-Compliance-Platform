@@ -42,6 +42,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+# Lint policy: E501 (long error strings/query builders), B904 (HTTPException
+# re-raises in except blocks), and B007 (tuple-unpack loop vars) are accepted.
+extend-ignore = ["E501", "B904", "B007"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/*/routes.py" = ["B008"]

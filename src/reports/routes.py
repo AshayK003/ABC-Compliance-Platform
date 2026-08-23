@@ -3,8 +3,9 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
 from src.models.base import Allocation, Centre, Expense, Grant, Inspection, Surgery
-from src.reports.exporters import build_excel, build_pdf, _fmt
+from src.reports.exporters import _fmt, build_excel, build_pdf
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -223,7 +224,7 @@ async def generate_report(
             "total_expensed": float(total_expensed),
             "utilization_rate": utilization,
         }]
-    
+
     return ReportPreviewResponse(
         template_id=template["id"],
         template_name=template["name"],
@@ -322,11 +323,11 @@ async def get_yoy_adherence(
     _: TokenPayload = Depends(get_current_user),
 ):
     """Get year-over-year adherence data for chart."""
-    from src.models.base import Surgery, Centre
-    
+    from src.models.base import Centre, Surgery
+
     current_year = datetime.now().year
     prev_year = current_year - 1
-    
+
     # Current year surgeries
     curr_stmt = select(Surgery, Centre).join(Centre, Surgery.centre_id == Centre.id).where(
         Surgery.timestamp >= datetime(current_year, 1, 1),
@@ -334,7 +335,7 @@ async def get_yoy_adherence(
     )
     curr_result = await db.execute(curr_stmt)
     curr_surgeries = curr_result.all()
-    
+
     # Previous year surgeries
     prev_stmt = select(Surgery, Centre).join(Centre, Surgery.centre_id == Centre.id).where(
         Surgery.timestamp >= datetime(prev_year, 1, 1),
@@ -342,19 +343,19 @@ async def get_yoy_adherence(
     )
     prev_result = await db.execute(prev_stmt)
     prev_surgeries = prev_result.all()
-    
+
     # Group by quarter
     from collections import defaultdict
     curr_quarterly = defaultdict(int)
     for s, c in curr_surgeries:
         quarter = (s.timestamp.month - 1) // 3 + 1
         curr_quarterly[f"Q{quarter}"] += 1
-    
+
     prev_quarterly = defaultdict(int)
     for s, c in prev_surgeries:
         quarter = (s.timestamp.month - 1) // 3 + 1
         prev_quarterly[f"Q{quarter}"] += 1
-    
+
     quarters = ["Q1", "Q2", "Q3", "Q4"]
     return {
         "quarters": quarters,
@@ -371,7 +372,7 @@ async def get_monthly_disbursements(
 ):
     """Get monthly fund disbursement data for chart."""
     from src.models.base import Allocation
-    
+
     # Get last 6 months
     month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     for _ in range(5):
@@ -379,17 +380,17 @@ async def get_monthly_disbursements(
             month_start = month_start.replace(year=month_start.year - 1, month=12)
         else:
             month_start = month_start.replace(month=month_start.month - 1)
-    
+
     allocs_stmt = select(Allocation).where(Allocation.allocated_at >= month_start)
     allocs_result = await db.execute(allocs_stmt)
     allocations = allocs_result.scalars().all()
-    
+
     from collections import defaultdict
     monthly = defaultdict(float)
     for alloc in allocations:
         month_key = alloc.allocated_at.strftime("%Y-%m")
         monthly[month_key] += float(alloc.amount)
-    
+
     sorted_months = sorted(monthly.keys())[-6:]  # Last 6 months
     return {
         "months": sorted_months,
@@ -405,11 +406,11 @@ async def get_expense_categories(
 ):
     """Get expense category breakdown for chart."""
     from src.models.base import Expense
-    
+
     exp_stmt = select(Expense.category, func.sum(Expense.amount)).group_by(Expense.category)
     exp_result = await db.execute(exp_stmt)
     expenses = exp_result.all()
-    
+
     total = sum(float(e[1]) for e in expenses) if expenses else 1
     return {
         "categories": [
@@ -431,24 +432,24 @@ async def get_monthly_surgeries(
 ):
     """Get monthly surgeries data for chart."""
     from src.models.base import Surgery
-    
+
     month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     for _ in range(5):
         if month_start.month == 1:
             month_start = month_start.replace(year=month_start.year - 1, month=12)
         else:
             month_start = month_start.replace(month=month_start.month - 1)
-    
+
     surg_stmt = select(Surgery).where(Surgery.timestamp >= month_start)
     surg_result = await db.execute(surg_stmt)
     surgeries = surg_result.scalars().all()
-    
+
     from collections import defaultdict
     monthly = defaultdict(int)
     for s in surgeries:
         month_key = s.timestamp.strftime("%Y-%m")
         monthly[month_key] += 1
-    
+
     sorted_months = sorted(monthly.keys())
     return {
         "months": sorted_months,
