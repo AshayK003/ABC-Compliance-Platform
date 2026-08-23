@@ -13,6 +13,8 @@ down_revision: str = "003"
 branch_labels: str | None = None
 depends_on: str | None = None
 
+_COMMITTEES_FK = "committees.id"
+
 
 def upgrade() -> None:
     op.create_table(
@@ -37,7 +39,7 @@ def upgrade() -> None:
         "meetings",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("committee_id", sa.String(36),
-                  sa.ForeignKey("committees.id", ondelete="CASCADE"), nullable=False, index=True),
+                  sa.ForeignKey(_COMMITTEES_FK, ondelete="CASCADE"), nullable=False, index=True),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("scheduled_at", sa.DateTime(), nullable=False, index=True),
@@ -74,7 +76,7 @@ def upgrade() -> None:
         "committee_members",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("committee_id", sa.String(36),
-                  sa.ForeignKey("committees.id", ondelete="CASCADE"), nullable=False, index=True),
+                  sa.ForeignKey(_COMMITTEES_FK, ondelete="CASCADE"), nullable=False, index=True),
         sa.Column("member_id", sa.String(36),
                   sa.ForeignKey("staff.id", ondelete="CASCADE"), nullable=False, index=True),
         sa.Column("role", sa.String(50), nullable=False),
@@ -94,7 +96,7 @@ def upgrade() -> None:
         "committee_documents",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("committee_id", sa.String(36),
-                  sa.ForeignKey("committees.id", ondelete="CASCADE"), nullable=False, index=True),
+                  sa.ForeignKey(_COMMITTEES_FK, ondelete="CASCADE"), nullable=False, index=True),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("file_path", sa.String(500), nullable=False),

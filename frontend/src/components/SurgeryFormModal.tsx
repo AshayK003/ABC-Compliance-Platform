@@ -58,12 +58,15 @@ export function SurgeryFormModal({ onClose, onSubmit }: SurgeryFormModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
+    <dialog
+      open
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 w-full h-full max-w-none max-h-none border-0 bg-transparent"
+      onClick={onClose}
+      onCancel={(e) => { e.preventDefault(); onClose(); }}
+    >
       <div
         className="bg-surface-container-high border border-outline-variant rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
         aria-labelledby="surgery-modal-title"
       >
         <div className="flex justify-between items-center p-4 border-b border-outline-variant">
@@ -176,6 +179,6 @@ export function SurgeryFormModal({ onClose, onSubmit }: SurgeryFormModalProps) {
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
   );
 }

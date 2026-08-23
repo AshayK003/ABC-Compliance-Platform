@@ -281,12 +281,15 @@ export function Centres() {
       )}
 
       {viewCentre && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setViewCentre(null)} onKeyDown={(e) => { if (e.key === 'Escape') setViewCentre(null); }}>
+        <dialog
+          open
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 w-full h-full max-w-none max-h-none border-0 bg-transparent"
+          onClick={() => setViewCentre(null)}
+          onCancel={(e) => { e.preventDefault(); setViewCentre(null); }}
+        >
           <div
             className="bg-surface-container-high border border-outline-variant rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
             aria-labelledby="centre-view-title"
           >
             <div className="flex justify-between items-center p-4 border-b border-outline-variant">
@@ -310,11 +313,13 @@ export function Centres() {
               </dl>
               <div>
                 <h3 className="font-label-bold text-label-bold text-on-surface mt-2 mb-1">Staff ({viewStaff?.length ?? '…'})</h3>
-                {viewStaff === null ? (
+                {viewStaff === null && (
                   <p className="font-body-sm text-body-sm text-on-surface-variant">Loading…</p>
-                ) : viewStaff.length === 0 ? (
+                )}
+                {viewStaff !== null && viewStaff.length === 0 && (
                   <p className="font-body-sm text-body-sm text-on-surface-variant">No staff assigned.</p>
-                ) : (
+                )}
+                {viewStaff !== null && viewStaff.length > 0 && (
                   <ul className="space-y-1">
                     {viewStaff.map((s) => (
                       <li key={s.id} className="flex justify-between font-body-sm text-body-sm">
@@ -327,7 +332,7 @@ export function Centres() {
               </div>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );
