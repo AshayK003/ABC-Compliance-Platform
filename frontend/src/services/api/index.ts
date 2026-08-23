@@ -9,22 +9,9 @@ export * from './notifications';
 // Re-export types
 export type { Centre, Dog, Surgery, Inspection, Grant, Allocation, Expense, Complaint, SyncQueueItem, User, LoginResponse, RegisterResponse, TokenPayload, AuthResponse } from '../../types';
 
-// Legacy setAuthToken - delegates to each module
-import { setAuthToken as setAuthTokenAuth } from './auth';
-import { setAuthToken as setAuthTokenCentres } from './centres';
-import { setAuthToken as setAuthTokenSurgeries } from './surgeries';
-import { setAuthToken as setAuthTokenInspections } from './inspections';
-import { setAuthToken as setAuthTokenFunds } from './funds';
-import { setAuthToken as setAuthTokenPublic } from './public';
-
-export function setAuthToken(token: string | null | undefined) {
-  setAuthTokenAuth(token);
-  setAuthTokenCentres(token);
-  setAuthTokenSurgeries(token);
-  setAuthTokenInspections(token);
-  setAuthTokenFunds(token);
-  setAuthTokenPublic(token);
-}
+// setAuthToken lives in the shared client — one token store for all modules
+import { setAuthToken, clearAuthToken } from './client';
+export { setAuthToken, clearAuthToken };
 
 // Legacy api object for backward compatibility during migration
 import { authApi } from './auth';
