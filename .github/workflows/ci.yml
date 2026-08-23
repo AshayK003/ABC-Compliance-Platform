@@ -66,7 +66,7 @@ jobs:
       - name: Run impeccable
         run: |
           cd frontend
-          npx impeccable detect src/ --json || echo "::warning::impeccable reported style advisories (non-blocking)"
+          npx -y impeccable@2.3.2 detect src/ --json || echo "::warning::impeccable reported style advisories (non-blocking)"
 
       - name: Type check
         run: |
