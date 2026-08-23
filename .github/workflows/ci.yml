@@ -20,8 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd /home/runner/work/ABC-Compliance-Platform/ABC-Compliance-Platform
-          pip install --only-binary :all: -r requirements.txt
-          pip install --only-binary :all: -r requirements-dev.txt
+          pip install --only-binary :all: --require-hashes -r requirements.lock
 
       - name: Run pytest
         env:
@@ -66,7 +65,7 @@ jobs:
       - name: Run impeccable
         run: |
           cd frontend
-          npx impeccable detect src/ --json || echo "::warning::impeccable reported style advisories (non-blocking)"
+          ./node_modules/.bin/impeccable detect src/ --json || echo "::warning::impeccable reported style advisories (non-blocking)"
 
       - name: Type check
         run: |
