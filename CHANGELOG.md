@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-08-23
+
+Investor-readiness release: closes security gaps, makes reported numbers genuine, and hardens the demo path.
+
+### Added
+- **Pending-approval registration:** self-signup creates an inactive staff record (202, no session); admins approve via new user-management endpoints (`GET /auth/staff`, `GET /auth/staff/pending`, `PATCH /auth/staff/{id}`) with role/centre assignment and last-admin protection.
+- **Admin demo account:** seeder provisions `9999999999 / demo123` for evaluation environments.
+- **Real compliance scores:** `GET /public/compliance-scores` reports completed/total inspection ratio per centre; dashboard "Compliance" card shows the genuine figure.
+- **Working report filters:** date range and region parameters now filter data across all four report templates (previously accepted but ignored).
+- **Security policy:** SECURITY.md with private disclosure process.
+- **Real-database e2e suite** (14 tests): cookie-only auth, IDOR regressions, FK validation on public endpoints, export bytes, full registration→approval lifecycle; auto-skips without Docker.
+
+### Fixed
+- **Report exports in production:** PDF/Excel downloads now authenticate via the httpOnly session cookie; the previous code read a localStorage token nothing ever wrote, so every export 401'd outside local dev.
+- **Cookie delivery cross-site:** auth cookies use `SameSite=None` outside debug so Vercel↔container-host deployments actually receive them.
+- **Cross-centre expense billing (IDOR):** vets can no longer bill expenses against another centre's allocation.
+- **Public complaint endpoint** validates `centre_id` and returns 400 instead of leaking a 500.
+- **Account deletion** deactivates instead of hard-deleting, preserving surgery/audit history referenced by staff FKs; sessions revoked immediately.
+- **Sync queue:** field staff can enqueue/mark/retry their own offline mutations (was admin-only); `synced_at` now records the actual sync moment.
+- **Notification targeting:** only admins may create notifications for other users (anti-spam between staff accounts).
+- **CI trigger** points at `master` (the actual default branch) — CI had been silently skipping three weeks of merges.
+- **Health check** logs real correlation IDs.
+
+### Changed
+- **Committee Portal is live:** governance decisions (with vote tallies), meetings, documents, and member directory now served from the database; static demo rows removed. Seeded with realistic committee data.
+- **Lint-clean codebase:** 62 auto-fixed issues, remaining accepted classes documented in lint policy.
+- **Map data 35x smaller:** India states GeoJSON simplified (vertex decimation + rounding) — heatmap chunk drops from 5.5 MB to 158 KB gzipped; all 35 states retained (`scripts/shrink_geojson.py`).
+- **Offline-safe icons:** Material Symbols font self-hosted; no Google Fonts CDN request at runtime.
+- **Fail-fast migrations:** Docker container exits if Alembic fails instead of booting on a broken schema.
+- **Dependency trim:** removed unused passlib and python-multipart (bcrypt used directly); fixed stale pdf-studio-py constraint that broke `uv lock`.
+- Version unified at 0.5.0 across app metadata and packaging.
+
+---
+
 ## [0.4.5] - 2026-08-23
 
 ### Added

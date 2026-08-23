@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 from uuid import uuid4
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, Response, status
+from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -14,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.models.base import Staff
 
-security_scheme = HTTPBearer()
+security_scheme = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -80,9 +81,16 @@ class TokenPayload(BaseModel):
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),  # noqa: B008
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),  # noqa: B008
 ) -> TokenPayload:
-    payload = decode_token(credentials.credentials)
+    # Accept either an Authorization: Bearer header or the httpOnly access
+    # token cookie. Cookie fallback keeps cookie-only flows (file downloads,
+    # server-side redirects) authenticated without exposing the token to JS.
+    token = credentials.credentials if credentials else request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    payload = decode_token(token)
     if payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
     return TokenPayload(
@@ -123,13 +131,24 @@ async def verify_refresh_token(refresh_token: str, db: AsyncSession) -> TokenPay
     )
 
 
+def _cookie_samesite() -> Literal["strict", "none"]:
+    # Local dev (same-site localhost): Strict is fine and maximally CSRF-safe.
+    # Production splits frontend/backend across sites (e.g. vercel.app ↔
+    # hf.space); Strict cookies never attach to cross-site requests, so use
+    # None (+ Secure) there. JSON-only bodies + restricted CORS keep CSRF
+    # exposure low.
+    return "strict" if settings.debug else "none"
+
+
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    # secure=False in debug so cookies work over plain-http localhost;
+    # browsers treat localhost as trustworthy, prod always gets Secure.
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=not settings.debug,
-        samesite="strict",
+        samesite=_cookie_samesite(),
         max_age=settings.access_token_expire_minutes * 60,
     )
     response.set_cookie(
@@ -137,14 +156,14 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
         value=refresh_token,
         httponly=True,
         secure=not settings.debug,
-        samesite="strict",
+        samesite=_cookie_samesite(),
         max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
     )
 
 
 def clear_auth_cookies(response: Response) -> None:
-    response.delete_cookie("access_token", secure=not settings.debug, samesite="strict")
-    response.delete_cookie("refresh_token", secure=not settings.debug, samesite="strict")
+    response.delete_cookie("access_token", secure=not settings.debug, samesite=_cookie_samesite())
+    response.delete_cookie("refresh_token", secure=not settings.debug, samesite=_cookie_samesite())
 
 
 def require_centre_access(centre_id_param: str):

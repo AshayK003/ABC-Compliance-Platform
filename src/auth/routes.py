@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import (
@@ -14,12 +14,14 @@ from src.auth.deps import (
     create_refresh_token,
     get_current_user,
     hash_password,
+    require_role,
     set_auth_cookies,
     verify_password,
     verify_refresh_token,
 )
 from src.database import get_db
-from src.models.base import Staff
+from src.models.base import Centre, Staff
+from src.utils.fk import assert_fk_exists
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -49,13 +51,19 @@ class TokenResponse(BaseModel):
 class RegisterResponse(BaseModel):
     id: str
     name: str
-    role: str
-    access_token: str
+    status: str = "pending_approval"
+    message: str
+
+
+class UserAdminUpdate(BaseModel):
+    active: bool | None = None
+    role: str | None = None
+    centre_id: str | None = None
 
 
 @router.post(
     "/register",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_202_ACCEPTED,
     responses={409: {"description": "Phone already registered"}},
 )
 @limiter.limit("3/hour")
@@ -65,9 +73,15 @@ async def register(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
+    """Self-registration creates an INACTIVE staff record pending admin
+    approval. No session is issued; role and centre assignment happen only
+    through the admin user-management endpoints."""
     result = await db.execute(select(Staff).where(Staff.phone == body.phone))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already registered")
+
+    if body.centre_id:
+        await assert_fk_exists(db, Centre, body.centre_id, "centre")
 
     staff = Staff(
         name=body.name,
@@ -75,6 +89,7 @@ async def register(
         role="vet",
         centre_id=(body.centre_id or None),
         password_hash=hash_password(body.password),
+        active=False,  # pending admin approval
     )
     db.add(staff)
     try:
@@ -82,25 +97,20 @@ async def register(
         await db.refresh(staff)
     except Exception as e:
         await db.rollback()
-        # Check for specific constraint violations
         if "phone" in str(e).lower() or "unique" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already registered")
-        if "length" in str(e).lower() or "varchar" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Phone number too long (max 20 characters)")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Registration failed")
-
-    access_token = create_access_token(
-        user_id=staff.id,
-        role=staff.role,
-        name=staff.name,
-        phone=staff.phone,
-        centre_id=staff.centre_id,
-    )
-    refresh_token = create_refresh_token(user_id=staff.id, token_version=staff.token_version)
-    set_auth_cookies(response, access_token, refresh_token)
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Phone already registered",
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed",
+        ) from e
 
     return RegisterResponse(
-        id=staff.id, name=staff.name, role=staff.role, access_token=access_token
+        id=staff.id,
+        name=staff.name,
+        message="Registration received. An administrator will review and activate your account.",
     )
 
 
@@ -174,20 +184,117 @@ async def logout(
 
 @router.delete("/me", responses={404: {"description": "User not found"}})
 async def delete_account(
+    response: Response,
     user: TokenPayload = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """Deactivate the account instead of hard-deleting.
+
+    Hard-deleting a Staff row breaks the surgical/audit history that references
+    it and violates the audit-trail guarantee. Deactivation preserves the
+    record, blocks login, and revokes all refresh tokens immediately.
+    """
     result = await db.execute(select(Staff).where(Staff.id == user.user_id))
     staff = result.scalar_one_or_none()
     if not staff:
         raise HTTPException(status_code=404, detail="User not found")
 
-    await db.delete(staff)
+    staff.active = False
+    staff.token_version += 1
     await db.commit()
 
-    response = Response(content='{"message": "Account deleted"}', media_type="application/json")
     clear_auth_cookies(response)
-    return response
+    return {"message": "Account deactivated"}
+
+
+@router.get("/staff", responses={403: {"description": "Admin only"}})
+async def list_staff(
+    active: bool | None = None,
+    centre_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin")),
+):
+    """Admin: list staff accounts, optionally filtered by state or centre."""
+    stmt = select(Staff).order_by(Staff.name)
+    if active is not None:
+        stmt = stmt.where(Staff.active == active)
+    if centre_id:
+        stmt = stmt.where(Staff.centre_id == centre_id)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.patch("/staff/{staff_id}", responses={404: {"description": "User not found"}})
+async def update_staff(
+    staff_id: str,
+    body: UserAdminUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin")),
+):
+    """Admin: activate/deactivate an account, change role, or assign centre.
+
+    Activating a pending registration is the approval step for self-signup.
+    Deactivating (or reassigning) a user bumps token_version so their existing
+    sessions are revoked immediately.
+    """
+    result = await db.execute(select(Staff).where(Staff.id == staff_id))
+    staff = result.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if body.centre_id is not None:
+        await assert_fk_exists(db, Centre, body.centre_id, "centre")
+    if body.role is not None:
+        if body.role not in ("vet", "surgeon", "admin"):
+            raise HTTPException(status_code=422, detail="Invalid role")
+        if staff.role == "admin" and body.role != "admin":
+            other_admins = await db.execute(
+                select(func.count(Staff.id)).where(Staff.role == "admin", Staff.active == True)  # noqa: E712
+            )
+            if (other_admins.scalar() or 0) <= 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Cannot demote the last active admin",
+                )
+    if body.active is False and staff.role == "admin":
+        other_admins = await db.execute(
+            select(func.count(Staff.id)).where(Staff.role == "admin", Staff.active == True)  # noqa: E712
+        )
+        if (other_admins.scalar() or 0) <= 1:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot deactivate the last active admin",
+            )
+
+    changed = False
+    if body.active is not None and body.active != staff.active:
+        staff.active = body.active
+        changed = True
+    if body.role is not None and body.role != staff.role:
+        staff.role = body.role
+        changed = True
+    if body.centre_id is not None and body.centre_id != staff.centre_id:
+        staff.centre_id = body.centre_id
+        changed = True
+    if changed:
+        # Role/centre changes must reach the access token; active changes must
+        # kill refresh tokens. Bump on any change — cheap and always safe.
+        staff.token_version += 1
+    await db.commit()
+    await db.refresh(staff)
+    return staff
+
+
+@router.get("/staff/pending", responses={403: {"description": "Admin only"}})
+async def list_pending_staff(
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin")),
+):
+    """Admin: registrations awaiting approval."""
+    result = await db.execute(
+        select(Staff).where(Staff.active == False).order_by(Staff.name)  # noqa: E712
+    )
+    return result.scalars().all()
 
 
 @router.get("/me")

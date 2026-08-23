@@ -77,11 +77,11 @@ class TestListCentres:
         # Mock for count query (returns total=0)
         count_mr = MagicMock()
         count_mr.scalar.return_value = 0
-        
+
         # Mock for main query (returns empty list)
         data_mr = MagicMock()
         data_mr.scalars.return_value.all.return_value = []
-        
+
         # Use side_effect to return different mocks for each call
         mock_session.execute.side_effect = [count_mr, data_mr]
 

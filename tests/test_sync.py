@@ -61,6 +61,13 @@ def _make_sync_queue(**kwargs) -> SyncQueue:
     return SyncQueue(**data)
 
 
+def _setup_sync_lookup(mock_session: AsyncMock, item: SyncQueue) -> None:
+    """Point the mocked session's execute at a single sync-queue row."""
+    mr = MagicMock()
+    mr.scalar_one_or_none.return_value = item
+    mock_session.execute.return_value = mr
+
+
 class TestSyncQueue:
     @pytest.mark.asyncio
     async def test_enqueue_operation(self, client: AsyncClient, mock_session: AsyncMock):
@@ -163,8 +170,9 @@ class TestSyncQueue:
         assert resp.json()["idempotency_key"] == "idem-lookup"
 
 
-class TestSyncAdminOnly:
-    """Non-admin callers must not be able to mutate sync state."""
+class TestSyncStaffAccess:
+    """Field staff (vet/surgeon) must be able to drive their own sync queue;
+    the offline-first flow cannot require an admin on every device."""
 
     @pytest.fixture
     def auth_override(self):
@@ -173,7 +181,16 @@ class TestSyncAdminOnly:
         return _override
 
     @pytest.mark.asyncio
-    async def test_enqueue_requires_admin(self, client: AsyncClient):
+    async def test_enqueue_allowed_for_staff(self, client: AsyncClient, mock_session: AsyncMock):
+        mr = MagicMock()
+        mr.scalar_one_or_none.return_value = None  # no idempotency conflict
+        mock_session.execute.return_value = mr
+        mock_session.commit = AsyncMock()
+        async def mock_refresh(obj):
+            if hasattr(obj, "id") and obj.id is None:
+                obj.id = "sync-new"
+        mock_session.refresh = AsyncMock(side_effect=mock_refresh)
+
         resp = await client.post("/api/v1/sync/enqueue", json={
             "entity_type": "surgery",
             "entity_id": "surg-1",
@@ -181,26 +198,30 @@ class TestSyncAdminOnly:
             "payload": {"surgery_type": "spay"},
             "idempotency_key": "idem-vet",
         })
-        assert resp.status_code == 403
+        assert resp.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_mark_synced_requires_admin(self, client: AsyncClient):
+    async def test_mark_synced_sets_timestamp(self, client: AsyncClient, mock_session: AsyncMock):
+        """Regression: synced_at must reflect the actual sync moment."""
+        item = _make_sync_queue()
+        _setup_sync_lookup(mock_session, item)
+        mock_session.commit = AsyncMock()
+
         resp = await client.post("/api/v1/sync/mark-synced/sync-1")
-        assert resp.status_code == 403
+        assert resp.status_code == 200
+        assert item.synced_at is not None
 
     @pytest.mark.asyncio
-    async def test_mark_failed_requires_admin(self, client: AsyncClient):
+    async def test_mark_failed_records_error(self, client: AsyncClient, mock_session: AsyncMock):
+        item = _make_sync_queue()
+        _setup_sync_lookup(mock_session, item)
+        mock_session.commit = AsyncMock()
+
         resp = await client.post(
             "/api/v1/sync/mark-failed/sync-fail", json={"error": "timeout"}
         )
-        assert resp.status_code == 403
-
-    @pytest.mark.asyncio
-    async def test_retry_failed_requires_admin(self, client: AsyncClient):
-        resp = await client.post(
-            "/api/v1/sync/retry-failed", json={"max_retries": 3}
-        )
-        assert resp.status_code == 403
+        assert resp.status_code == 200
+        assert item.error == "timeout"
 
     @pytest.mark.asyncio
     async def test_reads_allowed_for_staff(
@@ -212,3 +233,17 @@ class TestSyncAdminOnly:
 
         resp = await client.get("/api/v1/sync/pending")
         assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_retry_failed_allowed_for_staff(self, client: AsyncClient, mock_session: AsyncMock):
+        """Retry is a field-device operation; staff may trigger it."""
+        mr = MagicMock()
+        mr.scalars.return_value.all.return_value = []
+        mock_session.execute.return_value = mr
+        mock_session.commit = AsyncMock()
+
+        resp = await client.post(
+            "/api/v1/sync/retry-failed", json={"max_retries": 3}
+        )
+        assert resp.status_code == 200
+        assert resp.json() == {"retried": 0}

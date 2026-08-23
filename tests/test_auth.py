@@ -81,11 +81,9 @@ def _setup_mock_execute(mock_session: AsyncMock, return_value):
 class TestRegister:
     @pytest.mark.asyncio
     async def test_registers_new_staff(self, client: AsyncClient, mock_session: AsyncMock):
+        """Registration is pending-approval: inactive staff, 202, no session."""
         _setup_mock_execute(mock_session, None)
         mock_session.commit = AsyncMock()
-        # Mock refresh to set ID on the staff object - but we can't easily test
-        # the response body since the staff object is created inside the
-        # route handler. Just verify status and cookies.
         async def mock_refresh(obj):
             if hasattr(obj, 'id') and obj.id is None:
                 obj.id = "staff-new-id"
@@ -96,11 +94,11 @@ class TestRegister:
             "phone": "9876543210",
             "password": "secret123",
         })
-        assert resp.status_code == 201
-        assert "access_token" in resp.cookies
-        assert "refresh_token" in resp.cookies
-        mock_session.add.assert_called_once()
-        mock_session.commit.assert_awaited_once()
+        assert resp.status_code == 202
+        body = resp.json()
+        assert body["status"] == "pending_approval"
+        added = mock_session.add.call_args[0][0]
+        assert added.active is False  # must not be usable until approved
 
     @pytest.mark.asyncio
     async def test_register_cannot_self_assign_admin(
@@ -120,12 +118,10 @@ class TestRegister:
             "password": "secret123",
             "role": "admin",
         })
-        assert resp.status_code == 201
+        assert resp.status_code == 202
         # The created staff object must be a vet, never admin.
         added = mock_session.add.call_args[0][0]
         assert added.role == "vet"
-        body = resp.json()
-        assert body["role"] == "vet"
 
     @pytest.mark.asyncio
     async def test_rejects_duplicate_phone(self, client: AsyncClient, mock_session: AsyncMock):
@@ -257,24 +253,27 @@ class TestLogout:
 
 class TestDeleteAccount:
     @pytest.mark.asyncio
-    async def test_delete_account(self, client: AsyncClient, mock_session: AsyncMock, app: FastAPI):
+    async def test_delete_account_deactivates_not_deletes(
+        self, client: AsyncClient, mock_session: AsyncMock, app: FastAPI
+    ):
+        """Regression: account deletion must preserve the staff record
+        (audit/surgery history references it) and revoke sessions."""
         def vet_override():
             return TokenPayload(user_id="staff-1", role="vet")
         app.dependency_overrides[get_current_user] = vet_override
 
-        _setup_mock_execute(mock_session, _make_staff())
-        mock_session.delete = AsyncMock()
+        staff = _make_staff()
+        _setup_mock_execute(mock_session, staff)
         mock_session.commit = AsyncMock()
 
         resp = await client.delete("/api/v1/auth/me")
         assert resp.status_code == 200
-        assert resp.json() == {"message": "Account deleted"}
-        # Cookies should be cleared (deleted) via Set-Cookie headers
+        assert resp.json() == {"message": "Account deactivated"}
+        assert staff.active is False
+        assert staff.token_version == 1  # bumped → refresh tokens revoked
         set_cookie = resp.headers.get("set-cookie", "")
         assert "access_token=" in set_cookie
-        assert "refresh_token=" in set_cookie
         assert "Max-Age=0" in set_cookie
-        mock_session.delete.assert_called_once()
         mock_session.commit.assert_awaited_once()
 
 

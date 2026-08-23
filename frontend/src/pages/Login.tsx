@@ -10,6 +10,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [registerData, setRegisterData] = useState({ name: '', phone: '', password: '', centreId: '' });
+  const [registered, setRegistered] = useState(false);
 
   const from = (location.state as { from?: Location })?.from?.pathname || '/';
 
@@ -20,10 +21,13 @@ export function Login() {
     try {
       if (isRegister) {
         await register(registerData);
+        setRegistered(true);
       } else {
         await login(formData);
       }
-      navigate(from, { replace: true });
+      if (!isRegister) {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     }
@@ -33,6 +37,30 @@ export function Login() {
     setIsRegister(!isRegister);
     setError('');
   };
+
+  if (registered) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md bg-surface-container-high border border-outline-variant rounded-lg p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-primary text-4xl">hourglass_top</span>
+          </div>
+          <h1 className="text-headline-md font-headline-md font-bold text-on-surface">Registration received</h1>
+          <p className="text-body-md text-body-md text-on-surface-variant mt-3">
+            Your account is pending approval. An administrator will review your details and activate
+            access. You'll be able to sign in once approved.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setRegistered(false); setIsRegister(false); }}
+            className="mt-6 w-full bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded transition-colors hover:bg-primary-container"
+          >
+            Back to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isRegister) {
     return (

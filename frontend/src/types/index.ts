@@ -119,8 +119,8 @@ export interface LoginResponse extends AuthResponse {}
 export interface RegisterResponse {
   id: string;
   name: string;
-  role: string;
-  access_token: string;
+  status: 'pending_approval';
+  message: string;
 }
 
 export interface TokenPayload {

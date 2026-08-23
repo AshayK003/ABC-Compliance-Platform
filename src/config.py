@@ -36,8 +36,8 @@ class Settings(BaseSettings):
         if len(v.encode()) < 32:
             raise ValueError(
                 "SECRET_KEY must be at least 32 bytes (256 bits) for HS256 per RFC 7518. "
-                "Current length: {} bytes. Generate a strong key with: "
-                "python -c 'import secrets; print(secrets.token_urlsafe(32))'".format(len(v.encode()))
+                f"Current length: {len(v.encode())} bytes. Generate a strong key with: "
+                "python -c 'import secrets; print(secrets.token_urlsafe(32))'"
             )
         return v
 

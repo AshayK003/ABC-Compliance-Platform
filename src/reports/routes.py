@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from typing import Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+import re
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
-from src.models.base import Allocation, Expense, Grant, Inspection, Surgery
-from src.reports.exporters import build_excel, build_pdf, _fmt
+from src.models.base import Allocation, Centre, Expense, Grant, Inspection, Surgery
+from src.reports.exporters import _fmt, build_excel, build_pdf
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -67,6 +70,27 @@ class ReportGenerateRequest(BaseModel):
     format: str = "json"  # json, excel, pdf
 
 
+_RANGE_DAYS = {
+    "last 7 days": 7,
+    "last 30 days": 30,
+    "last 90 days": 90,
+    "last 6 months": 180,
+    "last 1 year": 365,
+}
+
+
+def _range_start(date_range: str) -> datetime | None:
+    """Parse the report's date_range label into a real cutoff datetime.
+
+    Returns None for ranges we don't recognise so callers fall back to
+    all-time data rather than silently returning an empty report.
+    """
+    days = _RANGE_DAYS.get(date_range.strip().lower())
+    if days is None:
+        return None
+    return datetime.now() - timedelta(days=days)
+
+
 class ReportPreviewResponse(BaseModel):
     template_id: str
     template_name: str
@@ -90,34 +114,41 @@ async def generate_report(
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    # Build query based on template
-    preview_data = []
-    
+    range_start = _range_start(body.date_range)
+    region = (body.region or "").strip()
+    region_states = {s.strip().lower() for s in re.split(r"[,;]", region) if s.strip()} \
+        if region and region.lower() != "all india" else None
+
+    async def _visible_centres():
+        stmt = select(Centre).where(Centre.status == "active")
+        if region_states:
+            stmt = stmt.where(func.lower(Centre.state).in_(region_states))
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
+    preview_data: list[dict] = []
+
     if body.template_id == "TMPL-001":  # Monthly Compliance
-        # Get compliance data per centre
-        from src.models.base import Centre, Inspection
-        
-        centres_stmt = select(Centre).where(Centre.status == "active")
-        centres_result = await db.execute(centres_stmt)
-        centres = centres_result.scalars().all()
-        
-        # Get inspection data for compliance calculation
-        ins_stmt = (
-            select(Inspection.centre_id, Inspection.status, func.count(Inspection.id))
-            .where(Inspection.status == "completed")
-            .group_by(Inspection.centre_id, Inspection.status)
-        )
-        ins_result = await db.execute(ins_stmt)
-        completed_data = {r[0]: r[2] for r in ins_result.all()}
-        
-        total_stmt = select(Inspection.centre_id, func.count(Inspection.id)).group_by(Inspection.centre_id)
-        total_result = await db.execute(total_stmt)
-        total_data = {r[0]: r[1] for r in total_result.all()}
-        
-        preview_data = []
+        centres = await _visible_centres()
+        centre_ids = [c.id for c in centres]
+        completed_data: dict[str, int] = {}
+        total_data: dict[str, int] = {}
+        if centre_ids:
+            ins_stmt = (
+                select(Inspection.centre_id, Inspection.status, func.count(Inspection.id))
+                .where(Inspection.centre_id.in_(centre_ids))
+                .group_by(Inspection.centre_id, Inspection.status)
+            )
+            if range_start:
+                ins_stmt = ins_stmt.where(Inspection.scheduled_at >= range_start)
+            for centre_id, status_val, count in (await db.execute(ins_stmt)).all():
+                total_data[centre_id] = total_data.get(centre_id, 0) + count
+                if status_val == "completed":
+                    completed_data[centre_id] = count
+
         for centre in centres:
             completed = completed_data.get(centre.id, 0)
-            total = total_data.get(centre.id, 1)
+            total = total_data.get(centre.id, 0)
             compliance = round((completed / total * 100) if total > 0 else 0, 1)
             preview_data.append({
                 "centre_id": centre.id,
@@ -129,78 +160,71 @@ async def generate_report(
                 "completed_inspections": completed,
                 "total_inspections": total,
             })
-    
+
     elif body.template_id == "TMPL-042":  # Surgery Trends
-        from src.models.base import Surgery, Centre
-        
-        month_start = datetime.now()
-        month_start = month_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        prev_month_start = month_start.replace(day=1)
-        prev_month_start = prev_month_start.replace(month=month_start.month - 1) if month_start.month > 1 else month_start.replace(year=month_start.year - 1, month=12, day=1)
-        
-        surgery_stmt = select(Surgery, Centre).join(Centre, Surgery.centre_id == Centre.id).where(
-            Surgery.timestamp >= prev_month_start,
-            Surgery.timestamp < datetime.now()
+        month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        prev_month_start = (
+            month_start.replace(month=month_start.month - 1)
+            if month_start.month > 1
+            else month_start.replace(year=month_start.year - 1, month=12, day=1)
         )
-        surgeries_result = await db.execute(surgery_stmt)
-        surgeries = surgeries_result.all()
-        
-        # Group by month
-        from collections import defaultdict
-        monthly_counts = defaultdict(int)
-        for surgery, centre in surgeries:
-            month_key = surgery.timestamp.strftime("%Y-%m")
-            monthly_counts[month_key] += 1
-        
-        sorted_months = sorted(monthly_counts.keys())
+
+        surgery_stmt = select(Surgery.timestamp).join(Centre, Surgery.centre_id == Centre.id)
+        if range_start:
+            surgery_stmt = surgery_stmt.where(Surgery.timestamp >= range_start)
+        else:
+            surgery_stmt = surgery_stmt.where(
+                Surgery.timestamp >= prev_month_start,
+                Surgery.timestamp < datetime.now(),
+            )
+        if region_states:
+            surgery_stmt = surgery_stmt.where(func.lower(Centre.state).in_(region_states))
+        rows = (await db.execute(surgery_stmt)).all()
+
+        monthly_counts: dict[str, int] = {}
+        for (ts,) in rows:
+            month_key = ts.strftime("%Y-%m")
+            monthly_counts[month_key] = monthly_counts.get(month_key, 0) + 1
+
         preview_data = [
-            {"month": m, "surgeries": monthly_counts[m]} 
-            for m in sorted_months
+            {"month": m, "surgeries": monthly_counts[m]} for m in sorted(monthly_counts.keys())
         ]
-    
+
     elif body.template_id == "TMPL-108":  # Inspection Summary
-        from src.models.base import Inspection, Centre
-        
-        ins_stmt = select(Inspection, Centre).join(Centre, Inspection.centre_id == Centre.id)
-        ins_result = await db.execute(ins_stmt)
-        inspections = ins_result.all()
-        
-        status_counts = {}
-        for ins, centre in inspections:
-            if ins.status not in status_counts:
-                status_counts[ins.status] = 0
-            status_counts[ins.status] += 1
-        
-        preview_data = [
-            {"status": k, "count": v} for k, v in status_counts.items()
-        ]
-    
+        stmt = select(Inspection.status, func.count(Inspection.id))
+        if region_states:
+            stmt = stmt.join(Centre, Inspection.centre_id == Centre.id).where(
+                func.lower(Centre.state).in_(region_states)
+            )
+        if range_start:
+            stmt = stmt.where(Inspection.scheduled_at >= range_start)
+        stmt = stmt.group_by(Inspection.status)
+        rows = (await db.execute(stmt)).all()
+        preview_data = [{"status": status_val, "count": count} for status_val, count in rows]
+
     elif body.template_id == "TMPL-205":  # Financial Audit
-        from src.models.base import Grant, Allocation, Expense
-        
-        grants_stmt = select(Grant)
-        grants_result = await db.execute(grants_stmt)
-        grants = grants_result.scalars().all()
-        
-        total_allocated = 0
-        total_expensed = 0
-        for grant in grants:
-            allocs_stmt = select(Allocation).where(Allocation.grant_id == grant.id)
-            allocs_result = await db.execute(allocs_stmt)
-            allocs = allocs_result.scalars().all()
-            for alloc in allocs:
-                total_allocated += alloc.amount
-                exp_stmt = select(func.sum(Expense.amount)).where(Expense.allocation_id == alloc.id)
-                exp_result = await db.execute(exp_stmt)
-                total_expensed += exp_result.scalar() or 0
-        
+        alloc_rows = (await db.execute(select(Allocation))).scalars().all()
+        grant_count = len(set(a.grant_id for a in alloc_rows)) or (
+            len((await db.execute(select(Grant.id))).all())
+        )
+        total_allocated = sum((a.amount for a in alloc_rows), Decimal("0"))
+
+        exp_stmt = select(func.coalesce(func.sum(Expense.amount), 0))
+        if range_start:
+            exp_stmt = exp_stmt.where(Expense.expense_at >= range_start.date())
+        total_expensed = (await db.execute(exp_stmt)).scalar() or Decimal("0")
+
+        utilization = (
+            round(float(total_expensed) / float(total_allocated) * 100, 1)
+            if float(total_allocated) > 0 else 0.0
+        )
         preview_data = [{
-            "total_grants": len(grants),
+            "total_grants": grant_count,
             "total_allocated": float(total_allocated),
             "total_expensed": float(total_expensed),
-            "utilization_rate": round((float(total_expensed) / float(total_allocated) * 100) if total_allocated > 0 else 0, 1)
+            "utilization_rate": utilization,
         }]
-    
+
     return ReportPreviewResponse(
         template_id=template["id"],
         template_name=template["name"],
@@ -299,11 +323,11 @@ async def get_yoy_adherence(
     _: TokenPayload = Depends(get_current_user),
 ):
     """Get year-over-year adherence data for chart."""
-    from src.models.base import Surgery, Centre
-    
+    from src.models.base import Centre, Surgery
+
     current_year = datetime.now().year
     prev_year = current_year - 1
-    
+
     # Current year surgeries
     curr_stmt = select(Surgery, Centre).join(Centre, Surgery.centre_id == Centre.id).where(
         Surgery.timestamp >= datetime(current_year, 1, 1),
@@ -311,7 +335,7 @@ async def get_yoy_adherence(
     )
     curr_result = await db.execute(curr_stmt)
     curr_surgeries = curr_result.all()
-    
+
     # Previous year surgeries
     prev_stmt = select(Surgery, Centre).join(Centre, Surgery.centre_id == Centre.id).where(
         Surgery.timestamp >= datetime(prev_year, 1, 1),
@@ -319,19 +343,19 @@ async def get_yoy_adherence(
     )
     prev_result = await db.execute(prev_stmt)
     prev_surgeries = prev_result.all()
-    
+
     # Group by quarter
     from collections import defaultdict
     curr_quarterly = defaultdict(int)
     for s, c in curr_surgeries:
         quarter = (s.timestamp.month - 1) // 3 + 1
         curr_quarterly[f"Q{quarter}"] += 1
-    
+
     prev_quarterly = defaultdict(int)
     for s, c in prev_surgeries:
         quarter = (s.timestamp.month - 1) // 3 + 1
         prev_quarterly[f"Q{quarter}"] += 1
-    
+
     quarters = ["Q1", "Q2", "Q3", "Q4"]
     return {
         "quarters": quarters,
@@ -348,7 +372,7 @@ async def get_monthly_disbursements(
 ):
     """Get monthly fund disbursement data for chart."""
     from src.models.base import Allocation
-    
+
     # Get last 6 months
     month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     for _ in range(5):
@@ -356,17 +380,17 @@ async def get_monthly_disbursements(
             month_start = month_start.replace(year=month_start.year - 1, month=12)
         else:
             month_start = month_start.replace(month=month_start.month - 1)
-    
+
     allocs_stmt = select(Allocation).where(Allocation.allocated_at >= month_start)
     allocs_result = await db.execute(allocs_stmt)
     allocations = allocs_result.scalars().all()
-    
+
     from collections import defaultdict
     monthly = defaultdict(float)
     for alloc in allocations:
         month_key = alloc.allocated_at.strftime("%Y-%m")
         monthly[month_key] += float(alloc.amount)
-    
+
     sorted_months = sorted(monthly.keys())[-6:]  # Last 6 months
     return {
         "months": sorted_months,
@@ -382,11 +406,11 @@ async def get_expense_categories(
 ):
     """Get expense category breakdown for chart."""
     from src.models.base import Expense
-    
+
     exp_stmt = select(Expense.category, func.sum(Expense.amount)).group_by(Expense.category)
     exp_result = await db.execute(exp_stmt)
     expenses = exp_result.all()
-    
+
     total = sum(float(e[1]) for e in expenses) if expenses else 1
     return {
         "categories": [
@@ -408,24 +432,24 @@ async def get_monthly_surgeries(
 ):
     """Get monthly surgeries data for chart."""
     from src.models.base import Surgery
-    
+
     month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     for _ in range(5):
         if month_start.month == 1:
             month_start = month_start.replace(year=month_start.year - 1, month=12)
         else:
             month_start = month_start.replace(month=month_start.month - 1)
-    
+
     surg_stmt = select(Surgery).where(Surgery.timestamp >= month_start)
     surg_result = await db.execute(surg_stmt)
     surgeries = surg_result.scalars().all()
-    
+
     from collections import defaultdict
     monthly = defaultdict(int)
     for s in surgeries:
         month_key = s.timestamp.strftime("%Y-%m")
         monthly[month_key] += 1
-    
+
     sorted_months = sorted(monthly.keys())
     return {
         "months": sorted_months,

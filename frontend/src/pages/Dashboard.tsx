@@ -44,12 +44,13 @@ export function Dashboard() {
 
   const loadDashboardData = async () => {
       try {
-        const [centreData, inspectionData, complaintData, surgeryData, allocationData] = await Promise.all([
+        const [centreData, inspectionData, complaintData, surgeryData, allocationData, scoreData] = await Promise.all([
           api.getCentres({ limit: 100 }),
           api.getInspections(),
           api.getComplaints().catch(() => [] as never[]),
           api.getSurgeries().catch(() => [] as never[]),
           api.getAllocations().catch(() => [] as never[]),
+          api.getComplianceScores().catch(() => [] as never[]),
         ]);
 
         const totalDisbursed = (allocationData as Array<{ amount: number }>)
@@ -73,10 +74,9 @@ export function Dashboard() {
           }
         }
 
-        const completedInspections = new Set(
-          (inspectionData as Array<{ centre_id: string; status: string }>)
-            .filter(i => i.status === 'completed')
-            .map(i => i.centre_id),
+        // Real compliance ratios from the backend (completed / total inspections)
+        const scoresById = new Map(
+          (scoreData as Array<{ centre_id: string; compliance_score: number }>).map(s => [s.centre_id, s.compliance_score]),
         );
 
         const summaries: CentreSummary[] = centreArray.map((c) => ({
@@ -87,7 +87,7 @@ export function Dashboard() {
         state: c.state,
         capacity: c.capacity ?? 0,
         status: c.status,
-        complianceScore: completedInspections.has(c.id) ? 100 : 0,
+        complianceScore: scoresById.get(c.id) ?? 0,
         surgeriesThisMonth: surgeryCounts.get(c.id) ?? 0,
       }));
 

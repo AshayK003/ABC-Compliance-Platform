@@ -59,6 +59,12 @@ export const api = {
   getComplaints: publicApi.getComplaints,
   createComplaint: publicApi.createComplaint,
   updateComplaint: publicApi.updateComplaint,
+  getHeatmap: publicApi.getHeatmap,
+  getComplianceScores: publicApi.getComplianceScores,
+  getCommitteeDecisions: publicApi.getCommitteeDecisions,
+  getCommitteeMeetings: publicApi.getCommitteeMeetings,
+  getCommitteeDocuments: publicApi.getCommitteeDocuments,
+  getCommitteeMembers: publicApi.getCommitteeMembers,
   // Sync Queue
   enqueueSync: publicApi.enqueueSync,
   getPendingSync: publicApi.getPendingSync,

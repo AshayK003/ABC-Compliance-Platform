@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 class TestModelTopLevel:
     def test_committee_models_are_module_level(self):

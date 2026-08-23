@@ -42,14 +42,14 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   };
 
   const register = async (data: { name: string; phone: string; password: string; centreId?: string }) => {
-    const res = await authApi.register({
+    // Registration is now pending-approval: no token is issued and the user
+    // cannot authenticate until an admin activates the account.
+    await authApi.register({
       name: data.name,
       phone: data.phone,
       password: data.password,
-      centre_id: data.centreId,
+      centre_id: data.centreId || undefined,
     });
-    setAuthToken(res.access_token);
-    await fetchUser();
   };
 
   const logout = async () => {

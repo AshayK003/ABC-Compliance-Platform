@@ -8,11 +8,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.audit.routes import log_audit_event
-from src.utils.fk import assert_fk_exists
+from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
 from src.models.base import Allocation, Centre, Expense, Grant
+from src.utils.fk import assert_fk_exists
 
 router = APIRouter(prefix="/grants", tags=["grants"])
 
@@ -169,6 +169,14 @@ async def create_expense(
     allocation = allocation_result.scalar_one_or_none()
     if not allocation:
         raise HTTPException(status_code=404, detail="Allocation not found")
+
+    # Object-level authorization (anti-IDOR): non-admin staff may only bill
+    # against allocations belonging to their own centre.
+    if user.role != "admin" and allocation.centre_id != user.centre_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: allocation belongs to another centre",
+        )
 
     # Sum existing expenses for this allocation
     existing_expenses_result = await db.execute(

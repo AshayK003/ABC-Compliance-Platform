@@ -22,7 +22,7 @@
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "7.11.0"
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
@@ -36,6 +36,7 @@
     "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.5.4",
     "happy-dom": "^20.11.1",
+    "impeccable": "^3.6.0",
     "jsdom": "^30.0.1",
     "oxlint": "^1.75.0",
     "postcss": "^8.5.25",

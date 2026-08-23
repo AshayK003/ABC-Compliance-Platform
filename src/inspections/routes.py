@@ -7,11 +7,11 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
 from src.audit.routes import log_audit_event
-from src.utils.fk import assert_fk_exists
+from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
 from src.database import get_db
 from src.models.base import Centre, Inspection, Staff
+from src.utils.fk import assert_fk_exists
 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
 

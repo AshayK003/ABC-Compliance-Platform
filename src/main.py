@@ -31,8 +31,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.audit.routes import router as audit_router
 from src.auth.routes import router as auth_router
 from src.centres.routes import router as centres_router
+from src.committee.routes import router as committee_router
 from src.config import settings
 from src.database import get_db
 from src.dogs.routes import router as dogs_router
@@ -40,10 +42,9 @@ from src.funds.routes import alloc_router, exp_router
 from src.funds.routes import router as funds_router
 from src.inspections.routes import router as inspections_router
 from src.notifications.routes import router as notifications_router
-from src.public.routes import public_router, sync_router, public_limiter
+from src.public.routes import public_limiter, public_router, sync_router
 from src.reports.routes import router as reports_router
 from src.surgeries.routes import router as surgeries_router
-from src.audit.routes import router as audit_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth_router)
@@ -59,6 +60,7 @@ api_v1_router.include_router(surgeries_router)
 api_v1_router.include_router(reports_router)
 api_v1_router.include_router(notifications_router)
 api_v1_router.include_router(audit_router)
+api_v1_router.include_router(committee_router)
 
 
 logging.basicConfig(
@@ -85,13 +87,13 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting %s v%s", settings.app_name, "0.4.0")
+    logger.info("Starting %s v%s", settings.app_name, "0.5.0")
     yield
     # Shutdown
     logger.info("Shutting down %s", settings.app_name)
 
 
-app = FastAPI(title=settings.app_name, version="0.4.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.5.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.state.public_limiter = public_limiter
 app.add_middleware(CorrelationIDMiddleware)
@@ -163,14 +165,14 @@ app.include_router(api_v1_router)
 
 
 @app.get("/health")
-async def health(db: Annotated[AsyncSession, Depends(get_db)]):  # noqa: B008
+async def health(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):  # noqa: B008
     checks = {
         "database": True,
     }
     try:
         await db.execute(select(1))
     except Exception as e:
-        correlation_id = getattr(db, "state", {}).get("correlation_id", "unknown")
+        correlation_id = getattr(request.state, "correlation_id", "unknown")
         logger.warning(
             "Health check DB failed: %s | correlation_id=%s", e, correlation_id
         )
