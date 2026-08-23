@@ -48,10 +48,12 @@ export const api = {
   getCentres: centresApi.getCentres,
   getCentre: centresApi.getCentre,
   createCentre: centresApi.createCentre,
+  getCentreStaff: centresApi.getCentreStaff,
   // Surgeries
   getSurgeries: surgeriesApi.getSurgeries,
   getSurgery: surgeriesApi.getSurgery,
   createSurgery: surgeriesApi.createSurgery,
+  getDogs: surgeriesApi.getDogs,
   // Inspections
   getInspections: inspectionsApi.getInspections,
   getInspection: inspectionsApi.getInspection,
