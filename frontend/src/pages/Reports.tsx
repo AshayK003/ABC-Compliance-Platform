@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ComplianceHeatmap } from '../components/ComplianceHeatmap';
-import { YoyAdherenceChart, useThemeDark, type YoyData } from '../components/YoyAdherenceChart';
+import { YoyAdherenceChart, type YoyData } from '../components/YoyAdherenceChart';
 import { reportsApi } from '../services/api/reports';
 
 interface ReportTemplate {
@@ -16,7 +16,6 @@ export function Reports() {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [yoyData, setYoyData] = useState<YoyData | null>(null);
-  const isDark = useThemeDark();
   const [dateRange, setDateRange] = useState('Last 30 Days');
   const [region, setRegion] = useState('All India');
   const [metric, setMetric] = useState('Overall Compliance %');

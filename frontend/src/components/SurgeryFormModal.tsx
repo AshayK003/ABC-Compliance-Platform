@@ -96,7 +96,7 @@ export function SurgeryFormModal({ onClose, onSubmit }: SurgeryFormModalProps) {
               <option value="">Select a dog…</option>
               {dogs.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.tag_id} ({d.sex === 'M' || d.sex === 'male' ? 'Male' : 'Female'}{d.age_estimate ? `, ~${d.age_estimate}y` : ''})
+                  {d.tag_id} ({d.sex === 'male' ? 'Male' : 'Female'}{d.age_estimate ? `, ~${d.age_estimate}y` : ''})
                 </option>
               ))}
             </select>
