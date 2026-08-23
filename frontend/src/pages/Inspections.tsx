@@ -79,7 +79,7 @@ export function Inspections() {
       {/* TopAppBar */}
       <header className="bg-surface-container dark:bg-surface-container text-primary dark:text-primary font-body-md text-body-md border-b border-outline-variant dark:border-outline-variant flex justify-between items-center h-16 px-gutter shrink-0 z-10 w-full">
         <div className="flex items-center">
-          <span className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface tracking-tight">AWBI ABC Compliance</span>
+          <span className="font-headline-sm text-[15px] leading-tight font-bold text-on-surface dark:text-on-surface tracking-tight truncate">AWBI ABC Compliance</span>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 bg-surface-container-highest px-2 py-1 rounded border border-outline-variant" title="System synced 2 mins ago">

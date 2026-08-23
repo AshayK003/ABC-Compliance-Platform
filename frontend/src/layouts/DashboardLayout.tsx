@@ -47,7 +47,7 @@ export function DashboardLayout() {
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <h2 className="text-headline-sm font-headline-sm font-bold text-on-surface dark:text-on-surface truncate">
+        <h2 className="font-headline-sm text-[15px] leading-tight font-bold text-on-surface dark:text-on-surface truncate px-1">
           AWBI ABC Compliance
         </h2>
         <NavLink
@@ -136,7 +136,7 @@ export function DashboardLayout() {
         {/* Top App Bar (desktop only — mobile uses the fixed top bar above) */}
         <header className="hidden lg:flex justify-between items-center h-16 px-gutter bg-surface-container dark:bg-surface-container border-b border-outline-variant dark:border-outline-variant z-10 shrink-0">
           <div className="flex items-center gap-4 min-w-0">
-            <h2 className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface truncate">
+            <h2 className="font-headline-sm text-[17px] leading-snug font-black text-on-surface dark:text-on-surface truncate">
               AWBI ABC Compliance
             </h2>
           </div>

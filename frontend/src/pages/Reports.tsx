@@ -100,10 +100,12 @@ export function Reports() {
       <div className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
         {/* TopAppBar */}
         <header className="flex justify-between items-center h-16 px-gutter w-full sticky top-0 z-40 bg-surface-container border-b border-outline-variant shrink-0">
-          <div className="md:hidden flex items-center gap-2">
-            <span className="font-headline-md text-headline-md font-bold text-primary">ABC Digital Compliance</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-headline-sm text-[15px] leading-tight font-bold text-primary truncate">
+              AWBI ABC Compliance
+            </span>
           </div>
-          <div className="hidden md:flex items-center flex-1 max-w-md relative">
+          <div className="hidden md:flex items-center flex-1 max-w-md relative ml-4">
             <span className="material-symbols-outlined absolute left-3 text-on-surface-variant pointer-events-none text-sm">search</span>
             <input
               className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm rounded-DEFAULT py-1.5 pl-9 pr-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant/50"

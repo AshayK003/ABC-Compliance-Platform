@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.5] - 2026-08-23
+
+### Added
+- **Real file exports (#40):** `POST /reports/export/pdf` (pdf-studio, cypher theme: KPI cards, styled tables, running header) and `/reports/export/excel` (openpyxl, teal header styling). Reports page Export PDF / Excel buttons wired with loading state and inline errors; template cards are selectable.
+
+### Fixed
+- **Header title clipping:** "AWBI ABC Compliance" rendered at oversized headline sizes in the mobile/desktop top bars, clipping descenders; resized with proper leading and truncation across layout + Dashboard/Inspections/Reports headers.
+- Export route `_fmt` import; export dependencies pinned (pdf-studio-py, openpyxl, matplotlib).
+
 ## [0.4.4] - 2026-08-23
 
 ### Added

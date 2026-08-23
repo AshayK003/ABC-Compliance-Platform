@@ -188,7 +188,7 @@ const topCentres = centres
       {/* TopAppBar */}
       <header className="flex justify-between items-center h-16 px-gutter bg-surface-container dark:bg-surface-container border-b border-outline-variant dark:border-outline-variant z-10 shrink-0">
         <div className="flex items-center gap-4">
-          <h2 className="text-headline-sm font-headline-sm font-black text-on-surface dark:text-on-surface">AWBI ABC Compliance</h2>
+          <h2 className="font-headline-sm text-[15px] leading-tight font-bold text-on-surface dark:text-on-surface truncate">AWBI ABC Compliance</h2>
         </div>
         <div className="flex items-center gap-4 text-on-surface-variant">
           <button type="button" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
