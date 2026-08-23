@@ -77,9 +77,7 @@ export function DashboardLayout() {
       >
         <div className="px-gutter mb-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm font-bold shrink-0">
-              A
-            </div>
+            <img src="/logo.svg" alt="ABC Compliance logo" className="w-10 h-10 rounded-xl shrink-0" />
             <div className="min-w-0">
               <h1 className="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary truncate">ABC Digital</h1>
               <p className="font-label-md text-label-md text-on-surface-variant truncate">Compliance Platform</p>

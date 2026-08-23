@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- ABC Compliance mark: shield + paw, teal on deep navy -->
+  <rect width="48" height="48" rx="12" fill="#061828"/>
+  <path d="M24 8l13 5v10.5c0 8.2-5.4 14.3-13 16.5-7.6-2.2-13-8.3-13-16.5V13l13-5z" fill="#29A195" opacity="0.25" stroke="#6BD8CB" stroke-width="1.6"/>
+  <!-- paw -->
+  <ellipse cx="18.4" cy="21.2" rx="2.5" ry="3.1" fill="#6BD8CB"/>
+  <ellipse cx="24" cy="19.6" rx="2.6" ry="3.3" fill="#6BD8CB"/>
+  <ellipse cx="29.6" cy="21.2" rx="2.5" ry="3.1" fill="#6BD8CB"/>
+  <path d="M24 25.4c3.4 0 6.1 2.4 6.1 5.1 0 1.9-1.5 3-3.1 3-1.1 0-2-.5-3-.5s-1.9.5-3 .5c-1.6 0-3.1-1.1-3.1-3 0-2.7 2.7-5.1 6.1-5.1z" fill="#6BD8CB"/>
+</svg>

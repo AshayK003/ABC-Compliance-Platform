@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ComplianceHeatmap } from '../components/ComplianceHeatmap';
 import { YoyAdherenceChart, type YoyData } from '../components/YoyAdherenceChart';
-import { reportsApi } from '../services/api/reports';
+import { reportsApi, reportsExport } from '../services/api/reports';
 
 interface ReportTemplate {
   id: string;
@@ -16,6 +16,9 @@ export function Reports() {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [yoyData, setYoyData] = useState<YoyData | null>(null);
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
+  const [exportError, setExportError] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('TMPL-001');
   const [dateRange, setDateRange] = useState('Last 30 Days');
   const [region, setRegion] = useState('All India');
   const [metric, setMetric] = useState('Overall Compliance %');
@@ -40,6 +43,31 @@ export function Reports() {
       console.error('Failed to load templates:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async (kind: 'pdf' | 'excel') => {
+    if (!selectedTemplateId) {
+      setExportError('Select a report template first');
+      return;
+    }
+    try {
+      setExporting(kind);
+      setExportError('');
+      await reportsExport[kind === 'pdf' ? 'exportPdf' : 'exportExcel']({
+        template_id: selectedTemplateId,
+        date_range: dateRange,
+        region: region,
+        metric: metric,
+        include_sub_entities: includeSubEntities,
+        highlight_critical: highlightCritical,
+        compare_benchmark: compareBenchmark,
+        format: kind,
+      });
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Export failed');
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -125,16 +153,31 @@ export function Reports() {
                   <span className="material-symbols-outlined text-[18px]">calendar_month</span>
                   <span className="font-label-md text-label-md">{dateRange}</span>
                 </button>
-                <button type="button" className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface text-secondary hover:text-on-surface hover:border-secondary transition-colors group">
+                <button
+                  type="button"
+                  onClick={() => handleExport('excel')}
+                  disabled={exporting !== null}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface text-secondary hover:text-on-surface hover:border-secondary transition-colors group disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-[18px]">download</span>
-                  <span className="font-label-md text-label-md">Excel</span>
+                  <span className="font-label-md text-label-md">{exporting === 'excel' ? 'Preparing…' : 'Excel'}</span>
                 </button>
-                <button type="button" className="flex items-center gap-2 px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container transition-colors">
+                <button
+                  type="button"
+                  onClick={() => handleExport('pdf')}
+                  disabled={exporting !== null}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container transition-colors disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                  <span className="font-label-md text-label-md font-bold">Export PDF</span>
+                  <span className="font-label-md text-label-md font-bold">{exporting === 'pdf' ? 'Preparing…' : 'Export PDF'}</span>
                 </button>
               </div>
             </div>
+            {exportError && (
+              <div className="bg-error-container text-on-error-container px-3 py-2 rounded font-body-sm text-body-sm mb-4" role="alert">
+                {exportError}
+              </div>
+            )}
 
             {/* Main Bento Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-element-gap">
@@ -228,7 +271,12 @@ export function Reports() {
                       <button
                         type="button"
                         key={template.id}
-                        className="w-full flex items-center justify-between p-3 rounded bg-background border border-outline-variant hover:border-primary/50 hover:bg-surface-container-lowest transition-colors group text-left"
+                        onClick={() => setSelectedTemplateId(template.id)}
+                        className={`w-full flex items-center justify-between p-3 rounded border transition-colors group text-left ${
+                          selectedTemplateId === template.id
+                            ? 'bg-primary/10 border-primary/50'
+                            : 'bg-background border-outline-variant hover:border-primary/50 hover:bg-surface-container-lowest'
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
 from src.models.base import Allocation, Expense, Grant, Inspection, Surgery
+from src.reports.exporters import build_excel, build_pdf, _fmt
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -214,6 +215,81 @@ async def generate_report(
         },
         preview_data=preview_data,
     )
+
+
+# ─── File Exports (PDF via pdf-studio, Excel via openpyxl) ───
+@router.post("/export/pdf")
+async def export_report_pdf(
+    body: ReportGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+):
+    """Render the report as a themed PDF and stream it as a download."""
+    from fastapi import Response
+
+    template = next((t for t in REPORT_TEMPLATES if t["id"] == body.template_id), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    preview = await generate_report(body, db, _)
+    headers, rows, summary = _tabularize(preview.preview_data)
+    pdf_bytes = build_pdf(
+        template_name=template["name"],
+        headers=headers,
+        rows=rows,
+        summary=summary,
+    )
+    filename = f"{body.template_id.lower().replace('-', '_')}_{datetime.now():%Y%m%d}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/export/excel")
+async def export_report_excel(
+    body: ReportGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+):
+    """Render the report as a styled Excel workbook and stream it as a download."""
+    from fastapi import Response
+
+    template = next((t for t in REPORT_TEMPLATES if t["id"] == body.template_id), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    preview = await generate_report(body, db, _)
+    headers, rows, summary = _tabularize(preview.preview_data)
+    xlsx_bytes = build_excel(
+        template_name=template["name"],
+        headers=headers,
+        rows=rows,
+        summary=summary,
+    )
+    filename = f"{body.template_id.lower().replace('-', '_')}_{datetime.now():%Y%m%d}.xlsx"
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _tabularize(preview_data: list[dict]) -> tuple[list[str], list[list[Any]], dict[str, Any] | None]:
+    """Convert heterogeneous preview payloads into (headers, rows, summary).
+
+    Single-summary payloads (TMPL-205) become KPI summary rows; list payloads
+    become table rows with their keys as headers.
+    """
+    if not preview_data:
+        return ["No data"], [[]], None
+    if len(preview_data) == 1 and all(not isinstance(v, (list, dict)) for v in preview_data[0].values()):
+        summary = preview_data[0]
+        return ["Metric", "Value"], [[k, _fmt(v)] for k, v in summary.items()], summary
+    headers = list(preview_data[0].keys())
+    rows = [[row.get(h) for h in headers] for row in preview_data]
+    return [h.replace("_", " ").title() for h in headers], rows, None
 
 
 # ─── Year-over-Year Adherence Chart Data ───
