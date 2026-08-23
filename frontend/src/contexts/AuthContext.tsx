@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import type { TokenPayload } from '../types';
-import { setAuthToken } from '../services/api';
+import { setAuthToken, clearAuthToken } from '../services/api';
 import { authApi } from '../services/api/auth';
 
 interface AuthContextType {
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     try {
       await authApi.logout();
     } finally {
-      setAuthToken(null);
+      clearAuthToken();
       setUser(null);
     }
   };
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     try {
       await authApi.deleteAccount();
     } finally {
-      setAuthToken(null);
+      clearAuthToken();
       setUser(null);
     }
   };
