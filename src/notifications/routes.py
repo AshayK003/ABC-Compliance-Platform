@@ -50,9 +50,19 @@ class NotificationOut(BaseModel):
 async def create_notification(
     body: NotificationCreate,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
+    user: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
-    notification = Notification(**body.model_dump())
+    # Only admins may target arbitrary recipients; everyone else can only
+    # create notifications for themselves (anti-spam/anti-phishing between
+    # staff accounts).
+    target_user_id = body.user_id if user.role == "admin" else user.user_id
+    notification = Notification(
+        user_id=target_user_id,
+        title=body.title,
+        message=body.message,
+        type=body.type,
+        read=body.read,
+    )
     db.add(notification)
     await db.commit()
     await db.refresh(notification)

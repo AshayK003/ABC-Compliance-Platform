@@ -71,6 +71,7 @@ async def client(session_maker):
         async with session_maker() as session:
             yield session
 
+    _app.dependency_overrides.clear()
     _app.dependency_overrides[get_db] = _override
     limiter.reset()
     auth_limiter.reset()
@@ -254,6 +255,96 @@ class TestCrossCentreIsolation:
                   "sex": "female"},
         )
         assert resp.status_code == 403
+
+
+class TestAuthLifecycle:
+    """Full lifecycle: register → pending → admin approves → login works."""
+
+    async def test_register_login_pending_approval_flow(self, client, session_maker):
+        phone = _phone()
+        # 1. Register — must NOT yield a session
+        reg = await client.post("/api/v1/auth/register", json={
+            "name": "Dr Pending", "phone": phone, "password": "secret123",
+        })
+        assert reg.status_code == 202
+        assert reg.json()["status"] == "pending_approval"
+        staff_id = reg.json()["id"]
+
+        # 2. Login before approval must be blocked
+        early = await client.post(
+            "/api/v1/auth/login", json={"phone": phone, "password": "secret123"},
+        )
+        assert early.status_code == 403
+
+        # 3. Admin activates
+        await _seed_staff(session_maker, phone=_phone(), role="admin")
+        admin_phone_holder = None
+        maker_session = session_maker()
+        async with maker_session as s:
+            result = await s.execute(text("SELECT phone FROM staff WHERE role='admin'"))
+            admin_phone_holder = result.scalar_one()
+
+        await client.post(
+            "/api/v1/auth/login",
+            json={"phone": admin_phone_holder, "password": "secret123"},
+        )
+        approve = await client.patch(
+            f"/api/v1/auth/staff/{staff_id}", json={"active": True},
+        )
+        assert approve.status_code == 200
+
+        # 4. Login now succeeds; /me reflects the session
+        final = await client.post(
+            "/api/v1/auth/login", json={"phone": phone, "password": "secret123"},
+        )
+        assert final.status_code == 200
+
+        me = await client.get("/api/v1/auth/me")
+        assert me.status_code == 200
+        assert me.json()["phone"] == phone
+
+    async def test_admin_cannot_deactivate_last_admin(self, client, session_maker):
+        admin_phone = _phone()
+        await _seed_staff(session_maker, phone=admin_phone, role="admin", name="Solo Admin")
+
+        await _login(client, admin_phone)
+        me_resp = await client.get("/api/v1/auth/me")
+        my_id = me_resp.json()["user_id"]
+
+        resp = await client.patch(f"/api/v1/auth/staff/{my_id}", json={"active": False})
+        assert resp.status_code == 409
+        assert "last active admin" in resp.json()["detail"]
+
+    async def test_nonadmin_cannot_access_staff_management(self, client, session_maker):
+        phone = _phone()
+        centre_id = await _seed_centre(session_maker, code=f"C{uuid4().hex[:6].upper()}")
+        await _seed_staff(session_maker, phone=phone, centre_id=centre_id)
+        await _login(client, phone)
+
+        resp = await client.get("/api/v1/auth/staff")
+        assert resp.status_code == 403
+
+    async def test_deactivate_revokes_refresh(self, client, session_maker):
+        """Deactivated user's existing refresh token must stop working."""
+        from httpx import ASGITransport, AsyncClient as AC
+
+        phone = _phone()
+        staff_id = await _seed_staff(session_maker, phone=phone)
+        # Vet logs in on their own client so their cookie jar is independent
+        vet_transport = ASGITransport(app=_app)
+        async with AC(transport=vet_transport, base_url="https://test") as vet_client:
+            await _login(vet_client, phone)
+
+            # Admin (on the shared client) deactivates the vet
+            admin_phone = _phone()
+            await _seed_staff(session_maker, phone=admin_phone, role="admin")
+            await _login(client, admin_phone)
+            deact = await client.patch(f"/api/v1/auth/staff/{staff_id}", json={"active": False})
+            assert deact.status_code == 200
+
+            # The vet's refresh cookie is now worthless (token_version bumped)
+            refresh = await vet_client.post("/api/v1/auth/refresh")
+            assert refresh.status_code == 401
 
 
 class TestHealthRealDB:

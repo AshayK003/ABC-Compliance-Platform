@@ -98,6 +98,16 @@ async def seed() -> None:
             await db.flush()
             by_phone[DEMO_SURGEON_PHONE] = surgeon
 
+        if "9999999999" not in by_phone:
+            from src.auth.deps import hash_password
+            admin = Staff(
+                centre_id=None, name="Demo Admin", role="admin",
+                phone="9999999999", password_hash=hash_password("demo123"), active=True,
+            )
+            db.add(admin)
+            await db.commit()
+            print("Seeded demo admin: phone 9999999999 / password demo123")
+
         vet = by_phone[DEMO_VET_PHONE]
         surgeon = by_phone[DEMO_SURGEON_PHONE]
         admin = next((s for s in staff if s.role == "admin"), None)
