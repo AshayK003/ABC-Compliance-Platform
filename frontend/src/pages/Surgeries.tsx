@@ -82,12 +82,6 @@ export function Surgeries() {
 
   const renderEmptyState = () => (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <header className="md:hidden flex justify-between items-center h-16 px-gutter w-full sticky top-0 z-40 border-b border-outline-variant bg-surface-container">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-primary cursor-pointer" data-icon="menu">menu</span>
-          <span className="font-headline-md text-headline-md font-bold text-primary">ABC Digital Compliance</span>
-        </div>
-      </header>
       <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -139,16 +133,6 @@ export function Surgeries() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <header className="md:hidden flex justify-between items-center h-16 px-gutter w-full sticky top-0 z-40 border-b border-outline-variant bg-surface-container">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-primary cursor-pointer" data-icon="menu">menu</span>
-          <span className="font-headline-md text-headline-md font-bold text-primary">ABC Digital Compliance</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer">notifications</span>
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer">settings</span>
-        </div>
-      </header>
 
       <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
         {/* Header & Controls */}
