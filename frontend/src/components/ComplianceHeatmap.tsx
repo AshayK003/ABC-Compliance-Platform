@@ -67,30 +67,6 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
     registerMap();
   }, []);
 
-  const ready = !loading && mapReady;
-
-  if (!ready && !error) {
-    return (
-      <div className={`bg-surface-container-lowest border border-outline-variant/50 rounded flex items-center justify-center ${className}`} style={{ minHeight: height }}>
-        <div className="flex flex-col items-center gap-3 text-on-surface-variant">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="font-label-md">Loading compliance heatmap...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={`bg-surface-container-lowest border border-outline-variant/50 rounded flex items-center justify-center ${className}`} style={{ minHeight: height }}>
-        <div className="flex flex-col items-center gap-3 text-error p-4 text-center">
-          <span className="material-symbols-outlined text-[48px]">error_outline</span>
-          <span className="font-label-md">Failed to load heatmap</span>
-          <span className="font-body-sm text-on-surface-variant max-w-xs">{error}</span>
-        </div>
-      </div>
-    );
-  }
 
   // Prepare ECharts data
   const mapData = data.map((d) => ({
@@ -176,6 +152,31 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
     ],
   }), [data, isDark]);
 
+
+  const ready = !loading && mapReady;
+
+  if (!ready && !error) {
+    return (
+      <div className={`bg-surface-container-lowest border border-outline-variant/50 rounded flex items-center justify-center ${className}`} style={{ minHeight: height }}>
+        <div className="flex flex-col items-center gap-3 text-on-surface-variant">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="font-label-md">Loading compliance heatmap...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`bg-surface-container-lowest border border-outline-variant/50 rounded flex items-center justify-center ${className}`} style={{ minHeight: height }}>
+        <div className="flex flex-col items-center gap-3 text-error p-4 text-center">
+          <span className="material-symbols-outlined text-[48px]">error_outline</span>
+          <span className="font-label-md">Failed to load heatmap</span>
+          <span className="font-body-sm text-on-surface-variant max-w-xs">{error}</span>
+        </div>
+      </div>
+    );
+  }
   const legendItems = [
     { color: 'bg-error', label: 'Critical (< 50%)' },
     { color: 'bg-secondary', label: 'Moderate (50-79%)' },

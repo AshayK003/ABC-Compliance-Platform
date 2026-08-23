@@ -7,8 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
 from src.audit.routes import log_audit_event
+from src.utils.fk import assert_fk_exists
 from src.database import get_db
-from src.models.base import Dog
+from src.models.base import Centre, Dog
 
 router = APIRouter(prefix="/dogs", tags=["dogs"])
 
@@ -29,6 +30,7 @@ async def create_dog(
     _: TokenPayload = Depends(require_centre_access("centre_id")),
     user: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
+    await assert_fk_exists(db, Centre, body.centre_id, "centre")
     dog = Dog(**body.model_dump())
     db.add(dog)
     try:
@@ -47,10 +49,12 @@ async def create_dog(
 async def list_dogs(
     centre_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(require_centre_access("centre_id")),
 ):
-    stmt = select(Dog).order_by(Dog.tag_id)
+    stmt = select(Dog).order_by(Dog.tag_id).limit(limit).offset(offset)
     if centre_id:
         stmt = stmt.where(Dog.centre_id == centre_id)
     if status:

@@ -237,7 +237,7 @@ export function FundTracker() {
                 <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                   <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                     <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Disbursements</h2>
-                    <button type="button" className="text-primary font-label-bold text-label-bold hover:underline" onClick={() => console.log('View All clicked')}>View All</button>
+                   
                   </div>
                   <div className="overflow-x-auto flex-1">
                     <DataTable
@@ -310,7 +310,7 @@ export function FundTracker() {
                   <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Disbursements</h2>
-                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline" onClick={() => console.log('View All clicked')}>View All</button>
+                     
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
@@ -366,7 +366,7 @@ export function FundTracker() {
                   <div className="lg:col-span-2 bg-surface rounded-lg border border-outline-variant overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface">Recent Expenses</h2>
-                      <button type="button" className="text-primary font-label-bold text-label-bold hover:underline" onClick={() => console.log('View All clicked')}>View All</button>
+                     
                     </div>
                     <div className="overflow-x-auto flex-1">
                       <DataTable
@@ -404,8 +404,13 @@ export function FundTracker() {
         isOpen={fundRequestOpen}
         onClose={() => setFundRequestOpen(false)}
         onSubmit={async (data) => {
-          // TODO: implement actual fund request submission
-          console.log('Submitting fund request:', data);
+          await api.createAllocation({
+            grant_id: data.grantId,
+            centre_id: data.centreId,
+            amount: data.amount,
+          });
+          setFundRequestOpen(false);
+          await loadData();
         }}
       />
     </div>

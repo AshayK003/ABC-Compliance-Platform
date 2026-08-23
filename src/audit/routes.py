@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.database import get_db
-from src.models.base import AuditEvent, Staff
+from src.models.base import AuditEvent
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -93,7 +93,7 @@ async def list_audit_events(
     _: TokenPayload = Depends(require_role("admin")),
 ):
     stmt = select(AuditEvent).order_by(AuditEvent.timestamp.desc()).limit(limit).offset(offset)
-    
+
     if entity_type:
         stmt = stmt.where(AuditEvent.entity_type == entity_type)
     if entity_id:
@@ -102,7 +102,7 @@ async def list_audit_events(
         stmt = stmt.where(AuditEvent.action == action)
     if actor_id:
         stmt = stmt.where(AuditEvent.actor_id == actor_id)
-    
+
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -115,22 +115,29 @@ async def get_audit_stats(
     """Get audit statistics."""
     total_events = await db.execute(select(func.count(AuditEvent.id)))
     total = total_events.scalar() or 0
-    
+
     # Actions breakdown
     actions_stmt = select(AuditEvent.action, func.count(AuditEvent.id)).group_by(AuditEvent.action)
     actions_result = await db.execute(actions_stmt)
     actions = {row[0]: row[1] for row in actions_result.all()}
-    
+
     # Entity types breakdown
-    entities_stmt = select(AuditEvent.entity_type, func.count(AuditEvent.id)).group_by(AuditEvent.entity_type)
+    entities_stmt = select(AuditEvent.entity_type, func.count(AuditEvent.id)).group_by(
+        AuditEvent.entity_type
+    )
     entities_result = await db.execute(entities_stmt)
     entities = {row[0]: row[1] for row in entities_result.all()}
-    
+
     # Top actors
-    actors_stmt = select(AuditEvent.actor_id, func.count(AuditEvent.id)).group_by(AuditEvent.actor_id).order_by(func.count(AuditEvent.id).desc()).limit(10)
+    actors_stmt = (
+        select(AuditEvent.actor_id, func.count(AuditEvent.id))
+        .group_by(AuditEvent.actor_id)
+        .order_by(func.count(AuditEvent.id).desc())
+        .limit(10)
+    )
     actors_result = await db.execute(actors_stmt)
     top_actors = [{"actor_id": row[0], "count": row[1]} for row in actors_result.all()]
-    
+
     return {
         "total_events": total,
         "actions": actions,
