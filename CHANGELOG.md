@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.3] - 2026-08-23
 
+### Added
+- **Responsive layout (PR #47):** sidebar becomes a slide-in drawer with hamburger button below the `lg` breakpoint, with a compact mobile top bar; drawer closes on scrim tap and route change. Removed duplicate page-level mobile headers. Modals and data tables verified mobile-safe.
+
 ### Security
 - **Object-level authorization (#32):** new `require_centre_access` dependency enforces centre ownership on entity routes — non-admin staff can only read/write entities of their own centre; admins bypass. Wired into dogs, surgeries, and inspections create/list endpoints.
 - **Expense over-allocation race (#35, #20):** `create_expense` now locks the allocation row (`SELECT ... FOR UPDATE`) inside the transaction, so two concurrent expenses can no longer both pass the balance check and overspend a grant.
