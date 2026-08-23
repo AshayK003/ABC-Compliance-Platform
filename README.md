@@ -28,7 +28,7 @@
 | **Surgeries** | Monthly surgery logs per centre with outcome tracking (recovered, complications) |
 | **Inspections** | Surprise inspection scheduling, execution, and findings with sign-off |
 | **Fund Tracker** | Program fund allocation, grants, and expense monitoring with budget vs actuals |
-| **Reports** | Compliance reporting and export (templates ready for Excel/PDF), including a state-level compliance heatmap |
+| **Reports** | Compliance reporting with real PDF (themed) and Excel file exports, including a state-level compliance heatmap |
 | **Committee Portal** | Governance oversight views for AWBI/state board officials |
 | **Sync Queue** | Offline-first mutation queue with idempotency keys for unreliable connectivity |
 | **Dashboard** | Real-time compliance trends, surgery/fund/centre metrics computed from live data |
