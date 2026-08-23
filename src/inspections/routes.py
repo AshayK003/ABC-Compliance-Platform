@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
 from src.audit.routes import log_audit_event
+from src.utils.fk import assert_fk_exists
 from src.database import get_db
-from src.models.base import Inspection
+from src.models.base import Centre, Inspection, Staff
 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
 
@@ -29,6 +30,8 @@ async def create_inspection(
     _: TokenPayload = Depends(require_centre_access("centre_id")),
     user: TokenPayload = Depends(require_role("admin", "vet")),
 ):
+    await assert_fk_exists(db, Centre, body.centre_id, "centre")
+    await assert_fk_exists(db, Staff, body.inspector_id, "inspector")
     inspection = Inspection(**body.model_dump())
     db.add(inspection)
     try:

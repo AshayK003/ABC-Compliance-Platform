@@ -106,8 +106,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
         financialYear: new Date().getFullYear().toString(),
       });
     } catch (error) {
-      console.error('Failed to submit fund request:', error);
-      setErrors({ purpose: 'Failed to submit request' });
+      setErrors({ purpose: error instanceof Error ? error.message : 'Failed to submit request' });
     } finally {
       setSubmitting(false);
     }

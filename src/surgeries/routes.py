@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
 from src.audit.routes import log_audit_event
+from src.utils.fk import assert_fk_exists
 from src.database import get_db
-from src.models.base import Surgery
+from src.models.base import Centre, Dog, Staff, Surgery
 
 router = APIRouter(prefix="/surgeries", tags=["surgeries"])
 
@@ -32,6 +33,9 @@ async def create_surgery(
     _: TokenPayload = Depends(require_centre_access("centre_id")),
     user: TokenPayload = Depends(require_role("admin", "vet", "surgeon")),
 ):
+    await assert_fk_exists(db, Dog, body.dog_id, "dog")
+    await assert_fk_exists(db, Centre, body.centre_id, "centre")
+    await assert_fk_exists(db, Staff, body.staff_id, "staff")
     surgery = Surgery(**body.model_dump(exclude_none=True))
     db.add(surgery)
     try:

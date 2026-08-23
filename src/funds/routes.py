@@ -10,8 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.deps import TokenPayload, get_current_user, require_role
 from src.audit.routes import log_audit_event
+from src.utils.fk import assert_fk_exists
 from src.database import get_db
-from src.models.base import Allocation, Expense, Grant
+from src.models.base import Allocation, Centre, Expense, Grant
 
 router = APIRouter(prefix="/grants", tags=["grants"])
 
@@ -83,6 +84,8 @@ async def create_allocation(
     db: AsyncSession = Depends(get_db),
     user: TokenPayload = Depends(require_role("admin")),
 ):
+    await assert_fk_exists(db, Grant, body.grant_id, "grant")
+    await assert_fk_exists(db, Centre, body.centre_id, "centre")
     allocation = Allocation(
         **body.model_dump(),
     )
