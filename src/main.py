@@ -163,14 +163,14 @@ app.include_router(api_v1_router)
 
 
 @app.get("/health")
-async def health(db: Annotated[AsyncSession, Depends(get_db)]):  # noqa: B008
+async def health(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):  # noqa: B008
     checks = {
         "database": True,
     }
     try:
         await db.execute(select(1))
     except Exception as e:
-        correlation_id = getattr(db, "state", {}).get("correlation_id", "unknown")
+        correlation_id = getattr(request.state, "correlation_id", "unknown")
         logger.warning(
             "Health check DB failed: %s | correlation_id=%s", e, correlation_id
         )

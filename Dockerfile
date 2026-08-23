@@ -22,4 +22,6 @@ USER appuser
 
 ENV PORT=8080
 EXPOSE 8080
-CMD ["sh", "-c", "alembic upgrade head 2>&1 | grep -v -E '(already exists|overlaps)' || true; python -m uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Run migrations; a real failure must kill the container (fail fast), while
+# benign concurrent-migration races are filtered from the log only.
+CMD ["sh", "-c", "if ! alembic upgrade head > /tmp/migrate.log 2>&1; then cat /tmp/migrate.log; exit 1; fi; grep -v -E '(already exists|overlaps)' /tmp/migrate.log || true; python -m uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
