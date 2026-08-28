@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import asyncio
 import random
+import secrets
+import os
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
@@ -83,13 +85,15 @@ async def seed() -> None:
 
         staff = list((await db.execute(select(Staff))).scalars())
 
-        # Ensure demo vet + surgeon exist
+        # Ensure demo vet + surgeon exist. Demo passwords are random per-seed
+        # (or from DEMO_PASSWORD env) — never static literals.
+        demo_password = os.environ.get("DEMO_PASSWORD") or secrets.token_urlsafe(12)
         by_phone = {s.phone: s for s in staff}
         if DEMO_VET_PHONE not in by_phone:
             from src.auth.deps import hash_password
             vet = Staff(
                 centre_id=centres[0].id, name="Demo Vet", role="vet",
-                phone=DEMO_VET_PHONE, password_hash=hash_password("demo123"), active=True,
+                phone=DEMO_VET_PHONE, password_hash=hash_password(demo_password), active=True,
             )
             db.add(vet)
             await db.flush()
@@ -98,7 +102,7 @@ async def seed() -> None:
             from src.auth.deps import hash_password
             surgeon = Staff(
                 centre_id=centres[1].id, name="Demo Surgeon", role="surgeon",
-                phone=DEMO_SURGEON_PHONE, password_hash=hash_password("demo123"), active=True,
+                phone=DEMO_SURGEON_PHONE, password_hash=hash_password(demo_password), active=True,
             )
             db.add(surgeon)
             await db.flush()
@@ -108,11 +112,11 @@ async def seed() -> None:
             from src.auth.deps import hash_password
             admin = Staff(
                 centre_id=None, name="Demo Admin", role="admin",
-                phone="9999999999", password_hash=hash_password("demo123"), active=True,
+                phone="9999999999", password_hash=hash_password(demo_password), active=True,
             )
             db.add(admin)
             await db.commit()
-            print("Seeded demo admin: phone 9999999999 / password demo123")
+            print(f"Seeded demo admin: phone 9999999999 / generated_password={demo_password}")
 
         vet = by_phone[DEMO_VET_PHONE]
         surgeon = by_phone[DEMO_SURGEON_PHONE]
@@ -345,7 +349,8 @@ async def seed() -> None:
 
         await db.commit()
         print("Committee seeded: 1 committee, 5 members, 5 meetings, 4 decisions, 4 documents")
-    print("Demo staff: vet=9888888888/demo123, surgeon=9777777777/demo123")
+    print(f"Demo staff: vet={DEMO_VET_PHONE}, surgeon={DEMO_SURGEON_PHONE} "
+          f"(shared generated password printed above for the admin; set DEMO_PASSWORD to fix it)")
 
 if __name__ == "__main__":
     asyncio.run(seed())

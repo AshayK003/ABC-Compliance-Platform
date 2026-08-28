@@ -1,0 +1,33 @@
+name: Strix Security Scan
+
+# AI-assisted penetration test (autonomous agents that validate findings with PoCs).
+# Free-tier model (hy3-free via OpenCode Zen). Report-only for now: the scan runs
+# on every PR and writes results to the Actions log, but does NOT block merge.
+# Flip to blocking (remove the `|| true`) only after the free scan has caught a
+# real, confirmed vulnerability on a PR — do not gate blind on a model that may
+# occasionally miss or mis-flag.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strix-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Strix
+        run: pipx install strix-agent==1.5.3
+
+      - name: Run quick security scan (report-only)
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_BASE: ${{ secrets.STRIX_LLM_BASE }}
+          LLM_API_KEY: ${{ secrets.STRIX_LLM_KEY }}
+        run: strix -n -t ./ --scan-mode quick || true

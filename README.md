@@ -136,7 +136,7 @@ Seeds the official AWBI centre list plus demo-scale operations data
 
 | Role | Phone | Password |
 |------|-------|----------|
-| Admin | `9999999999` | `demo123` |
+| Admin | `9999999999` | Generated at seed time — see the seeder's stdout output (or set `SEED_ADMIN_PASSWORD` / `DEMO_PASSWORD` to pin it) |
 
 Demo data is for evaluation environments only.
 

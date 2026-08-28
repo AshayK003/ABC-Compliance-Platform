@@ -21,3 +21,8 @@ venv/
 .DS_Store
 Thumbs.db
 .env
+
+# Strix security-scan artifacts (local PoC scripts, run dirs, temp probes)
+strix_runs/
+poc_*.py
+_tmp_*.txt

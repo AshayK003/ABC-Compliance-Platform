@@ -7,11 +7,15 @@ Usage (local Docker Postgres is exposed on host port 5433, not 5432):
   DATABASE_URL=postgresql+asyncpg://abc:abc@localhost:5433/abc_dashboard \\
     env -u PYTHONPATH ./.venv/Scripts/python.exe scripts/seed_awbi_centres.py
 
-Also creates an admin user (phone 9999999999 / password admin123).
+Also creates an admin user (phone 9999999999). The initial password is
+generated randomly at seed time (or taken from SEED_ADMIN_PASSWORD) and is
+printed exactly once below — it is not static. Rotate it on first login.
 """
 
 import asyncio
 import hashlib
+import os
+import secrets
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -164,20 +168,23 @@ async def seed_centres():
         await db.commit()
         print(f"Seeded {len(AWBI_CENTERS)} centres")
 
-        # Also create a default admin staff user for testing
+        # Also create a default admin staff user for testing.
+        # Password is random per-seed (or from SEED_ADMIN_PASSWORD) — never static.
         from src.auth.deps import hash_password
+
+        admin_password = os.environ.get("SEED_ADMIN_PASSWORD") or secrets.token_urlsafe(16)
         admin = Staff(
             id=str(uuid4()),
             centre_id=None,
             name="System Admin",
             role="admin",
             phone="9999999999",
-            password_hash=hash_password("admin123"),
+            password_hash=hash_password(admin_password),
             active=True,
         )
         db.add(admin)
         await db.commit()
-        print("Created admin user: phone=9999999999, password=admin123")
+        print(f"Created admin user: phone=9999999999, generated_password={admin_password}")
 
 
 if __name__ == "__main__":

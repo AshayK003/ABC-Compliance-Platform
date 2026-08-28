@@ -13,7 +13,7 @@ Investor-readiness release: closes security gaps, makes reported numbers genuine
 
 ### Added
 - **Pending-approval registration:** self-signup creates an inactive staff record (202, no session); admins approve via new user-management endpoints (`GET /auth/staff`, `GET /auth/staff/pending`, `PATCH /auth/staff/{id}`) with role/centre assignment and last-admin protection.
-- **Admin demo account:** seeder provisions `9999999999 / demo123` for evaluation environments.
+- **Admin demo account:** seeder provisions `9999999999` with a password generated randomly at seed time (or pinned via `SEED_ADMIN_PASSWORD` / `DEMO_PASSWORD` env vars). The value is printed once to stdout — it is never static and is not published here.
 - **Real compliance scores:** `GET /public/compliance-scores` reports completed/total inspection ratio per centre; dashboard "Compliance" card shows the genuine figure.
 - **Working report filters:** date range and region parameters now filter data across all four report templates (previously accepted but ignored).
 - **Security policy:** SECURITY.md with private disclosure process.
