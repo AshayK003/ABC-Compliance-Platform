@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Centre } from '../types';
+import { normalizeCentresResponse } from '../services/api/centres';
 
 type InspectionRecord = {
   id: string;
@@ -17,6 +17,7 @@ type InspectionRecord = {
 export function Inspections() {
   const [records, setRecords] = useState<InspectionRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [selectedInspection, setSelectedInspection] = useState<InspectionRecord | null>(null);
 
   useEffect(() => {
@@ -25,11 +26,13 @@ export function Inspections() {
 
   const loadData = async () => {
     try {
+      setLoadError('');
       const [inspectionData, centreData] = await Promise.all([
         api.getInspections(),
-        api.getCentres().catch(() => [] as never[]),
+        api.getCentres(),
       ]);
-      const centreMap = new Map((centreData as Centre[]).map(c => [c.id, c]));
+      const centreList = normalizeCentresResponse(centreData);
+      const centreMap = new Map(centreList.map(c => [c.id, c]));
       setRecords((inspectionData as Array<{
               id: string; centre_id: string; inspector_id: string; scheduled_at?: string; status: string;
             }>).map(i => {
@@ -47,7 +50,7 @@ export function Inspections() {
         };
       }));
     } catch (error) {
-      console.error('Failed to load inspections:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load inspections');
     } finally {
       setLoading(false);
     }
@@ -87,10 +90,10 @@ export function Inspections() {
             <span className="text-[11px] font-label-md text-on-surface-variant">Online & Synced</span>
           </div>
           <div className="flex items-center gap-2 border-l border-outline-variant pl-4 ml-2">
-            <button type="button" className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
+            <button type="button" aria-label="Notifications" className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
               <span className="material-symbols-outlined">notifications</span>
             </button>
-            <button type="button" className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
+            <button type="button" aria-label="Settings" className="p-2 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-surface-container-highest">
               <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
@@ -98,6 +101,12 @@ export function Inspections() {
       </header>
 
       <main className="flex-1 overflow-auto p-container-padding">
+        {loadError && (
+          <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4 mb-4" role="alert">
+            <span>Couldn't load inspections: {loadError}</span>
+            <button type="button" onClick={loadData} className="underline shrink-0">Retry</button>
+          </div>
+        )}
         <div className="flex justify-between items-end mb-6">
           <div>
             <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Inspection Schedule</h2>
@@ -155,8 +164,7 @@ export function Inspections() {
                 </>
               )}
 
-              {tomorrowRecords.length > 0 && (
-                <>
+              {tomorrowRecords.length > 0 && (                <>
                   <div className="text-[11px] font-bold text-on-surface-variant tracking-wider uppercase mb-2 mt-6">Tomorrow</div>
                   {tomorrowRecords.map((record) => (
                                       <button
@@ -179,6 +187,12 @@ export function Inspections() {
                                       </button>
                                     ))}
                 </>
+              )}
+              {todayRecords.length === 0 && tomorrowRecords.length === 0 && (
+                <div className="text-center py-12 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-4xl block mb-2">calendar_month</span>
+                  <p className="font-body-md text-body-md">No inspections scheduled for today or tomorrow.</p>
+                </div>
               )}
             </div>
           </div>

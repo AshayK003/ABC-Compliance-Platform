@@ -16,6 +16,7 @@ interface Notification {
 export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const { user } = useAuth();
 
@@ -26,6 +27,7 @@ export function Notifications() {
   const loadNotifications = async () => {
     try {
       setLoading(true);
+      setActionError('');
       const data = await notificationsApi.getNotifications({
         user_id: user?.user_id,
         read: filter === 'unread' ? false : undefined,
@@ -34,7 +36,7 @@ export function Notifications() {
       });
       setNotifications(data);
     } catch (error) {
-      console.error('Failed to load notifications:', error);
+      setActionError(error instanceof Error ? error.message : 'Failed to load notifications');
     } finally {
       setLoading(false);
     }
@@ -42,15 +44,17 @@ export function Notifications() {
 
   const handleMarkAllRead = async () => {
       try {
+        setActionError('');
         await notificationsApi.markAllRead(user?.user_id);
         await loadNotifications();
       } catch (error) {
-        console.error('Failed to mark all read:', error);
+        setActionError(error instanceof Error ? error.message : 'Failed to mark all read');
       }
     };
 
     const handleToggleRead = async (notification: Notification) => {
       try {
+        setActionError('');
         await notificationsApi.updateNotification(notification.id, {
           read: !notification.read,
         });
@@ -58,7 +62,7 @@ export function Notifications() {
           n.id === notification.id ? { ...n, read: !n.read } : n
         ));
       } catch (error) {
-        console.error('Failed to toggle read:', error);
+        setActionError(error instanceof Error ? error.message : 'Failed to update notification');
       }
     };
 
@@ -121,6 +125,12 @@ export function Notifications() {
       </header>
 
       <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
+        {actionError && (
+          <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4" role="alert">
+            <span>{actionError}</span>
+            <button type="button" onClick={loadNotifications} className="underline shrink-0">Retry</button>
+          </div>
+        )}
         {notifications.length === 0 ? (
           <div className="flex-1 flex items-center justify-center bg-background">
             <div className="text-center p-8 fade-in">

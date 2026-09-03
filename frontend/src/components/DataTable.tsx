@@ -116,12 +116,18 @@ function Toolbar({
   if (!enableFiltering && !enableExport) return null;
 
   const handleExport = () => {
+      const csvCell = (value: unknown) => {
+        let text = String(value ?? '');
+        // Formula-injection guard: leading =,+,-,@ executes on open in Excel.
+        if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
+        return '"' + text.replaceAll('"', '""') + '"';
+      };
       const csvContent = [
         columns.map(c => c.header).join(','),
         filteredAndSortedData.map(row =>
           columns.map(col => {
             const value = (row as Record<string, unknown>)[col.key];
-            return '"' + String(value ?? '').replaceAll('"', '""') + '"';
+            return csvCell(value);
           }).join(',')
         ),
       ].join('\n');
@@ -233,6 +239,8 @@ function Pagination({
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
+                aria-label={`Page ${pageNum}`}
+                aria-current={currentPage === pageNum ? 'page' : undefined}
                 className={'w-8 h-8 rounded font-label-md text-label-md flex items-center justify-center transition-colors ' + (
                   currentPage === pageNum
                     ? 'bg-primary text-on-primary'

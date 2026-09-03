@@ -29,6 +29,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
   const [grants, setGrants] = useState<Array<{ id: string; awbi_ref: string; amount: number }>>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [errors, setErrors] = useState<FundRequestFormErrors>({});
 
   const [formData, setFormData] = useState<FundRequestFormData>({
@@ -48,6 +49,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
   const loadData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const [centreData, grantData] = await Promise.all([
         api.getCentres({ limit: 100 }),
         api.getGrants(),
@@ -59,7 +61,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
       setCentres(centresArray.filter(c => c.status === 'active'));
       setGrants(grantsArray.filter(g => g.status === 'active'));
     } catch (error) {
-      console.error('Failed to load modal data:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load centres and grants');
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,7 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true" aria-label="New fund request">
       <div className="bg-surface-container-high w-full max-w-md rounded-xl border border-outline-variant shadow-xl animate-in fade-in zoom-in-95 duration-200">
         <div className="p-6 border-b border-outline-variant flex justify-between items-center">
           <h2 className="font-headline-md text-headline-md font-bold text-on-surface">New Fund Request</h2>
@@ -130,6 +132,12 @@ export function FundRequestModal({ isOpen, onClose, onSubmit }: FundRequestModal
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {loadError && (
+            <div className="bg-error-container text-on-error-container px-3 py-2 rounded font-body-sm text-body-sm flex items-center justify-between gap-4" role="alert">
+              <span>Couldn't load form data: {loadError}</span>
+              <button type="button" onClick={loadData} className="underline shrink-0">Retry</button>
+            </div>
+          )}
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>

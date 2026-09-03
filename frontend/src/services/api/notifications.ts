@@ -24,10 +24,10 @@ export const notificationsApi = {
     request<Notification>(`/notifications/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   markAllRead: (user_id?: string) =>
-    request<{ updated: number }>('/notifications/mark-all-read', {
-      method: 'POST',
-      body: JSON.stringify({ user_id }),
-    }),
+    request<{ updated: number }>(
+      `/notifications/mark-all-read${user_id ? `?user_id=${encodeURIComponent(user_id)}` : ''}`,
+      { method: 'POST' },
+    ),
 
   getUnreadCount: (user_id?: string) =>
     request<{ count: number }>(`/notifications/unread-count${user_id ? `?user_id=${user_id}` : ''}`),

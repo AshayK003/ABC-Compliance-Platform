@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
@@ -7,9 +8,11 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.auth.deps import TokenPayload, require_role
 from src.database import get_db
 from src.models.base import AuditEvent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -46,19 +49,29 @@ async def log_audit_event(
     actor_id: str,
     details: dict | None = None,
 ) -> AuditEvent:
-    """Log an audit event to the database."""
+    """Log an audit event to the database.
+
+    Best-effort by design: auditing must never fail the user operation it
+    records (a 500-after-create makes clients retry into duplicates). A
+    lost event is logged server-side with full context instead.
+    """
     audit_event = AuditEvent(
         entity_type=entity_type,
         entity_id=entity_id,
         action=action,
         actor_id=actor_id,
         timestamp=datetime.now(UTC).replace(tzinfo=None),
+        details=details,
     )
-    # Store details in a JSON field if we add one later
-    # For now, we'll just log the action
     db.add(audit_event)
-    await db.commit()
-    await db.refresh(audit_event)
+    try:
+        await db.commit()
+        await db.refresh(audit_event)
+    except Exception:
+        await db.rollback()
+        logger.exception(
+            "audit event dropped: %s %s actor=%s", entity_type, action, actor_id
+        )
     return audit_event
 
 
@@ -66,14 +79,17 @@ async def log_audit_event(
 async def create_audit_event(
     body: AuditEventCreate,
     db: AsyncSession = Depends(get_db),
-    user: TokenPayload = Depends(get_current_user),
+    user: TokenPayload = Depends(require_role("admin")),
 ):
-    """Create an audit event (typically called internally by other endpoints)."""
+    """Admin-only manual audit entry. All routine events are written
+    server-side via log_audit_event; this endpoint exists for exceptional
+    backfills, never for regular clients (prevents trail forgery)."""
     audit_event = AuditEvent(
         entity_type=body.entity_type,
         entity_id=body.entity_id,
         action=body.action,
         actor_id=user.user_id,
+        details=body.details,
     )
     db.add(audit_event)
     await db.commit()

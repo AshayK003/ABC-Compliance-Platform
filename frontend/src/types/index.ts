@@ -17,7 +17,6 @@ export interface Staff {
   name: string;
   role: 'vet' | 'surgeon' | 'admin';
   phone: string;
-  password_hash: string;
   active: boolean;
 }
 

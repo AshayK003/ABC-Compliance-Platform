@@ -375,7 +375,7 @@ async def get_monthly_disbursements(
 
     # Get last 6 months
     month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    for _ in range(5):
+    for _i in range(5):
         if month_start.month == 1:
             month_start = month_start.replace(year=month_start.year - 1, month=12)
         else:
@@ -434,7 +434,7 @@ async def get_monthly_surgeries(
     from src.models.base import Surgery
 
     month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    for _ in range(5):
+    for _i in range(5):
         if month_start.month == 1:
             month_start = month_start.replace(year=month_start.year - 1, month=12)
         else:

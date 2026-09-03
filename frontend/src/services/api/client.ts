@@ -10,6 +10,12 @@ import type { LoginResponse } from '../../types';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v1';
 
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  // Misconfiguration alarm: a production bundle without VITE_API_URL talks
+  // to a dev-only address. Loud on purpose — silent fallback hides outages.
+  console.warn('VITE_API_URL is not set; API calls fall back to http://localhost:8000');
+}
+
 let authToken: string | null = null;
 let refreshPromise: Promise<LoginResponse> | null = null;
 
@@ -49,7 +55,7 @@ export async function refreshAccessToken(): Promise<LoginResponse> {
 }
 
 // Endpoints that must never trigger a refresh-retry loop.
-const NO_RETRY = ['/auth/login', '/auth/register', '/auth/refresh'];
+const NO_RETRY = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/me', '/auth/logout'];
 
 export async function authenticatedFetch<T>(
   endpoint: string,

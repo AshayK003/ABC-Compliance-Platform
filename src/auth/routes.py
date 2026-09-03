@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,26 +17,25 @@ from src.auth.deps import (
     verify_password,
     verify_refresh_token,
 )
+from src.cache import invalidate_pattern
 from src.database import get_db
 from src.models.base import Centre, Staff
+from src.ratelimit import limiter
 from src.utils.fk import assert_fk_exists
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Rate limiter instance (shared with main app)
-limiter = Limiter(key_func=get_remote_address)
-
 
 class RegisterRequest(BaseModel):
-    name: str
-    phone: str
-    password: str
+    name: str = Field(min_length=1, max_length=255)
+    phone: str = Field(min_length=10, max_length=15)
+    password: str = Field(min_length=8, max_length=128)
     centre_id: str | None = None
 
 
 class LoginRequest(BaseModel):
-    phone: str
-    password: str
+    phone: str = Field(min_length=10, max_length=15)
+    password: str = Field(min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -59,6 +56,17 @@ class UserAdminUpdate(BaseModel):
     active: bool | None = None
     role: str | None = None
     centre_id: str | None = None
+
+
+class StaffOut(BaseModel):
+    """Admin-facing staff view — never includes password_hash/token_version."""
+
+    id: str
+    centre_id: str | None
+    name: str
+    role: str
+    phone: str
+    active: bool
 
 
 @router.post(
@@ -107,6 +115,8 @@ async def register(
             detail="Registration failed",
         ) from e
 
+    # New staff row affects centres-list staff counts.
+    invalidate_pattern("centres:")
     return RegisterResponse(
         id=staff.id,
         name=staff.name,
@@ -207,7 +217,7 @@ async def delete_account(
     return {"message": "Account deactivated"}
 
 
-@router.get("/staff", responses={403: {"description": "Admin only"}})
+@router.get("/staff", response_model=list[StaffOut], responses={403: {"description": "Admin only"}})
 async def list_staff(
     active: bool | None = None,
     centre_id: str | None = None,
@@ -224,7 +234,7 @@ async def list_staff(
     return result.scalars().all()
 
 
-@router.patch("/staff/{staff_id}", responses={404: {"description": "User not found"}})
+@router.patch("/staff/{staff_id}", response_model=StaffOut, responses={404: {"description": "User not found"}})
 async def update_staff(
     staff_id: str,
     body: UserAdminUpdate,
@@ -282,10 +292,12 @@ async def update_staff(
         staff.token_version += 1
     await db.commit()
     await db.refresh(staff)
+    # Staff membership changed: the centres list embeds staff counts.
+    invalidate_pattern("centres:")
     return staff
 
 
-@router.get("/staff/pending", responses={403: {"description": "Admin only"}})
+@router.get("/staff/pending", response_model=list[StaffOut], responses={403: {"description": "Admin only"}})
 async def list_pending_staff(
     db: AsyncSession = Depends(get_db),
     _: TokenPayload = Depends(require_role("admin")),

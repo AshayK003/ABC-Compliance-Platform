@@ -26,13 +26,15 @@ export function Surgeries() {
   const [records, setRecords] = useState<SurgeryRecord[]>([]);
   const [summary, setSummary] = useState<SurgerySummary>(emptySummary);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
+      setLoadError('');
       const [surgeryData, centreData] = await Promise.all([
         api.getSurgeries(),
-        api.getCentres().catch(() => [] as never[]),
+        api.getCentres(),
       ]);
       const centreList = Array.isArray(centreData)
         ? (centreData as Array<{ id: string; name: string; code: string }>)
@@ -56,7 +58,7 @@ export function Surgeries() {
         complications: mapped.filter(r => r.outcome === 'Complications').length,
       });
     } catch (error) {
-      console.error('Failed to load surgeries:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load surgeries');
     } finally {
       setLoading(false);
     }
@@ -83,6 +85,12 @@ export function Surgeries() {
   const renderEmptyState = () => (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
+        {loadError && (
+          <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4" role="alert">
+            <span>Couldn't load surgeries: {loadError}</span>
+            <button type="button" onClick={loadData} className="underline shrink-0">Retry</button>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="font-display-lg text-display-lg text-on-background">Surgery Audit Log</h1>
@@ -135,6 +143,12 @@ export function Surgeries() {
       {/* Header */}
 
       <main className="flex-1 flex flex-col min-w-0 p-container-padding space-y-6">
+        {loadError && (
+          <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4" role="alert">
+            <span>Couldn't load surgeries: {loadError}</span>
+            <button type="button" onClick={loadData} className="underline shrink-0">Retry</button>
+          </div>
+        )}
         {/* Header & Controls */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

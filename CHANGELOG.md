@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.3] - 2026-09-03
+
+Silent-failure hunt: every swallowed error found by sweeping all `except`/`catch` sites, fixed where it could mislead, documented where the trade-off stands.
+
+### Fixed
+- **Audit can no longer fail the operation it records:** `log_audit_event` is best-effort (rollback + server-side log with context). Previously an audit-commit failure returned 500 *after* the entity was created, inviting duplicate retries.
+- **Complaint errors honestly classified:** only FK-shaped commit failures map to 400; anything else (outage, constraint bug) is a 500 instead of a misleading "invalid centre".
+- **Load failures are visible:** Dashboard, Centres, Surgeries, Inspections, FundTracker, CommitteePortal, Notifications, Reports, and the fund-request modal now show an inline error banner with Retry instead of rendering zeros/empties indistinguishable from "no data". The 13 silent `.catch(() => [])` fallbacks are removed (net code deletion).
+- **Staff-load errors distinguished** from "no staff assigned" in the centre detail view.
+- **Bad enum values rejected:** complaint status (`open/in_progress/resolved/closed`) and notification type (`info/warning/error/success`) are Literals — a typo can no longer file a record no queue will ever match.
+
+### Deliberately not changed
+- `console.error` in `ErrorBoundary`, heatmap GeoJSON loader, and API clients stays: each site already surfaces the failure in UI; the console line is the diagnostic trail, not the handling.
+- AuthContext still signs out on `/auth/me` failure (loud, not silent — offline handling is a separate feature).
+
+---
+
+## [0.5.2] - 2026-09-03
+
+Second hardening pass: closes the remaining gaps from the audit leftovers review (sync ownership, honest UI, supply-chain and deploy hygiene). No API removals.
+
+### Security
+- **Sync queue ownership (migration 005):** `sync_queue.owner_id` (FK to staff, `SET NULL`). Enqueue stamps the caller; pending/retry lists and all transitions are scoped to own items for non-admins. Pre-ownership rows (`owner_id NULL`) are grandfathered — still operable, never orphaned. Cross-user access returns 404.
+- **Audit `details` stored (migration 005):** `audit_events.details` JSON column; `log_audit_event` and `POST /audit` persist it instead of dropping it.
+- **Idempotency-key probing closed:** re-posting another user's `idempotency_key` no longer returns their payload (404).
+- **CSRF posture documented** (SECURITY.md): JSON-only bodies + whitelist CORS structurally mitigate cookie CSRF; explicit tokens deferred until a form/multipart endpoint exists.
+- **Supply chain:** `pip-audit` clean (no known vulns); `npm audit --audit-level=high` clean; CI gains a gitleaks secret-scan job and top-level `contents: read` permissions; Vercel serves nosniff / frame-deny / strict referrer / restricted permissions headers (backend headers never covered the static SPA).
+
+### Fixed
+- **Honest compliance column:** the centres table rendered a hardcoded 92% bar with `undefined/100` (backend has no per-centre score field). Now shows `—` until real data exists; real scores render a true-width bar with `progressbar` semantics.
+- **Centres search actually debounces** (input is instant, fetch waits 300ms — previously every keystroke fetched).
+- **Login buttons** no longer disable during the initial session probe (local `submitting` state).
+- **Settings → Delete Account wired** to the deactivation endpoint with confirm, error display, and redirect.
+- **Empty states** for dashboard inspections/alerts and the inspection calendar (were blank regions).
+- **A11y:** labels on all icon-only buttons and placeholder-only search inputs, `aria-current` on pagination, `role=dialog` on modal overlays.
+- **Reports heatmap lazy-loaded:** echarts + 768KB GeoJSON split out of the initial bundle.
+- **UTC timestamps** in Excel/PDF exports (were server-local naive datetimes).
+- **Dead code removed:** `chart_png`, `build_pdf(centre_map)`, "More Filters" no-op button. (`matplotlib` stays in dependencies for now — lockfiles untouched; removal is a follow-up.)
+
+### Deliberately not changed (senior review calls)
+- `POST /sync/enqueue` stays **200** (not 201): with idempotent enqueue, 200-for-existing is defensible and 201 would churn clients for cosmetics.
+- `FundTracker` allocation submit already surfaces errors in-modal (the "missing try/catch" finding was wrong — verified before touching).
+- No password-complexity rules (NIST advises against; bcrypt + 5/min rate limit stand) and no CSRF token scheme (see above).
+- Profile 2FA/sessions/password-change buttons remain placeholders (need new backend endpoints — a feature, not a fix) and stay listed as known limitations.
+- Real-DB e2e (16 tests) still requires Docker Postgres — unavailable in this environment; every e2e assertion was hand-checked against the new logic.
+
+---
+
+## [0.5.1] - 2026-09-03
+
+Security-hardening release: closes the credential-leak and cross-centre data exposures found in the 2026-09-03 full-stack audit, enforces fund and input invariants, and fixes user-visible frontend crashes. No API removals; all changes are additive restrictions plus two corrected response shapes (`/auth/staff*` no longer serialise secrets).
+
+### Security
+- **Staff credential leak closed:** `GET /auth/staff`, `GET /auth/staff/pending`, `PATCH /auth/staff/{id}` now respond with a `StaffOut` model — `password_hash` and `token_version` are never serialised. Frontend `Staff` type drops `password_hash` to match.
+- **Centre isolation enforced (IDOR):** `require_centre_access` now reads the centre id from query/path *and* JSON body (previously body-bound creates 403'd every non-admin while checking nothing). Detail reads (`dogs`, `surgeries`, `inspections`, `allocations`, `expenses`, `complaints`) return 404 for cross-centre callers (no existence oracle); list endpoints force-scope non-admins to their own centre; centre-staff directory scoped to own centre for non-admins.
+- **Audit trail locked down:** `POST /audit` is admin-only; routine events remain server-side via `log_audit_event`.
+- **Single shared rate limiter** (`src/ratelimit.py`): auth, public, and app all use one instance with one accounting store (verified 429 behaviour with a regression test). Note: with the installed slowapi, per-route decorators enforce via their own instance, so limits were active before — they are now also coherent.
+- **Input validation:** registration/login phone and password lengths, non-empty names/codes, non-negative capacity/age/weight, complaint phone/description lengths (all compatible with existing clients and seed data).
+- **Formula-injection guards:** Excel exports (`_safe_cell`) and CSV exports prefix `=,+,-,@`-leading cells; heatmap tooltips HTML-escape backend-controlled strings.
+- **Empty-string FK guard:** `assert_fk_exists` rejects blank ids (previously `centre_id=""` bypassed the check and corrupted the row); it now also returns the fetched row so linkage checks cost no extra query.
+
+### Fixed
+- **Grant over-allocation:** `POST /allocations` rejects amounts exceeding the grant's remaining balance (same pattern as the expense balance guard).
+- **Cross-entity linkage:** surgeries reject dogs/staff from another centre; inspections reject foreign inspectors; expenses reject surgeries outside the allocation's centre; `expense_at` datetimes are coerced to `Date`.
+- **Surgery date filters** accept real datetimes (`from_date`/`to_date: datetime`), so bad input is a 422, not a 500.
+- **Frontend crashes:** Inspections and FundTracker handle the paginated centres envelope via `normalizeCentresResponse` (was `map is not a function` → blank page); grant status `active` now maps to Approved instead of Flagged.
+- **Report preview works:** Generate Preview sends the selected template and renders a result summary strip (was hardcoded `template_id:''` → permanent 404, result discarded).
+- **Notification `markAllRead`** sends `user_id` as a query param (backend binds query, so admin cross-user calls silently hit self before); notification updates are read-only (`read` flag only).
+- **Auth refresh loops:** `/auth/me` and `/auth/logout` no longer trigger refresh-retry.
+- **Stale centres cache:** staff registration/updates invalidate the centres list (staff counts); LIKE search escapes `%_`.
+- **Type/lint clean:** pyright 11→0 errors; ruff fully clean (including pre-existing migration/seed nits).
+
+### Added
+- **ErrorBoundary** around the app: render crashes show a recoverable Refresh screen instead of a blank page.
+- **Regression tests:** 11 new backend tests (hash-leak, HTTP-level read isolation, grant cap incl. exact-balance boundary, cross-centre surgery rejection, shared-limiter wiring + live 429 proof) and 3 frontend tests (`normalizeCentresResponse`). Suite: 102 backend unit/API + 16 e2e (DB-gated) · 21 frontend.
+- Pagination on `GET /public/complaints`; bounded `GET /sync/pending` (`1–500`) and `POST /sync/retry-failed` (100-item batches).
+
+### Known limitations (documented, not fixed)
+- Access tokens remain valid up to 15 min after deactivation/role change (refresh is revoked immediately via `token_version`); accepted short-window trade-off, matching the existing design note in `verify_refresh_token`.
+- Sync queue has no ownership column (needs a migration): any authenticated user can transition any sync item; acceptable for the single-tenant field deployment, flagged for 0.6.0.
+- Committee member directory, report aggregates, and the centres directory stay visible to all authenticated roles (governance-transparency design).
+- No `HEALTHCHECK` in Dockerfile; no CSRF token on cookie-authed POSTs (mitigated by SameSite + JSON-only + tight CORS); Settings/Profile contain mock-only controls.
+- e2e suite requires Docker Postgres (`abc_test`); not runnable in this environment — mocked suite + visual checks used instead.
+
+---
+
 ## [0.5.0] - 2026-08-23
 
 Investor-readiness release: closes security gaps, makes reported numbers genuine, and hardens the demo path.
@@ -117,7 +203,7 @@ Investor-readiness release: closes security gaps, makes reported numbers genuine
 - **Refresh token revocation (P0-2):** added `token_version` to `Staff` model; refresh tokens now carry this version; logout increments it, invalidating all prior refresh tokens. Closes session-fixation hole.
 
 ### Audit
-- Full-stack AEOS M23 audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), audit-trail wiring (#34), expense race (#35).
+- Full-stack comprehensive audit (2026-08-15): 12 issues logged (#32–#43). Remaining P0s tracked: object-level authorization (#32), audit-trail wiring (#34), expense race (#35).
 
 ### Added
 - **Committee & Meetings API** — Full CRUD for committees, meetings, decisions, votes, members, attendees, and documents

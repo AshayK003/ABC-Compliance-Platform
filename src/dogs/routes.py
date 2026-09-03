@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.audit.routes import log_audit_event
-from src.auth.deps import TokenPayload, get_current_user, require_centre_access, require_role
+from src.auth.deps import (
+    TokenPayload,
+    check_centre_read,
+    get_current_user,
+    require_centre_access,
+    require_role,
+    scope_centre_filter,
+)
 from src.database import get_db
 from src.models.base import Centre, Dog
 from src.utils.fk import assert_fk_exists
@@ -16,10 +23,10 @@ router = APIRouter(prefix="/dogs", tags=["dogs"])
 
 class DogCreate(BaseModel):
     centre_id: str
-    tag_id: str
-    sex: str
-    age_estimate: int | None = None
-    weight: float | None = None
+    tag_id: str = Field(min_length=1, max_length=50)
+    sex: str = Field(min_length=1, max_length=10)
+    age_estimate: int | None = Field(default=None, ge=0)
+    weight: float | None = Field(default=None, ge=0)
     status: str = "registered"
 
 
@@ -52,8 +59,9 @@ async def list_dogs(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(require_centre_access("centre_id")),
+    current: TokenPayload = Depends(get_current_user),
 ):
+    centre_id = scope_centre_filter(current, centre_id)
     stmt = select(Dog).order_by(Dog.tag_id).limit(limit).offset(offset)
     if centre_id:
         stmt = stmt.where(Dog.centre_id == centre_id)
@@ -68,10 +76,11 @@ async def list_dogs(
 async def get_dog(
     dog_id: str,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
     result = await db.execute(select(Dog).where(Dog.id == dog_id))
     dog = result.scalar_one_or_none()
     if not dog:
         raise HTTPException(status_code=404, detail="Dog not found")
+    check_centre_read(current, dog.centre_id)
     return dog

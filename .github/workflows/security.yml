@@ -1,7 +1,7 @@
 name: Strix Security Scan
 
 # AI-assisted penetration test (autonomous agents that validate findings with PoCs).
-# Free-tier model (hy3-free via OpenCode Zen). Report-only for now: the scan runs
+# Free-tier model (external LLM). Report-only for now: the scan runs
 # on every PR and writes results to the Actions log, but does NOT block merge.
 # Flip to blocking (remove the `|| true`) only after the free scan has caught a
 # real, confirmed vulnerability on a PR — do not gate blind on a model that may

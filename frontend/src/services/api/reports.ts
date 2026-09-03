@@ -3,6 +3,10 @@ import { authenticatedFetch as request } from './client';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v1';
 
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  console.warn('VITE_API_URL is not set; report exports fall back to http://localhost:8000');
+}
+
 export const reportsApi = {
   // Report Templates
   getTemplates: () => request<ReportTemplate[]>('/reports/templates'),

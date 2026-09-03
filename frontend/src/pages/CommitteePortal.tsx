@@ -55,6 +55,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 export function CommitteePortal() {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
   const [meetings, setMeetings] = useState<MeetingRow[]>([]);
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
@@ -64,11 +65,12 @@ export function CommitteePortal() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoadError('');
     Promise.all([
-      api.getCommitteeDecisions().catch(() => [] as DecisionRow[]),
-      api.getCommitteeMeetings().catch(() => [] as MeetingRow[]),
-      api.getCommitteeDocuments().catch(() => [] as DocumentRow[]),
-      api.getCommitteeMembers().catch(() => [] as MemberRow[]),
+      api.getCommitteeDecisions(),
+      api.getCommitteeMeetings(),
+      api.getCommitteeDocuments(),
+      api.getCommitteeMembers(),
     ])
       .then(([d, m, docs, mem]) => {
         if (cancelled) return;
@@ -76,6 +78,9 @@ export function CommitteePortal() {
         setMeetings(m);
         setDocuments(docs);
         setMembers(mem);
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Failed to load committee data');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -182,6 +187,11 @@ export function CommitteePortal() {
         </div>
 
         <div className="p-container-padding flex flex-col gap-6 w-full max-w-[1600px] mx-auto overflow-x-hidden">
+          {loadError && (
+            <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm" role="alert">
+              Couldn't load committee data: {loadError}
+            </div>
+          )}
           {/* Bento Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Decision Log (Spans 8 columns) */}

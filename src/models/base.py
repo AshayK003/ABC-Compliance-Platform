@@ -207,6 +207,7 @@ class AuditEvent(Base):
     entity_id: Mapped[str] = mapped_column(String(36), index=True)
     action: Mapped[str] = mapped_column(String(50))
     actor_id: Mapped[str] = mapped_column(String(36))
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=None)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True
     )
@@ -246,6 +247,9 @@ class SyncQueue(Base):
     operation: Mapped[str] = mapped_column(String(20))  # create, update, delete
     payload: Mapped[dict] = mapped_column(JSON, default=dict)  # JSONB in PostgreSQL
     idempotency_key: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("staff.id", ondelete="SET NULL"), index=True, nullable=True, default=None
+    )
     status: Mapped[str] = mapped_column(
         String(20), default="pending", index=True
     )  # pending, synced, failed

@@ -24,9 +24,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -43,6 +42,7 @@ from src.funds.routes import router as funds_router
 from src.inspections.routes import router as inspections_router
 from src.notifications.routes import router as notifications_router
 from src.public.routes import public_limiter, public_router, sync_router
+from src.ratelimit import limiter
 from src.reports.routes import router as reports_router
 from src.surgeries.routes import router as surgeries_router
 
@@ -80,24 +80,24 @@ class CorrelationIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
-# Rate limiter
-limiter = Limiter(key_func=get_remote_address)
+# Rate limiter is the single shared instance from src.ratelimit
+# (route modules import the same object).
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting %s v%s", settings.app_name, "0.5.0")
+    logger.info("Starting %s v%s", settings.app_name, "0.5.3")
     yield
     # Shutdown
     logger.info("Shutting down %s", settings.app_name)
 
 
-app = FastAPI(title=settings.app_name, version="0.5.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.5.3", lifespan=lifespan)
 app.state.limiter = limiter
 app.state.public_limiter = public_limiter
 app.add_middleware(CorrelationIDMiddleware)
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 
 @app.exception_handler(Exception)

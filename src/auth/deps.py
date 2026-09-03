@@ -166,23 +166,37 @@ def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie("refresh_token", secure=not settings.debug, samesite=_cookie_samesite())
 
 
-def require_centre_access(centre_id_param: str):
+def require_centre_access(centre_id_param: str = "centre_id"):
     """Object-level authorization for entity routers (anti-IDOR).
 
     Returns a dependency factory: admins pass; everyone else may only touch
     entities whose centre_id matches their own staff.centre_id. Staff without
     a centre assignment are read-blocked from all centres.
 
+    The centre id is read from the query/path params first, then from the
+    JSON body (POST/PUT/PATCH create routes carry it in the body, where a
+    plain ``centre_id: str | None`` parameter would never bind). Reading the
+    body here is safe: Starlette caches ``request.body()`` for the handler.
+
     Usage on a route with a `centre_id` path/query/body param:
         _: TokenPayload = Depends(require_centre_access("centre_id"))
     """
 
     async def _check(
+        request: Request = None,  # type: ignore[assignment]  # injected by FastAPI; None in direct unit calls
         centre_id: str | None = None,
         current: TokenPayload = Depends(get_current_user),  # noqa: B008
     ) -> TokenPayload:
         if current.role == "admin":
             return current
+        if centre_id is None and request is not None and request.method in ("POST", "PUT", "PATCH"):
+            try:
+                payload = await request.json()
+            except Exception:
+                payload = None
+            if isinstance(payload, dict):
+                value = payload.get(centre_id_param)
+                centre_id = value if isinstance(value, str) and value else None
         if not centre_id or centre_id != current.centre_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -192,6 +206,37 @@ def require_centre_access(centre_id_param: str):
 
     _check.__name__ = f"require_centre_access[{centre_id_param}]"
     return _check
+
+
+def check_centre_read(current: TokenPayload, centre_id: str | None) -> None:
+    """Object-level read guard: non-admins may only read their own centre's
+    records. Raises 404 (not 403) so record existence isn't leaked to
+    cross-centre callers."""
+    if current.role == "admin":
+        return
+    if not centre_id or centre_id != current.centre_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+
+def scope_centre_filter(current: TokenPayload, centre_id: str | None) -> str | None:
+    """Force list-endpoint filters to the caller's centre for non-admins.
+
+    Admins keep the requested filter. Non-admins requesting another centre
+    get 403; non-admins with no filter (or a matching one) are scoped to
+    their own centre. Staff without a centre assignment are blocked."""
+    if current.role == "admin":
+        return centre_id
+    if not current.centre_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: no centre assigned to this account",
+        )
+    if centre_id is not None and centre_id != current.centre_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: resource belongs to another centre",
+        )
+    return current.centre_id
 
 
 def require_role(*roles: str):

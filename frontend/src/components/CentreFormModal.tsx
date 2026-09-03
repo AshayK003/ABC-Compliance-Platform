@@ -63,7 +63,7 @@ export function CentreFormModal({ centre, onClose, onSubmit }: CentreFormModalPr
     const submitText = submitting ? 'Saving...' : getSubmitText();
 
     return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="Centre form">
       <div className="bg-surface-container-high border border-outline-variant rounded-lg w-full max-w-md overflow-hidden">
         <div className="p-4 border-b border-outline-variant flex justify-between items-center">
           <h2 className="font-headline-sm text-headline-sm text-on-surface">

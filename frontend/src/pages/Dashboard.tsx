@@ -34,6 +34,7 @@ export function Dashboard() {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [totalDisbursed, setTotalDisbursed] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [surgeryTrend, setSurgeryTrend] = useState(0);
   const [fundTrend, setFundTrend] = useState(0);
   const [centreTrend, setCentreTrend] = useState(0);
@@ -44,13 +45,14 @@ export function Dashboard() {
 
   const loadDashboardData = async () => {
       try {
+        setLoadError('');
         const [centreData, inspectionData, complaintData, surgeryData, allocationData, scoreData] = await Promise.all([
           api.getCentres({ limit: 100 }),
           api.getInspections(),
-          api.getComplaints().catch(() => [] as never[]),
-          api.getSurgeries().catch(() => [] as never[]),
-          api.getAllocations().catch(() => [] as never[]),
-          api.getComplianceScores().catch(() => [] as never[]),
+          api.getComplaints(),
+          api.getSurgeries(),
+          api.getAllocations(),
+          api.getComplianceScores(),
         ]);
 
         const totalDisbursed = (allocationData as Array<{ amount: number }>)
@@ -152,7 +154,7 @@ export function Dashboard() {
       const centreTrend = prevMonthCentres > 0 ? Math.round(((currentMonthCentres - prevMonthCentres) / prevMonthCentres) * 100) : (currentMonthCentres > 0 ? 100 : 0);
       setCentreTrend(centreTrend);
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -191,10 +193,10 @@ const topCentres = centres
           <h2 className="font-headline-sm text-[15px] leading-tight font-bold text-on-surface dark:text-on-surface truncate">AWBI ABC Compliance</h2>
         </div>
         <div className="flex items-center gap-4 text-on-surface-variant">
-          <button type="button" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
+          <button type="button" aria-label="Notifications" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <button type="button" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
+          <button type="button" aria-label="Settings" className="hover:text-primary dark:hover:text-primary transition-opacity duration-150 p-2 rounded-full hover:bg-surface-variant">
             <span className="material-symbols-outlined">settings</span>
           </button>
           <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center cursor-pointer">
@@ -206,6 +208,12 @@ const topCentres = centres
       {/* Canvas */}
       <main className="flex-1 overflow-y-auto p-container-padding bg-background">
         <div className="max-w-7xl mx-auto flex flex-col gap-container-padding">
+          {loadError && (
+            <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4" role="alert">
+              <span>Couldn't load dashboard data: {loadError}</span>
+              <button type="button" onClick={loadDashboardData} className="underline shrink-0">Retry</button>
+            </div>
+          )}
           {/* Stat Cards */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
             <StatCard
@@ -276,11 +284,14 @@ const topCentres = centres
             <div className="bg-surface-container-high border border-outline-variant rounded-lg p-6 flex flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-headline-sm text-headline-sm">Upcoming Surprise Inspections</h3>
-                <button type="button" className="text-primary hover:text-primary-fixed transition-colors">
+                <button type="button" aria-label="View all inspections" className="text-primary hover:text-primary-fixed transition-colors">
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
               </div>
               <div className="flex flex-col gap-3">
+                {upcomingInspections.length === 0 && (
+                  <p className="text-on-surface-variant font-body-md text-body-md">No upcoming inspections scheduled.</p>
+                )}
                 {upcomingInspections.map((inspection) => (
                                   <InspectionCard
                                     key={inspection.centreName + inspection.scheduledAt}
@@ -309,6 +320,11 @@ const topCentres = centres
                   </tr>
                 </thead>
                 <tbody className="text-body-md">
+                  {alerts.length === 0 && (
+                    <tr className="border-b border-outline-variant/50">
+                      <td colSpan={4} className="p-table-cell-padding text-on-surface-variant">No compliance alerts — all clear.</td>
+                    </tr>
+                  )}
                   {alerts.map((alert) => (
                     <tr key={alert.centre + alert.district + alert.issue} className="border-b border-outline-variant/50 hover:bg-surface-variant/30 transition-colors">
                       <td className="p-table-cell-padding font-medium text-on-surface">{alert.centre}</td>

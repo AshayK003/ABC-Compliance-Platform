@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://www.postgresql.org)
-[![Tests](https://img.shields.io/badge/tests-105%20backend%20%C2%B7%2018%20frontend-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-132%20backend%20%C2%B7%2021%20frontend-brightgreen)]()
 [![Status](https://img.shields.io/badge/status-active%20development-brightgreen)]()
 
 </div>
@@ -161,7 +161,7 @@ Demo data is for evaluation environments only.
 ## 🧪 Tests
 
 ```bash
-# Backend — 91 unit/API tests + 14 real-database e2e tests
+# Backend — 112 unit/API tests + 16 real-database e2e tests
 pytest -q -m "not e2e"          # mocked suite (no database needed)
 
 # e2e suite: requires Docker Postgres with an abc_test database
@@ -225,11 +225,11 @@ See [SECURITY.md](SECURITY.md) for the full policy and reporting process.
 
 - **Auth:** JWT in `httpOnly` cookies (`SameSite=Strict` locally, `None` cross-site in prod); short-lived access + revocable refresh tokens
 - **Registration:** pending admin approval — no instant access
-- **Authorization:** role-based checks plus object-level centre-scoping on entity writes (anti-IDOR)
+- **Authorization:** role-based checks plus object-level centre-scoping on entity reads/writes (cross-centre reads return 404, no existence leak)
 - **Account deletion:** deactivation preserving referenced history, not hard-delete
-- **Rate limiting:** 5/min login, 3/hr register, 10/hr public complaints
+- **Rate limiting:** single shared limiter — 5/min login, 3/hr register, 10/hr public complaints (429-verified)
 - **CSP:** strict in production; HSTS, nosniff, frame-deny everywhere
-- **Input validation:** Pydantic v2 on every request body; FK existence checks return 400s, not 500s
+- **Input validation:** Pydantic v2 on every request body (length/range constraints); FK existence checks return 400s, not 500s; grant/allocation balance enforced; Excel/CSV formula-injection guards
 - **SQL injection:** SQLAlchemy ORM only — no raw SQL
 - **Secrets:** env-driven, validated at startup (32-byte minimum SECRET_KEY)
 - **CI audits:** `pip-audit` + `npm audit --audit-level=high` on every push
@@ -252,6 +252,16 @@ See [SECURITY.md](SECURITY.md) for the full policy and reporting process.
 ```bash
 docker compose up -d --build
 ```
+
+### Production checklist
+
+- [ ] `DEBUG=false` (dev CSP, insecure cookies, and Swagger-docs exposure all key off this)
+- [ ] Strong `SECRET_KEY` (≥32 bytes, generated — never the example/dev values)
+- [ ] `ALLOWED_ORIGINS` set to the real frontend origin(s)
+- [ ] Pooled Postgres URL with `ssl=require` (Neon `-pooler` host)
+- [ ] `alembic upgrade head` succeeds (container already fail-fasts on this)
+- [ ] Rotate the seeded admin password after first login
+- [ ] UptimeRobot 5-min ping on `/health` (prevents free-tier suspension)
 
 ---
 

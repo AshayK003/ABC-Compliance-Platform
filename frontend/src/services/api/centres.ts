@@ -8,6 +8,16 @@ export interface CentresResponse {
   pageSize: number;
 }
 
+/** Backend returns a {data,total,page,pageSize} envelope; tolerate a bare
+ * array (legacy callers) and anything else (network garbage → []). */
+export function normalizeCentresResponse(input: unknown): Centre[] {
+  if (Array.isArray(input)) return input as Centre[];
+  if (input && typeof input === 'object' && Array.isArray((input as CentresResponse).data)) {
+    return (input as CentresResponse).data;
+  }
+  return [];
+}
+
 export const centresApi = {
   getCentres: (params?: { limit?: number; offset?: number; search?: string; district?: string; status?: string }) => {
     const search = new URLSearchParams();

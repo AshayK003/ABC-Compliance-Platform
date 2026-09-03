@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -297,3 +297,384 @@ class TestAuditWiring:
         types = [type(o).__name__ for o in added]
         assert "Grant" in types, "grant was not persisted"
         assert "AuditEvent" in types, "grant creation did not write an audit event"
+
+
+class TestStaffHashLeak:
+    """Critical: /auth/staff* must never serialise password_hash/token_version."""
+
+    def _admin(self, app: FastAPI, mock_session: AsyncMock):
+        from src.models.base import Staff  # noqa: F401  (import guard)
+
+        app.dependency_overrides[get_db] = lambda: mock_session
+        app.dependency_overrides[get_current_user] = lambda: TokenPayload(user_id="a", role="admin")
+
+    def _staff(self):
+        from src.models.base import Staff
+
+        return Staff(
+            id="s1", centre_id="c1", name="Dr A", role="vet",
+            phone="9876543210", password_hash="hash", active=True, token_version=3,
+        )
+
+    @pytest.mark.asyncio
+    async def test_list_staff_hides_secrets(self, app: FastAPI, mock_session: AsyncMock):
+        self._admin(app, mock_session)
+        mock_session.execute.return_value = _result(rows=[self._staff()])
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.get("/api/v1/auth/staff")
+
+        assert resp.status_code == 200
+        assert "password_hash" not in resp.json()[0]
+        assert "token_version" not in resp.json()[0]
+        assert resp.json()[0]["phone"] == "9876543210"
+
+    @pytest.mark.asyncio
+    async def test_update_staff_hides_secrets(self, app: FastAPI, mock_session: AsyncMock):
+        self._admin(app, mock_session)
+        mock_session.execute.return_value = _result(scalar=self._staff())
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.patch("/api/v1/auth/staff/s1", json={"active": False})
+
+        assert resp.status_code == 200
+        assert "password_hash" not in resp.json()
+        assert "token_version" not in resp.json()
+
+
+class TestCentreReadIsolation:
+    """Critical (IDOR): HTTP-level centre isolation on reads."""
+
+    def _vet(self, app: FastAPI, mock_session: AsyncMock):
+        app.dependency_overrides[get_db] = lambda: mock_session
+        app.dependency_overrides[get_current_user] = lambda: TokenPayload(
+            user_id="v1", role="vet", centre_id="centre-a"
+        )
+
+    def _dog(self, centre: str):
+        from src.models.base import Dog
+
+        return Dog(id="d1", centre_id=centre, tag_id="T1", sex="female")
+
+    @pytest.mark.asyncio
+    async def test_vet_cannot_read_other_centre_dog(self, app: FastAPI, mock_session: AsyncMock):
+        self._vet(app, mock_session)
+        mock_session.execute.return_value = _result(scalar=self._dog("centre-b"))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.get("/api/v1/dogs/d1")
+
+        assert resp.status_code == 404  # masked, no existence leak
+
+    @pytest.mark.asyncio
+    async def test_vet_can_read_own_centre_dog(self, app: FastAPI, mock_session: AsyncMock):
+        self._vet(app, mock_session)
+        mock_session.execute.return_value = _result(scalar=self._dog("centre-a"))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.get("/api/v1/dogs/d1")
+
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_vet_list_rejected_for_other_centre(self, app: FastAPI, mock_session: AsyncMock):
+        self._vet(app, mock_session)
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.get("/api/v1/dogs?centre_id=centre-b")
+
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_vet_list_without_filter_scoped(self, app: FastAPI, mock_session: AsyncMock):
+        self._vet(app, mock_session)
+        mock_session.execute.return_value = _result(rows=[self._dog("centre-a")])
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.get("/api/v1/dogs")
+
+        assert resp.status_code == 200
+
+
+class TestGrantOverallocation:
+    """High: allocations must never exceed their grant's amount."""
+
+    def _admin(self, app: FastAPI, mock_session: AsyncMock):
+        app.dependency_overrides[get_db] = lambda: mock_session
+        app.dependency_overrides[get_current_user] = lambda: TokenPayload(user_id="a", role="admin")
+
+    def _grant(self):
+        from decimal import Decimal
+
+        from src.models.base import Grant
+
+        return Grant(
+            id="grant-1", awbi_ref="AWBI/2026/001", amount=Decimal("1000.00"),
+            purpose="ABC", financial_year="2026-27", status="active",
+        )
+
+    async def _post(self, app, mock_session, total_existing: str, amount: str):
+        from decimal import Decimal
+
+        self._admin(app, mock_session)
+        mr_centre = MagicMock()
+        mr_centre.scalar_one_or_none.return_value = MagicMock()  # FK passes
+        mr_grant = MagicMock()
+        mr_grant.scalar_one_or_none.return_value = self._grant()
+        mr_sum = MagicMock()
+        mr_sum.scalar.return_value = Decimal(total_existing)
+        mock_session.execute.side_effect = [mr_centre, mr_grant, mr_sum]
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            return await ac.post("/api/v1/allocations", json={
+                "grant_id": "grant-1", "centre_id": "centre-1", "amount": amount,
+            })
+
+    @pytest.mark.asyncio
+    async def test_rejects_over_allocation(self, app: FastAPI, mock_session: AsyncMock):
+        resp = await self._post(app, mock_session, "800.00", "500.00")
+        assert resp.status_code == 400
+        assert "grant balance" in resp.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_allows_exact_balance(self, app: FastAPI, mock_session: AsyncMock):
+        resp = await self._post(app, mock_session, "800.00", "200.00")
+        assert resp.status_code == 201
+
+
+class TestSurgeryLinkage:
+    """High: a surgery must not join a dog from another centre."""
+
+    @pytest.mark.asyncio
+    async def test_rejects_cross_centre_dog(self, app: FastAPI, mock_session: AsyncMock):
+        from src.models.base import Dog
+
+        app.dependency_overrides[get_db] = lambda: mock_session
+        app.dependency_overrides[get_current_user] = lambda: TokenPayload(user_id="a", role="admin")
+
+        mr_dog = MagicMock()
+        mr_dog.scalar_one_or_none.return_value = Dog(
+            id="dog-1", centre_id="centre-b", tag_id="T1", sex="female"
+        )
+        mock_session.execute.side_effect = [mr_dog, MagicMock(), MagicMock()]
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/surgeries", json={
+                "dog_id": "dog-1", "centre_id": "centre-a", "staff_id": "staff-1",
+                "surgery_type": "spay",
+            })
+
+        assert resp.status_code == 400
+        assert "different centre" in resp.json()["detail"]
+
+
+class TestSharedLimiterWiring:
+    """High: one shared limiter instance; limits actually enforce (429)."""
+    def test_single_instance_shared(self):
+        from src import ratelimit
+        from src.auth import routes as auth_routes
+        from src.main import limiter as main_limiter
+        from src.public import routes as public_routes
+
+        assert auth_routes.limiter is ratelimit.limiter
+        assert main_limiter is ratelimit.limiter
+        assert public_routes.public_limiter is ratelimit.limiter
+
+    @pytest.mark.asyncio
+    async def test_limit_enforced_429(self):
+        from slowapi import Limiter, _rate_limit_exceeded_handler
+        from slowapi.errors import RateLimitExceeded
+        from slowapi.util import get_remote_address
+
+        iso = Limiter(key_func=get_remote_address)
+        iso_app = FastAPI()
+        iso_app.state.limiter = iso
+        iso_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+        @iso_app.get("/ping")
+        @iso.limit("2/minute")
+        async def ping(request: Request):
+            return {"ok": True}
+
+        transport = ASGITransport(app=iso_app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            assert (await ac.get("/ping")).status_code == 200
+            assert (await ac.get("/ping")).status_code == 200
+            assert (await ac.get("/ping")).status_code == 429
+
+
+class TestSyncOwnership:
+    """Sync items belong to the staff member who enqueued them.
+
+    Legacy rows (owner_id NULL, enqueued before ownership) stay operable
+    by any authenticated user — grandfathered, not orphaned.
+    """
+
+    def _overrides(self, app: FastAPI, mock_session: AsyncMock, role: str, user_id: str):
+        app.dependency_overrides[get_db] = lambda: mock_session
+        app.dependency_overrides[get_current_user] = lambda: TokenPayload(
+            user_id=user_id, role=role
+        )
+
+    def _item(self, **kwargs):
+        from src.models.base import SyncQueue
+
+        data = {
+            "id": "sq-1",
+            "entity_type": "dog",
+            "entity_id": "d1",
+            "operation": "create",
+            "payload": {"a": 1},
+            "idempotency_key": "key-1",
+            "status": "pending",
+        }
+        data.update(kwargs)
+        return SyncQueue(**data)
+
+    @pytest.mark.asyncio
+    async def test_vet_cannot_mark_others_item(self, app: FastAPI, mock_session: AsyncMock):
+        self._overrides(app, mock_session, "vet", "vet-1")
+        mock_session.execute.return_value = _result(scalar=self._item(owner_id="vet-2"))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/sync/mark-synced/sq-1")
+
+        assert resp.status_code == 404
+        mock_session.commit.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_vet_can_mark_own_item(self, app: FastAPI, mock_session: AsyncMock):
+        self._overrides(app, mock_session, "vet", "vet-1")
+        mock_session.execute.return_value = _result(scalar=self._item(owner_id="vet-1"))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/sync/mark-synced/sq-1")
+
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_legacy_ownerless_item_grandfathered(self, app: FastAPI, mock_session: AsyncMock):
+        self._overrides(app, mock_session, "vet", "vet-1")
+        mock_session.execute.return_value = _result(scalar=self._item(owner_id=None))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/sync/mark-synced/sq-1")
+
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_admin_can_mark_any_item(self, app: FastAPI, mock_session: AsyncMock):
+        self._overrides(app, mock_session, "admin", "admin-1")
+        mock_session.execute.return_value = _result(scalar=self._item(owner_id="vet-9"))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/sync/mark-synced/sq-1")
+
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_enqueue_records_owner(self, app: FastAPI, mock_session: AsyncMock):
+        self._overrides(app, mock_session, "vet", "vet-1")
+        mock_session.execute.return_value = _result(scalar=None)
+        added: list[object] = []
+        mock_session.add.side_effect = lambda obj: added.append(obj)
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/sync/enqueue", json={
+                "entity_type": "dog",
+                "entity_id": "d1",
+                "operation": "create",
+                "payload": {"a": 1},
+                "idempotency_key": "key-owner",
+            })
+
+        assert resp.status_code == 200
+        assert added and added[0].owner_id == "vet-1"
+
+    @pytest.mark.asyncio
+    async def test_vet_cannot_read_others_status(self, app: FastAPI, mock_session: AsyncMock):
+        self._overrides(app, mock_session, "vet", "vet-1")
+        mock_session.execute.return_value = _result(scalar=self._item(owner_id="vet-2"))
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.get("/api/v1/sync/status/key-1")
+
+        assert resp.status_code == 404
+
+    def test_migration_005_chains(self):
+        migration_dir = Path(__file__).resolve().parents[1] / "migrations" / "versions"
+        contents = {p.name: p.read_text(encoding="utf-8") for p in migration_dir.glob("*.py")}
+        assert "005_sync_ownership_and_audit_details.py" in contents
+        m005 = contents["005_sync_ownership_and_audit_details.py"]
+        assert 'down_revision: str = "004"' in m005
+        assert "owner_id" in m005 and "details" in m005
+
+    def test_models_match_migration_005(self):
+        from src.models.base import AuditEvent, SyncQueue
+
+        assert "owner_id" in {c.name for c in SyncQueue.__table__.columns}
+        assert "details" in {c.name for c in AuditEvent.__table__.columns}
+
+
+class TestNoSilentFailures:
+    """Auditing must never fail the operation it records; error
+    classification must not report outages as bad input."""
+
+    def _admin(self, app: FastAPI, mock_session: AsyncMock):
+        app.dependency_overrides[get_db] = lambda: mock_session
+        app.dependency_overrides[get_current_user] = lambda: TokenPayload(
+            user_id="admin-1", role="admin"
+        )
+
+    @pytest.mark.asyncio
+    async def test_audit_commit_failure_still_returns_201(
+        self, app: FastAPI, mock_session: AsyncMock
+    ):
+        # Entity commit succeeds, audit commit blows up: the client must
+        # still get 201 (else it retries into duplicates).
+        mock_session.commit = AsyncMock(side_effect=[None, Exception("db down")])
+        self._admin(app, mock_session)
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/grants", json={
+                "awbi_ref": "AUD-FAIL-1",
+                "amount": "1000.00",
+                "purpose": "audit",
+                "financial_year": "2026-27",
+            })
+
+        assert resp.status_code == 201
+
+    @pytest.mark.asyncio
+    async def test_complaint_commit_failure_is_500_not_400(
+        self, app: FastAPI, mock_session: AsyncMock
+    ):
+        # centre_id pre-check passes; the commit then fails for an
+        # unrelated reason: must be a 500, not a misleading 400.
+        mock_session.commit = AsyncMock(side_effect=RuntimeError("connection lost"))
+        app.dependency_overrides[get_db] = lambda: mock_session
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            resp = await ac.post("/api/v1/public/complaints", json={
+                "centre_id": "centre-1",
+                "citizen_phone": "9876543210",
+                "description": "stray dogs",
+            })
+
+        assert resp.status_code == 500

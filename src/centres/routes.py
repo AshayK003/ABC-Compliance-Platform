@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.audit.routes import log_audit_event
-from src.auth.deps import TokenPayload, get_current_user, require_role
+from src.auth.deps import TokenPayload, get_current_user, require_role, scope_centre_filter
 from src.cache import cache, cache_key, invalidate_pattern
 from src.database import get_db
 from src.models.base import Centre, Staff
@@ -15,11 +15,11 @@ router = APIRouter(prefix="/centres", tags=["centres"])
 
 
 class CentreCreate(BaseModel):
-    name: str
-    code: str
-    district: str
-    state: str
-    capacity: int = 0
+    name: str = Field(min_length=1, max_length=255)
+    code: str = Field(min_length=1, max_length=50)
+    district: str = Field(min_length=1, max_length=255)
+    state: str = Field(min_length=1, max_length=100)
+    capacity: int = Field(default=0, ge=0)
 
 
 class CentreOut(BaseModel):
@@ -72,13 +72,15 @@ async def list_centres(
         .outerjoin(staff_count_subq, Centre.id == staff_count_subq.c.centre_id)
     )
 
-    # Apply filters
+    # Apply filters (LIKE wildcards in user input are escaped so "%" can't match-all)
     if search:
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
         base_query = base_query.where(
-            Centre.name.ilike(f"%{search}%") |
-            Centre.code.ilike(f"%{search}%") |
-            Centre.district.ilike(f"%{search}%") |
-            Centre.state.ilike(f"%{search}%")
+            Centre.name.ilike(pattern, escape="\\") |
+            Centre.code.ilike(pattern, escape="\\") |
+            Centre.district.ilike(pattern, escape="\\") |
+            Centre.state.ilike(pattern, escape="\\")
         )
     if district:
         base_query = base_query.where(Centre.district == district)
@@ -162,8 +164,10 @@ async def get_centre(
 async def list_centre_staff(
     centre_id: str,
     db: AsyncSession = Depends(get_db),
-    _: TokenPayload = Depends(get_current_user),
+    current: TokenPayload = Depends(get_current_user),
 ):
+    # Staff phones are PII: non-admins may only list their own centre's staff.
+    scope_centre_filter(current, centre_id)
     result = await db.execute(
         select(Staff).where(Staff.centre_id == centre_id).order_by(Staff.name)
     )

@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, loading } = useAuth();
+  const { login, register } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({ phone: '', password: '' });
   const [error, setError] = useState('');
   const [isRegister, setIsRegister] = useState(false);
@@ -17,6 +18,7 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
 
     try {
       if (isRegister) {
@@ -30,6 +32,8 @@ export function Login() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -113,10 +117,10 @@ export function Login() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               className="w-full bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded transition-colors hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {submitting ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-on-primary/30 border-t-on-primary"></div>
                   Signing in...
@@ -221,10 +225,10 @@ export function Login() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitting}
             className="w-full bg-primary text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded transition-colors hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {submitting ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-on-primary/30 border-t-on-primary"></div>
                 Creating account...

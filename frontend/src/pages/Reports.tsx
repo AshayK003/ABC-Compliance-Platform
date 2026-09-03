@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ComplianceHeatmap } from '../components/ComplianceHeatmap';
 import { YoyAdherenceChart, type YoyData } from '../components/YoyAdherenceChart';
 import { reportsApi, reportsExport } from '../services/api/reports';
+import type { ReportPreviewResponse } from '../types';
+
+// Split out: pulls in echarts + the India GeoJSON (~1MB). Loaded on demand.
+const ComplianceHeatmap = lazy(() =>
+  import('../components/ComplianceHeatmap').then((m) => ({ default: m.ComplianceHeatmap })),
+);
 
 interface ReportTemplate {
   id: string;
@@ -18,13 +23,15 @@ export function Reports() {
   const [yoyData, setYoyData] = useState<YoyData | null>(null);
   const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
   const [exportError, setExportError] = useState('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('TMPL-001');
-  const [dateRange, setDateRange] = useState('Last 30 Days');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('TMPL-001');  const [dateRange, setDateRange] = useState('Last 30 Days');
   const [region, setRegion] = useState('All India');
   const [metric, setMetric] = useState('Overall Compliance %');
   const [includeSubEntities, setIncludeSubEntities] = useState(true);
   const [highlightCritical, setHighlightCritical] = useState(false);
   const [compareBenchmark, setCompareBenchmark] = useState(true);
+  const [preview, setPreview] = useState<ReportPreviewResponse | null>(null);
+  const [previewError, setPreviewError] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -33,6 +40,7 @@ export function Reports() {
   const loadTemplates = async () => {
     try {
       setLoading(true);
+      setPreviewError('');
       const [data, yoy] = await Promise.all([
         reportsApi.getTemplates(),
         reportsApi.getYoyAdherence().catch(() => null),
@@ -40,7 +48,7 @@ export function Reports() {
       setTemplates(data);
       setYoyData(yoy);
     } catch (error) {
-      console.error('Failed to load templates:', error);
+      setPreviewError(error instanceof Error ? error.message : 'Failed to load report templates');
     } finally {
       setLoading(false);
     }
@@ -72,10 +80,15 @@ export function Reports() {
   };
 
   const handleGeneratePreview = async () => {
+    if (!selectedTemplateId) {
+      setPreviewError('Select a report template first');
+      return;
+    }
     try {
-      setLoading(true);
-      await reportsApi.generateReport({
-        template_id: '',
+      setPreviewLoading(true);
+      setPreviewError('');
+      const result = await reportsApi.generateReport({
+        template_id: selectedTemplateId,
         date_range: dateRange,
         region: region,
         metric: metric,
@@ -84,10 +97,12 @@ export function Reports() {
         compare_benchmark: compareBenchmark,
         format: 'json',
       });
+      setPreview(result);
     } catch (error) {
-      console.error('Failed to generate preview:', error);
+      setPreview(null);
+      setPreviewError(error instanceof Error ? error.message : 'Preview failed');
     } finally {
-      setLoading(false);
+      setPreviewLoading(false);
     }
   };
 
@@ -108,6 +123,7 @@ export function Reports() {
           <div className="hidden md:flex items-center flex-1 max-w-md relative ml-4">
             <span className="material-symbols-outlined absolute left-3 text-on-surface-variant pointer-events-none text-sm">search</span>
             <input
+              aria-label="Search reports, entities, or metrics"
               className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm rounded-DEFAULT py-1.5 pl-9 pr-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant/50"
               placeholder="Search reports, entities, or metrics..."
               type="text"
@@ -126,7 +142,7 @@ export function Reports() {
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </NavLink>
-            <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+            <button aria-label="Help" className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
               <span className="material-symbols-outlined text-[20px]">help</span>
             </button>
             <div className="h-8 w-px bg-outline-variant mx-2"></div>
@@ -243,11 +259,26 @@ export function Reports() {
                     <input checked={compareBenchmark} onChange={(e) => setCompareBenchmark(e.target.checked)} className="w-4 h-4 rounded bg-background border-outline-variant text-primary focus:ring-primary focus:ring-offset-background" type="checkbox" />
                     <span className="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Compare to Benchmark</span>
                   </label>
-                  <button type="button" className="ml-auto flex items-center gap-2 px-4 py-1.5 rounded bg-surface-container-high border border-outline-variant hover:bg-secondary-container transition-colors" onClick={handleGeneratePreview}>
+                  <button type="button" className="ml-auto flex items-center gap-2 px-4 py-1.5 rounded bg-surface-container-high border border-outline-variant hover:bg-secondary-container transition-colors" onClick={handleGeneratePreview} disabled={previewLoading}>
                     <span className="material-symbols-outlined text-[16px] text-primary">play_arrow</span>
-                    <span className="font-label-md text-label-md text-on-surface">Generate Preview</span>
+                    <span className="font-label-md text-label-md text-on-surface">{previewLoading ? 'Generating…' : 'Generate Preview'}</span>
                   </button>
                 </div>
+                {previewError && (
+                  <div className="mt-4 bg-error-container text-on-error-container px-3 py-2 rounded font-body-sm text-body-sm" role="alert">
+                    {previewError}
+                  </div>
+                )}
+                {preview && (
+                  <div className="mt-4 border border-outline-variant rounded bg-background px-4 py-3" role="status">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-1 font-body-sm text-body-sm">
+                      <span className="font-bold text-on-surface">{preview.template_name}</span>
+                      <span className="text-on-surface-variant">{preview.preview_data.length} rows</span>
+                      <span className="text-on-surface-variant">{preview.region} · {preview.date_range}</span>
+                      <span className="text-on-surface-variant ml-auto">Generated {new Date(preview.generated_at).toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Templates */}
@@ -309,7 +340,9 @@ export function Reports() {
                   <span className="font-code-sm text-code-sm text-secondary bg-secondary/10 px-2 py-0.5 rounded">LIVE</span>
                 </div>
                 <div className="flex-1">
-                  <ComplianceHeatmap height="100%" />
+                  <Suspense fallback={<div className="h-full min-h-[200px] animate-pulse bg-surface-container-lowest rounded" />}>
+                    <ComplianceHeatmap height="100%" />
+                  </Suspense>
                 </div>
               </div>
 

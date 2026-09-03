@@ -86,21 +86,22 @@ export function ComplianceHeatmap({ className = '', height = '400px' }: Complian
       padding: 12,
       textStyle: { color: isDark ? '#d4e4fa' : '#1c1c1c' },
       formatter: (params: any) => {
+        const esc = (v: unknown) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
         const item = params.data;
         const riskColors = { critical: '#ef4444', moderate: '#f59e0b', compliant: '#22c55e' };
         const riskLabel = item.risk?.charAt(0).toUpperCase() + item.risk?.slice(1) || 'Unknown';
         const muted = isDark ? '#94a3b8' : '#666666';
         return `
-          <div style="font-weight: 600; margin-bottom: 8px; color: ${isDark ? '#f8fafc' : '#111'};">${item.name}</div>
+          <div style="font-weight: 600; margin-bottom: 8px; color: ${isDark ? '#f8fafc' : '#111'};">${esc(item.name)}</div>
           <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px;">
             <span style="color: ${muted};">Compliance:</span>
-            <span style="color: ${riskColors[item.risk as keyof typeof riskColors] || '#64748b'}; font-weight: 500;">${item.value}%</span>
+            <span style="color: ${riskColors[item.risk as keyof typeof riskColors] || '#64748b'}; font-weight: 500;">${esc(item.value)}%</span>
             <span style="color: ${muted};">Risk:</span>
-            <span style="color: ${riskColors[item.risk as keyof typeof riskColors] || '#64748b'}; font-weight: 500;">${riskLabel}</span>
+            <span style="color: ${riskColors[item.risk as keyof typeof riskColors] || '#64748b'}; font-weight: 500;">${esc(riskLabel)}</span>
             <span style="color: ${muted};">Centres:</span>
-            <span>${item.centres}</span>
+            <span>${esc(item.centres)}</span>
             <span style="color: ${muted};">Inspections:</span>
-            <span>${item.inspections}</span>
+            <span>${esc(item.inspections)}</span>
           </div>
         `;
       },

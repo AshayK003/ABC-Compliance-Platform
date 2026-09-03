@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -23,7 +24,8 @@ const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export function Settings() {
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
+  const navigate = useNavigate();
   const { theme: contextTheme, setTheme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>({
     ...DEFAULT_SETTINGS,
@@ -44,6 +46,23 @@ export function Settings() {
     // In real app, call API to save settings
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Deactivate your account? You will be signed out immediately.')) return;
+    try {
+      setDeleting(true);
+      setDeleteError('');
+      await deleteAccount();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Failed to delete account');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -285,12 +304,17 @@ export function Settings() {
               </div>
               <button
                 type="button"
-                className="bg-error-container text-on-error-container font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-error/20"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="bg-error-container text-on-error-container font-label-bold text-label-bold px-4 py-2 rounded transition-colors hover:bg-error/20 disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-[18px] mr-2">delete_forever</span>
-                Delete Account
+                {deleting ? 'Deactivating…' : 'Delete Account'}
               </button>
             </div>
+            {deleteError && (
+              <p className="mt-3 font-body-sm text-body-sm text-error" role="alert">{deleteError}</p>
+            )}
           </section>
         </div>
       </main>

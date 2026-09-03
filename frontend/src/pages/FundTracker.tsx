@@ -4,7 +4,7 @@ import { StatCard } from '../components/StatCard';
 import { ChartPlaceholder } from '../components/ChartPlaceholder';
 import { FundRequestModal } from '../components/FundRequestModal';
 import { api } from '../services/api';
-import type { Centre } from '../types';
+import { normalizeCentresResponse } from '../services/api/centres';
 
 type FundDisbursement = {
   date: string;
@@ -26,6 +26,7 @@ type ExpenseRecord = {
 export function FundTracker() {
   const [activeTab, setActiveTab] = useState<'grants' | 'allocations' | 'expenses'>('grants');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [fundRequestOpen, setFundRequestOpen] = useState(false);
   const [disbursements, setDisbursements] = useState<FundDisbursement[]>([]);
   const [allocations, setAllocations] = useState<FundDisbursement[]>([]);
@@ -40,21 +41,23 @@ export function FundTracker() {
 
   const loadData = async () => {
     try {
+      setLoadError('');
       const [grantData, allocationData, expenseData, centreData] = await Promise.all([
         api.getGrants(),
-        api.getAllocations().catch(() => [] as never[]),
-        api.getExpenses().catch(() => [] as never[]),
-        api.getCentres().catch(() => [] as never[]),
+        api.getAllocations(),
+        api.getExpenses(),
+        api.getCentres(),
       ]);
-      const centreMap = new Map((centreData as Centre[]).map(c => [c.id, c.name]));
+      const centreList = normalizeCentresResponse(centreData);
+      const centreMap = new Map(centreList.map(c => [c.id, c.name]));
 
       const grants = grantData as Array<{ awbi_ref: string; amount: number; purpose: string; financial_year: string; status: string }>;
       const allocs = allocationData as Array<{ id: string; grant_id: string; centre_id: string; amount: number; allocated_at: string }>;
       const exps = expenseData as Array<{ allocation_id: string; category: string; amount: number; bill_ref?: string; expense_at: string }>;
 
-      // Helper to get status from grant
+      // Helper to get status from grant (backend default status is "active")
       const getGrantStatus = (status: string): FundDisbursement['status'] => {
-        if (status === 'approved') return 'Approved';
+        if (status === 'approved' || status === 'active') return 'Approved';
         if (status === 'pending') return 'Processing';
         return 'Flagged';
       };
@@ -108,7 +111,7 @@ export function FundTracker() {
         .map(([category, amount]) => ({ category, amount })));
 
     } catch (error) {
-      console.error('Failed to load fund data:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load fund data');
     } finally {
       setLoading(false);
     }
@@ -161,17 +164,17 @@ export function FundTracker() {
         <div className="flex-1 max-w-md mx-4 hidden sm:block">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-            <input className="w-full bg-surface-container-highest border border-outline-variant rounded px-10 py-1.5 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant/50" placeholder="Search funds, entities..." type="text" />
+            <input aria-label="Search funds and entities" className="w-full bg-surface-container-highest border border-outline-variant rounded px-10 py-1.5 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant/50" placeholder="Search funds, entities..." type="text" />
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <button type="button" aria-label="Notifications" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <button type="button" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <button type="button" aria-label="Settings" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button type="button" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
+          <button type="button" aria-label="Help" className="p-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80">
             <span className="material-symbols-outlined">help</span>
           </button>
           <div className="w-8 h-8 rounded-full bg-secondary-container ml-2 overflow-hidden border border-outline-variant cursor-pointer">
@@ -183,6 +186,12 @@ export function FundTracker() {
       {/* Main Content Canvas */}
       <main className="flex-1 overflow-y-auto p-container-padding bg-surface-container-lowest">
         <div className="max-w-7xl mx-auto space-y-6">
+          {loadError && (
+            <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4" role="alert">
+              <span>Couldn't load fund data: {loadError}</span>
+              <button type="button" onClick={loadData} className="underline shrink-0">Retry</button>
+            </div>
+          )}
           {/* Page Header & Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>

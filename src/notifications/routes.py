@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -25,15 +26,14 @@ class NotificationCreate(BaseModel):
     user_id: str
     title: str
     message: str
-    type: str = "info"  # info, warning, error, success
+    type: Literal["info", "warning", "error", "success"] = "info"  # info, warning, error, success
     read: bool = False
 
 
 class NotificationUpdate(BaseModel):
+    """Read-only update: notification content is immutable once created."""
+
     read: bool | None = None
-    title: str | None = None
-    message: str | None = None
-    type: str | None = None
 
 
 class NotificationOut(BaseModel):

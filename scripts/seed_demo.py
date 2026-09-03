@@ -22,9 +22,9 @@ Usage (from project root):
 from __future__ import annotations
 
 import asyncio
+import os
 import random
 import secrets
-import os
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 

@@ -11,15 +11,19 @@ export function Centres() {
   const [viewCentre, setViewCentre] = useState<Centre | null>(null);
   const [viewStaff, setViewStaff] = useState<Array<{ id: string; name: string; role: string; phone: string }> | null>(null);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [loadError, setLoadError] = useState('');
+  const [staffError, setStaffError] = useState('');
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadCentres = useCallback(async () => {
     try {
+      setLoadError('');
       const response = await api.getCentres({
         limit: pageSize,
         offset: (page - 1) * pageSize,
@@ -36,7 +40,7 @@ export function Centres() {
         setTotal(response.total);
       }
     } catch (error) {
-      console.error('Failed to load centres:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load centres');
     } finally {
       setLoading(false);
     }
@@ -53,19 +57,26 @@ export function Centres() {
       return;
     }
     let cancelled = false;
+    setStaffError('');
     api.getCentreStaff(viewCentre.id)
       .then((staff) => { if (!cancelled) setViewStaff(staff); })
-      .catch(() => { if (!cancelled) setViewStaff([]); });
+      .catch((error) => {
+        if (!cancelled) {
+          setViewStaff([]);
+          setStaffError(error instanceof Error ? error.message : 'Failed to load staff');
+        }
+      });
     return () => { cancelled = true; };
   }, [viewCentre]);
 
-  // Debounced search
+  // Debounced search: the input updates instantly, the fetch waits 300ms
   const handleSearchChange = (value: string) => {
-    setSearch(value);
+    setSearchInput(value);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     searchTimeoutRef.current = setTimeout(() => {
+      setSearch(value);
       setPage(1);
     }, 300);
   };
@@ -120,6 +131,12 @@ export function Centres() {
 
       {/* Filters */}
       <div className="flex-1 overflow-y-auto p-container-padding">
+        {loadError && (
+          <div className="bg-error-container text-on-error-container px-4 py-3 rounded-lg font-body-sm text-body-sm flex items-center justify-between gap-4 mb-4" role="alert">
+            <span>Couldn't load centres: {loadError}</span>
+            <button type="button" onClick={loadCentres} className="underline shrink-0">Retry</button>
+          </div>
+        )}
         <div className="bg-surface-container rounded-lg border border-outline-variant p-4 mb-6 flex flex-col md:flex-row gap-4 items-end">
           <div className="w-full md:w-1/3">
             <label htmlFor="search-facility" className="block font-label-md text-label-md text-on-surface-variant mb-1">Search Facility</label>
@@ -128,7 +145,7 @@ export function Centres() {
               <input
                 id="search-facility"
                 type="text"
-                value={search}
+                value={searchInput}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full bg-background border border-outline-variant rounded pl-10 pr-3 py-2 text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-outline"
                 placeholder="Centre name, ID, or location..."
@@ -165,10 +182,6 @@ export function Centres() {
               <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">arrow_drop_down</span>
             </div>
           </div>
-          <button type="button" className="w-full md:w-auto bg-surface-container-high border border-outline-variant hover:border-outline text-on-surface font-label-bold text-label-bold px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 h-[38px]">
-            <span className="material-symbols-outlined text-[18px]">filter_list</span>
-            More Filters
-          </button>
         </div>
 
         {/* Table */}
@@ -197,16 +210,20 @@ export function Centres() {
                   render: (c: Centre) => getStatusBadge(c.status),
                 },
                 {
-                  key: 'complianceScore',
-                  header: 'Compliance Score',
+                  key: 'compliance',
+                  header: 'Compliance',
                   align: 'center',
                   render: (c: Centre) => (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
-                        <div className="h-full bg-primary w-[92%] rounded-full"></div>
+                    c.complianceScore === undefined ? (
+                      <span className="font-code-sm text-on-surface-variant">—</span>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden" role="progressbar" aria-valuenow={c.complianceScore} aria-valuemin={0} aria-valuemax={100} aria-label={`Compliance ${c.complianceScore} of 100`}>
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${c.complianceScore}%` }}></div>
+                        </div>
+                        <span className="font-code-sm text-primary">{c.complianceScore}/100</span>
                       </div>
-                      <span className="font-code-sm text-primary">{c.complianceScore}/100</span>
-                    </div>
+                    )
                   ),
                 },
                 {
@@ -316,8 +333,11 @@ export function Centres() {
                 {viewStaff === null && (
                   <p className="font-body-sm text-body-sm text-on-surface-variant">Loading…</p>
                 )}
-                {viewStaff !== null && viewStaff.length === 0 && (
+                {viewStaff !== null && viewStaff.length === 0 && !staffError && (
                   <p className="font-body-sm text-body-sm text-on-surface-variant">No staff assigned.</p>
+                )}
+                {staffError && (
+                  <p className="font-body-sm text-body-sm text-error" role="alert">Couldn't load staff: {staffError}</p>
                 )}
                 {viewStaff !== null && viewStaff.length > 0 && (
                   <ul className="space-y-1">
